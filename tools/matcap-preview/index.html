@@ -1,0 +1,1317 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MatCap リアルタイム3Dプレビュー（lilToon合成シミュレーター）｜KitWorks Lab 無料Webツール</title>
+  <meta name="description" content="VRChat・lilToon向けのMatCapテクスチャをブラウザ上で即3D確認できる無料プレビューツール。球体・トーラスノット・アニメ調シルエットで通常/加算/スクリーン/乗算と強度・ベースカラーをリアルタイム比較。手持ちPNGのドラッグ＆ドロップにも対応。">
+  <link rel="canonical" href="https://kitworks-lab.github.io/tools/matcap-preview/">
+  <meta property="og:title" content="Live 3D MatCap Previewer for lilToon & VRChat — KitWorks Lab">
+  <meta property="og:description" content="Preview 20 sample MatCaps or drop your own PNG onto a real-time 3D Sphere, Torus Knot, and Anime Silhouette with Normal/Add/Screen/Multiply blend modes.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="../../assets/avatar-600.png">
+  <link rel="icon" type="image/svg+xml" href="../../assets/favicon.svg">
+  <link rel="icon" type="image/png" href="../../assets/favicon.png">
+  <link rel="stylesheet" href="../../css/styles.css">
+  <link rel="stylesheet" href="../tools.css">
+  <style>
+    .mc-workbench {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+      gap: 24px;
+      align-items: start;
+    }
+
+    .stage-panel {
+      background: var(--paper-card);
+      border: 1.5px solid var(--rule-strong);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-ink);
+      overflow: hidden;
+    }
+
+    .stage-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding: 12px 16px;
+      background: var(--paper-muted);
+      border-bottom: 1.5px solid var(--rule-strong);
+    }
+
+    .stage-viewport {
+      position: relative;
+      background: #1d1a17;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      min-height: 410px;
+      cursor: grab;
+      user-select: none;
+      touch-action: none;
+    }
+
+    .stage-viewport:active {
+      cursor: grabbing;
+    }
+
+    .stage-viewport.is-dragover {
+      outline: 3px dashed var(--accent);
+      outline-offset: -10px;
+      background: #27221d;
+    }
+
+    #previewCanvas {
+      width: min(100%, 400px);
+      height: auto;
+      aspect-ratio: 1;
+      display: block;
+      border-radius: 8px;
+    }
+
+    .stage-caption {
+      position: absolute;
+      left: 14px;
+      bottom: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 10px;
+      border-radius: 5px;
+      background: rgba(30, 27, 24, 0.84);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #f3eee6;
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      pointer-events: none;
+    }
+
+    .stage-hint {
+      position: absolute;
+      right: 14px;
+      bottom: 12px;
+      color: #b7aea2;
+      font-size: 11.5px;
+      pointer-events: none;
+    }
+
+    .active-matcap-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 16px;
+      border-top: 1px solid var(--rule);
+      background: var(--paper-card);
+      flex-wrap: wrap;
+    }
+
+    .active-matcap-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    #activeThumb {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1.5px solid var(--rule-strong);
+      object-fit: cover;
+      background: #1d1a17;
+      flex-shrink: 0;
+    }
+
+    .active-name {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--ink);
+      line-height: 1.25;
+    }
+
+    .active-meta {
+      font-size: 12px;
+      color: var(--ink-muted);
+      font-family: var(--font-mono);
+    }
+
+    .ctrl-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .ctrl-block {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .ctrl-row-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .ctrl-val {
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .blend-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 6px;
+    }
+
+    .blend-btn {
+      padding: 8px 6px;
+      border: 1.5px solid var(--rule);
+      border-radius: var(--radius-sm);
+      background: var(--paper);
+      color: var(--ink);
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      transition: border-color 0.14s ease, background-color 0.14s ease;
+    }
+
+    .blend-btn:hover {
+      border-color: var(--ink);
+    }
+
+    .blend-btn.is-active {
+      background: var(--ink);
+      color: var(--paper-card);
+      border-color: var(--ink);
+    }
+
+    .color-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .color-input {
+      width: 40px;
+      height: 32px;
+      padding: 2px;
+      border: 1.5px solid var(--rule-strong);
+      border-radius: var(--radius-sm);
+      background: var(--paper-card);
+      cursor: pointer;
+    }
+
+    .swatch-dot {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 1.5px solid var(--rule-strong);
+      cursor: pointer;
+      padding: 0;
+      transition: transform 0.12s ease;
+    }
+
+    .swatch-dot:hover {
+      transform: scale(1.1);
+    }
+
+    .dropzone {
+      border: 1.5px dashed var(--ink-muted);
+      border-radius: var(--radius-sm);
+      background: var(--paper);
+      padding: 12px 14px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.15s ease, background-color 0.15s ease;
+    }
+
+    .dropzone:hover,
+    .dropzone.is-dragover {
+      border-color: var(--accent);
+      background: var(--accent-tint);
+    }
+
+    .dropzone strong {
+      display: block;
+      font-size: 13px;
+      color: var(--ink);
+    }
+
+    .dropzone span {
+      display: block;
+      font-size: 11.5px;
+      color: var(--ink-muted);
+      margin-top: 2px;
+    }
+
+    /* Swatch Gallery */
+    .gallery-section {
+      margin-top: 28px;
+    }
+
+    .cat-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+
+    .cat-tab {
+      padding: 6px 11px;
+      border: 1.5px solid var(--rule);
+      border-radius: var(--radius-sm);
+      background: var(--paper-card);
+      color: var(--ink-soft);
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .cat-tab:hover {
+      border-color: var(--ink);
+      color: var(--ink);
+    }
+
+    .cat-tab.is-active {
+      background: var(--ink);
+      border-color: var(--ink);
+      color: var(--paper-card);
+    }
+
+    .matcap-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(126px, 1fr));
+      gap: 10px;
+    }
+
+    .mc-card {
+      padding: 8px;
+      border: 1.5px solid var(--rule);
+      border-radius: var(--radius-sm);
+      background: var(--paper-card);
+      cursor: pointer;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: border-color 0.14s ease, transform 0.12s ease;
+    }
+
+    .mc-card:hover {
+      border-color: var(--ink);
+    }
+
+    .mc-card.is-active {
+      border-color: var(--accent);
+      box-shadow: var(--shadow-ink-sm);
+      background: var(--paper);
+    }
+
+    .mc-thumb-wrap {
+      background: #1d1a17;
+      border-radius: 5px;
+      padding: 8px;
+      display: grid;
+      place-items: center;
+    }
+
+    .mc-thumb-wrap img {
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .mc-card-name {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--ink);
+      line-height: 1.3;
+    }
+
+    .mc-card-tag {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      color: var(--ink-muted);
+    }
+
+    /* Editorial Store CTA Strip */
+    .cta-grid {
+      margin-top: 32px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .cta-card {
+      background: var(--paper-card);
+      border: 1.5px solid var(--rule-strong);
+      border-radius: var(--radius-md);
+      padding: 20px 22px;
+      box-shadow: var(--shadow-ink-sm);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .cta-card.is-pro {
+      border-top: 5px solid var(--accent);
+    }
+
+    .cta-card.is-lite {
+      border-top: 5px solid var(--sage);
+    }
+
+    .cta-kicker {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--ink-muted);
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
+    .cta-title {
+      margin: 4px 0 6px;
+      font-size: 20px;
+      font-weight: 800;
+      line-height: 1.3;
+    }
+
+    .cta-desc {
+      margin: 0;
+      font-size: 13.5px;
+      color: var(--ink-soft);
+      line-height: 1.65;
+    }
+
+    .cta-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .site-footer {
+      border-top: 1px solid var(--rule);
+      padding: 24px 0 36px;
+      margin-top: 40px;
+      font-size: 13px;
+      color: var(--ink-muted);
+    }
+
+    .footer-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    @media (max-width: 920px) {
+      .mc-workbench {
+        grid-template-columns: 1fr;
+      }
+      .cta-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .stage-viewport {
+        min-height: 310px;
+        padding: 12px;
+      }
+      .stage-hint {
+        display: none;
+      }
+      .matcap-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+      }
+      .blend-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand-link" href="../../">
+        <img class="brand-avatar" src="../../assets/avatar-600.png" alt="KitWorks Lab" width="36" height="36">
+        <span class="brand-name">KitWorks Lab</span>
+      </a>
+      <div class="header-right">
+        <nav class="site-nav" aria-label="Primary">
+          <a href="../" data-i18n="navTools">無料ツール一覧</a>
+          <a href="./" class="is-current" data-i18n="navMatcap">MatCapプレビュー</a>
+          <a href="../obs-chat-css/" data-i18n="navChat">OBSチャットCSS</a>
+          <a href="../yt-thumb-preview/" data-i18n="navYt">サムネ確認</a>
+          <a href="../../" data-i18n="navHome">トップ</a>
+        </nav>
+        <div class="lang-toggle" role="group" aria-label="Language">
+          <button type="button" class="lang-btn is-active" data-lang-btn="ja" aria-pressed="true">JP</button>
+          <button type="button" class="lang-btn" data-lang-btn="en" aria-pressed="false">EN</button>
+        </div>
+      </div>
+    </div>
+    <nav class="mobile-tool-nav" aria-label="Tools navigation">
+      <a href="../" data-i18n="navTools">無料ツール一覧</a>
+      <a href="./" class="is-current" data-i18n="navMatcap">MatCapプレビュー</a>
+      <a href="../obs-chat-css/" data-i18n="navChat">OBSチャットCSS</a>
+      <a href="../yt-thumb-preview/" data-i18n="navYt">サムネ確認</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="tool-hero">
+      <div class="container">
+        <div class="breadcrumb">
+          <a href="../../">KitWorks Lab</a>
+          <span class="breadcrumb-sep">/</span>
+          <a href="../" data-i18n="navTools">無料ツール一覧</a>
+          <span class="breadcrumb-sep">/</span>
+          <span data-i18n="crumbCurrent">MatCap 3Dプレビュー</span>
+        </div>
+        <div class="tool-hero-row">
+          <div>
+            <h1 class="tool-hero-title" data-i18n="title">MatCap リアルタイム3Dプレビュー</h1>
+            <p class="tool-hero-lead" data-i18n="lead">VRChat・lilToon向けのMatCap 20種（または手持ちPNG）を、球体・トーラスノット・アニメ調シルエットの3Dモデル上でリアルタイム確認できます。合成モード（通常 / 加算 / スクリーン / 乗算）、強度、ベースカラーを切り替えながら改変の当たりをチェックできます。</p>
+          </div>
+          <div class="local-stamp">
+            <span class="local-stamp-dot" aria-hidden="true"></span>
+            <span data-i18n="localStamp">ブラウザ完結 / 画像送信なし</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="tool-section">
+      <div class="container">
+        <div class="mc-workbench">
+          <!-- Real-Time 3D Stage -->
+          <div class="stage-panel">
+            <div class="stage-toolbar">
+              <div class="seg-group" role="group" aria-label="3D Preview Mesh">
+                <button type="button" class="seg-btn is-active" data-shape="sphere" data-i18n="shapeSphere">球体</button>
+                <button type="button" class="seg-btn" data-shape="knot" data-i18n="shapeKnot">トーラスノット</button>
+                <button type="button" class="seg-btn" data-shape="anime" data-i18n="shapeAnime">アニメ調シルエット</button>
+              </div>
+              <button type="button" class="btn btn-secondary btn-sm" id="btnRotate" aria-pressed="true" data-i18n="btnRotateOn">自動回転: ON</button>
+            </div>
+
+            <div class="stage-viewport" id="stageDrop">
+              <canvas id="previewCanvas" width="400" height="400" aria-label="Real-time 3D MatCap preview canvas"></canvas>
+              <div class="stage-caption" id="stageBadge">Normal · 75%</div>
+              <div class="stage-hint" data-i18n="dragHint">ドラッグで回転 / PNGドロップ対応</div>
+            </div>
+
+            <div class="active-matcap-bar">
+              <div class="active-matcap-info">
+                <img id="activeThumb" src="assets/01_Silk_Angel_Ring_Silver.png" alt="Active MatCap">
+                <div>
+                  <div class="active-name" id="activeName">01 Silk Angel Ring Silver</div>
+                  <div class="active-meta" id="activeMeta">Hair Anisotropic · Recommended: Screen</div>
+                </div>
+              </div>
+              <button type="button" class="btn btn-secondary btn-sm" id="btnApplyRec" data-i18n="btnApplyRec">推奨設定を適用</button>
+            </div>
+          </div>
+
+          <!-- Right Controls Panel -->
+          <aside class="tool-panel" aria-label="MatCap shading controls">
+            <div class="tool-panel-head">
+              <h2 class="tool-panel-title" data-i18n="ctrlHeading">lilToon 合成パラメータ</h2>
+              <button type="button" class="btn btn-secondary btn-sm" id="btnReset" data-i18n="btnReset">リセット</button>
+            </div>
+            <div class="tool-panel-body ctrl-stack">
+              <!-- Blend Mode -->
+              <div class="ctrl-block">
+                <span class="ctrl-label" data-i18n="labelBlend">合成モード (Blend Mode)</span>
+                <div class="blend-grid" role="group" aria-label="Blend mode">
+                  <button type="button" class="blend-btn is-active" data-blend="normal" data-i18n="blendNormal">通常</button>
+                  <button type="button" class="blend-btn" data-blend="add" data-i18n="blendAdd">加算</button>
+                  <button type="button" class="blend-btn" data-blend="screen" data-i18n="blendScreen">スクリーン</button>
+                  <button type="button" class="blend-btn" data-blend="multiply" data-i18n="blendMultiply">乗算</button>
+                </div>
+              </div>
+
+              <!-- Strength -->
+              <div class="ctrl-block">
+                <div class="ctrl-row-head">
+                  <label class="ctrl-label" for="strengthRange" data-i18n="labelStrength">MatCap 強度 (Strength)</label>
+                  <span class="ctrl-val" id="strengthVal">75%</span>
+                </div>
+                <input type="range" id="strengthRange" min="0" max="100" value="75">
+              </div>
+
+              <!-- Base Color -->
+              <div class="ctrl-block">
+                <div class="ctrl-row-head">
+                  <label class="ctrl-label" for="baseColorPicker" data-i18n="labelBaseColor">ベースカラー (Base Color)</label>
+                  <span class="ctrl-val" id="baseColorHex">#2b3142</span>
+                </div>
+                <div class="color-row">
+                  <input type="color" id="baseColorPicker" class="color-input" value="#2b3142" aria-label="Base color picker">
+                  <button type="button" class="swatch-dot" data-color="#2b3142" style="background:#2b3142" title="Dark Hair / Navy"></button>
+                  <button type="button" class="swatch-dot" data-color="#f5dfd2" style="background:#f5dfd2" title="Anime Skin"></button>
+                  <button type="button" class="swatch-dot" data-color="#ffffff" style="background:#ffffff" title="Pure White"></button>
+                  <button type="button" class="swatch-dot" data-color="#7a1c30" style="background:#7a1c30" title="Crimson Fabric"></button>
+                  <button type="button" class="swatch-dot" data-color="#b8c0cc" style="background:#b8c0cc" title="Silver Metal"></button>
+                  <button type="button" class="swatch-dot" data-color="#141722" style="background:#141722" title="Obsidian / Eye Base"></button>
+                </div>
+              </div>
+
+              <!-- Custom PNG Dropzone -->
+              <div class="ctrl-block">
+                <span class="ctrl-label" data-i18n="labelCustom">手持ちのMatCap PNGを試す</span>
+                <label class="dropzone" id="fileDropzone" for="customFileInput">
+                  <strong data-i18n="dropTitle">PNG / JPG をここにドロップ、またはクリックして選択</strong>
+                  <span data-i18n="dropSub">サーバーには送信されません（ブラウザ内ローカル処理）</span>
+                </label>
+                <input type="file" id="customFileInput" accept="image/png,image/jpeg,image/webp" hidden>
+              </div>
+            </div>
+          </aside>
+        </div>
+
+        <!-- 20 Sample MatCap Gallery -->
+        <div class="gallery-section">
+          <div class="tool-panel">
+            <div class="tool-panel-head">
+              <h2 class="tool-panel-title" data-i18n="galleryHeading">収録サンプル MatCap（20種クリックで即切替）</h2>
+              <span class="active-meta" id="galleryCount">20 / 20</span>
+            </div>
+            <div class="tool-panel-body">
+              <div class="cat-tabs" role="tablist" aria-label="MatCap Category Filter">
+                <button type="button" class="cat-tab is-active" data-cat="all" data-i18n="catAll">すべて (20)</button>
+                <button type="button" class="cat-tab" data-cat="hair" data-i18n="catHair">01 髪</button>
+                <button type="button" class="cat-tab" data-cat="eyes" data-i18n="catEyes">02 瞳</button>
+                <button type="button" class="cat-tab" data-cat="metal" data-i18n="catMetal">03 金属</button>
+                <button type="button" class="cat-tab" data-cat="fabric" data-i18n="catFabric">04 布・革</button>
+                <button type="button" class="cat-tab" data-cat="holo" data-i18n="catHolo">05 ホロ・宝石</button>
+                <button type="button" class="cat-tab" data-cat="rim" data-i18n="catRim">06 リム・肌</button>
+              </div>
+              <div class="matcap-grid" id="matcapGrid"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Editorial Store CTAs (BOOTH & Gumroad) -->
+        <div class="cta-grid">
+          <article class="cta-card is-pro">
+            <div>
+              <div class="cta-kicker" data-i18n="proKicker">FULL PACK · 160 ASSETS</div>
+              <h2 class="cta-title" data-i18n="proTitle">ToonCap 120 Pro（全160素材 + UnityPackage）</h2>
+              <p class="cta-desc" data-i18n="proDesc">高解像度1024px MatCap 120種（黒フチ防止エッジパディング済み）、影ランプ 24種、シームレスディテールマスク 16種を収録。個人・商用・アバター改変・配信OK、AI不使用。</p>
+            </div>
+            <div class="cta-actions">
+              <a class="btn btn-primary" href="https://kitworks.booth.pm/" target="_blank" rel="noopener noreferrer" data-i18n="ctaBoothPro">BOOTHで見る（¥600）</a>
+              <a class="btn btn-secondary" href="https://kitworkslab.gumroad.com/" target="_blank" rel="noopener noreferrer" data-i18n="ctaGumroadPro">Gumroad ($6)</a>
+            </div>
+          </article>
+
+          <article class="cta-card is-lite">
+            <div>
+              <div class="cta-kicker" data-i18n="liteKicker">FREE SAMPLE · 20 ASSETS</div>
+              <h2 class="cta-title" data-i18n="liteTitle">ToonCap 120 Lite（無料お試し版 20種）</h2>
+              <p class="cta-desc" data-i18n="liteDesc">まずは自分のアバターで質感を試したい方向けの無料版。MatCap 12種＋影ランプ 4種＋ディテールマスク 4種を、設定済みUnityPackage同梱でお渡しします。</p>
+            </div>
+            <div class="cta-actions">
+              <a class="btn btn-primary" style="background:var(--sage);border-color:var(--ink)" href="https://kitworks.booth.pm/" target="_blank" rel="noopener noreferrer" data-i18n="ctaBoothLite">BOOTHで無料DL（¥0）</a>
+              <a class="btn btn-secondary" href="https://kitworkslab.gumroad.com/" target="_blank" rel="noopener noreferrer" data-i18n="ctaGumroadLite">Gumroad ($0+)</a>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <span>KitWorks Lab · ToonCap 120 Live MatCap Previewer</span>
+      <span><a href="../" data-i18n="navTools">無料ツール一覧</a> · <a href="https://kitworks.booth.pm/" target="_blank" rel="noopener noreferrer">BOOTH</a> · <a href="https://kitworkslab.gumroad.com/" target="_blank" rel="noopener noreferrer">Gumroad</a></span>
+    </div>
+  </footer>
+
+  <script src="../tools-common.js"></script>
+  <script>
+    (function () {
+      'use strict';
+
+      var SAMPLES = [
+        { id: '01_Silk_Angel_Ring_Silver',   file: '01_Silk_Angel_Ring_Silver.png',   cat: 'hair',   catLabel: 'Hair',   name: 'Silk Angel Ring Silver',   blend: 'screen',   strength: 75, base: '#2b3142' },
+        { id: '02_Angel_Ring_Warm_Gold',     file: '02_Angel_Ring_Warm_Gold.png',     cat: 'hair',   catLabel: 'Hair',   name: 'Angel Ring Warm Gold',     blend: 'screen',   strength: 72, base: '#4a3220' },
+        { id: '03_Soft_Anime_Sakura_Sheen',  file: '03_Soft_Anime_Sakura_Sheen.png',  cat: 'hair',   catLabel: 'Hair',   name: 'Anime Sakura Sheen',       blend: 'normal',   strength: 70, base: '#c98ca6' },
+        { id: '04_Midnight_Navy_Gloss',      file: '04_Midnight_Navy_Gloss.png',      cat: 'hair',   catLabel: 'Hair',   name: 'Midnight Navy Gloss',      blend: 'screen',   strength: 78, base: '#141a2b' },
+        { id: '05_Crisp_Anime_Double_Dot',   file: '05_Crisp_Anime_Double_Dot.png',   cat: 'eyes',   catLabel: 'Eyes',   name: 'Anime Double Dot',         blend: 'add',      strength: 90, base: '#1a2d52' },
+        { id: '06_Four_Point_Starlight',     file: '06_Four_Point_Starlight.png',     cat: 'eyes',   catLabel: 'Eyes',   name: 'Four-Point Starlight',     blend: 'add',      strength: 92, base: '#241a4a' },
+        { id: '07_Sweet_Heart_Catchlight',   file: '07_Sweet_Heart_Catchlight.png',   cat: 'eyes',   catLabel: 'Eyes',   name: 'Sweet Heart Catchlight',   blend: 'add',      strength: 92, base: '#591c3b' },
+        { id: '08_Studio_Window_Panes',      file: '08_Studio_Window_Panes.png',      cat: 'eyes',   catLabel: 'Eyes',   name: 'Studio Window Panes',      blend: 'add',      strength: 85, base: '#1d2d3d' },
+        { id: '09_Brushed_Titanium',         file: '09_Brushed_Titanium.png',         cat: 'metal',  catLabel: 'Metal',  name: 'Brushed Titanium',         blend: 'normal',   strength: 88, base: '#b8c0cc' },
+        { id: '10_Rose_Gold_Satin',          file: '10_Rose_Gold_Satin.png',          cat: 'metal',  catLabel: 'Metal',  name: 'Rose Gold Satin',          blend: 'normal',   strength: 88, base: '#d9a093' },
+        { id: '11_Chrome_Mirror_Studio',     file: '11_Chrome_Mirror_Studio.png',     cat: 'metal',  catLabel: 'Metal',  name: 'Chrome Mirror Studio',     blend: 'normal',   strength: 94, base: '#e5ebf2' },
+        { id: '12_Oil_Slick_Titanium',       file: '12_Oil_Slick_Titanium.png',       cat: 'metal',  catLabel: 'Metal',  name: 'Oil-Slick Titanium',       blend: 'normal',   strength: 88, base: '#96a0b5' },
+        { id: '13_Crimson_Velvet_Rim',       file: '13_Crimson_Velvet_Rim.png',       cat: 'fabric', catLabel: 'Fabric', name: 'Crimson Velvet Rim',       blend: 'normal',   strength: 85, base: '#6e1627' },
+        { id: '14_Glossy_Black_Latex',       file: '14_Glossy_Black_Latex.png',       cat: 'fabric', catLabel: 'Fabric', name: 'Glossy Black Latex',       blend: 'normal',   strength: 92, base: '#16181f' },
+        { id: '15_Saddle_Brown_Leather',     file: '15_Saddle_Brown_Leather.png',     cat: 'fabric', catLabel: 'Fabric', name: 'Saddle Brown Leather',     blend: 'normal',   strength: 82, base: '#6b3b20' },
+        { id: '16_Soap_Bubble_Thin_Film',    file: '16_Soap_Bubble_Thin_Film.png',    cat: 'holo',   catLabel: 'Holo',   name: 'Soap Bubble Thin-Film',    blend: 'screen',   strength: 85, base: '#212536' },
+        { id: '17_Sapphire_Crystal_Core',    file: '17_Sapphire_Crystal_Core.png',    cat: 'holo',   catLabel: 'Gem',    name: 'Sapphire Crystal Core',    blend: 'normal',   strength: 90, base: '#19468c' },
+        { id: '18_Warm_Sunset_Rim',          file: '18_Warm_Sunset_Rim.png',          cat: 'rim',    catLabel: 'Rim',    name: 'Warm Sunset Rim',          blend: 'screen',   strength: 75, base: '#2c2538' },
+        { id: '19_Cool_Moonlight_Rim',       file: '19_Cool_Moonlight_Rim.png',       cat: 'rim',    catLabel: 'Rim',    name: 'Cool Moonlight Rim',       blend: 'screen',   strength: 78, base: '#1b243b' },
+        { id: '20_Warm_Skin_SSS_Glow',       file: '20_Warm_Skin_SSS_Glow.png',       cat: 'rim',    catLabel: 'Skin',   name: 'Warm Skin SSS Glow',       blend: 'normal',   strength: 62, base: '#f5dfd2' }
+      ];
+
+      var DICT = {
+        ja: {
+          pageTitle: 'MatCap リアルタイム3Dプレビュー（lilToon合成シミュレーター）｜KitWorks Lab 無料Webツール',
+          pageDesc: 'VRChat・lilToon向けのMatCapテクスチャをブラウザ上で即3D確認できる無料プレビューツール。',
+          navTools: '無料ツール一覧', navMatcap: 'MatCapプレビュー', navChat: 'OBSチャットCSS', navYt: 'サムネ確認', navHome: 'トップ',
+          crumbCurrent: 'MatCap 3Dプレビュー',
+          title: 'MatCap リアルタイム3Dプレビュー',
+          lead: 'VRChat・lilToon向けのMatCap 20種（または手持ちPNG）を、球体・トーラスノット・アニメ調シルエットの3Dモデル上でリアルタイム確認できます。合成モード（通常 / 加算 / スクリーン / 乗算）、強度、ベースカラーを切り替えながら改変の当たりをチェックできます。',
+          localStamp: 'ブラウザ完結 / 画像送信なし',
+          shapeSphere: '球体', shapeKnot: 'トーラスノット', shapeAnime: 'アニメ調シルエット',
+          btnRotateOn: '自動回転: ON', btnRotateOff: '自動回転: OFF',
+          dragHint: 'ドラッグで回転 / PNGドロップ対応',
+          btnApplyRec: '推奨設定を適用',
+          ctrlHeading: 'lilToon 合成パラメータ',
+          btnReset: 'リセット',
+          labelBlend: '合成モード (Blend Mode)',
+          blendNormal: '通常', blendAdd: '加算', blendScreen: 'スクリーン', blendMultiply: '乗算',
+          labelStrength: 'MatCap 強度 (Strength)',
+          labelBaseColor: 'ベースカラー (Base Color)',
+          labelCustom: '手持ちのMatCap PNGを試す',
+          dropTitle: 'PNG / JPG をここにドロップ、またはクリックして選択',
+          dropSub: 'サーバーには送信されません（ブラウザ内ローカル処理）',
+          galleryHeading: '収録サンプル MatCap（20種クリックで即切替）',
+          catAll: 'すべて (20)', catHair: '01 髪', catEyes: '02 瞳', catMetal: '03 金属', catFabric: '04 布・革', catHolo: '05 ホロ・宝石', catRim: '06 リム・肌',
+          proKicker: 'FULL PACK · 160 ASSETS',
+          proTitle: 'ToonCap 120 Pro（全160素材 + UnityPackage）',
+          proDesc: '高解像度1024px MatCap 120種（黒フチ防止エッジパディング済み）、影ランプ 24種、シームレスディテールマスク 16種を収録。個人・商用・アバター改変・配信OK、AI不使用。',
+          ctaBoothPro: 'BOOTHで見る（¥600）', ctaGumroadPro: 'Gumroad ($6)',
+          liteKicker: 'FREE SAMPLE · 20 ASSETS',
+          liteTitle: 'ToonCap 120 Lite（無料お試し版 20種）',
+          liteDesc: 'まずは自分のアバターで質感を試したい方向けの無料版。MatCap 12種＋影ランプ 4種＋ディテールマスク 4種を、設定済みUnityPackage同梱でお渡しします。',
+          ctaBoothLite: 'BOOTHで無料DL（¥0）', ctaGumroadLite: 'Gumroad ($0+)'
+        },
+        en: {
+          pageTitle: 'Live 3D MatCap Previewer for lilToon & VRChat — KitWorks Lab',
+          pageDesc: 'Preview 20 procedural MatCaps or drop your own PNG onto a live 3D Sphere, Torus Knot, and Anime Silhouette with lilToon blend modes.',
+          navTools: 'Free Tools', navMatcap: 'MatCap Preview', navChat: 'OBS Chat CSS', navYt: 'YT Thumb', navHome: 'Home',
+          crumbCurrent: 'MatCap 3D Preview',
+          title: 'Live 3D MatCap Previewer',
+          lead: 'Inspect 20 sample MatCaps from ToonCap 120 — or drop your own PNG — on a real-time 3D Sphere, Torus Knot, and Anime Silhouette. Switch lilToon blend modes (Normal, Add, Screen, Multiply), strength, and base color directly in your browser.',
+          localStamp: '100% Local · Zero Upload',
+          shapeSphere: 'Sphere', shapeKnot: 'Torus Knot', shapeAnime: 'Anime Silhouette',
+          btnRotateOn: 'Auto-Rotate: ON', btnRotateOff: 'Auto-Rotate: OFF',
+          dragHint: 'Drag to orbit · Drop PNG',
+          btnApplyRec: 'Apply Recommended',
+          ctrlHeading: 'lilToon Blend Controls',
+          btnReset: 'Reset',
+          labelBlend: 'Blend Mode',
+          blendNormal: 'Normal', blendAdd: 'Add', blendScreen: 'Screen', blendMultiply: 'Multiply',
+          labelStrength: 'MatCap Strength',
+          labelBaseColor: 'Base Color',
+          labelCustom: 'Test Your Own MatCap PNG',
+          dropTitle: 'Drop a PNG / JPG here, or click to choose',
+          dropSub: 'Processed locally in your browser — never uploaded',
+          galleryHeading: 'Included Preview MatCaps (Click any of 20)',
+          catAll: 'All (20)', catHair: '01 Hair', catEyes: '02 Eyes', catMetal: '03 Metal', catFabric: '04 Fabric', catHolo: '05 Holo/Gem', catRim: '06 Rim/Skin',
+          proKicker: 'FULL PACK · 160 ASSETS',
+          proTitle: 'ToonCap 120 Pro (160 Textures + .unitypackage)',
+          proDesc: '120 edge-padded 1024px MatCaps across 6 categories, 24 Toon Shadow Ramps, and 16 Seamless Detail Masks. 100% procedural, zero AI, commercial & avatar-edit friendly.',
+          ctaBoothPro: 'Get on BOOTH (¥600)', ctaGumroadPro: 'Get on Gumroad ($6)',
+          liteKicker: 'FREE SAMPLE · 20 ASSETS',
+          liteTitle: 'ToonCap 120 Lite (Free 20-Asset Sample)',
+          liteDesc: 'Test ToonCap on your own VRChat avatar first. Includes 12 MatCaps (2 per category), 4 Shadow Ramps, 4 Seamless Detail Masks, and a pre-configured .unitypackage.',
+          ctaBoothLite: 'Free on BOOTH (¥0)', ctaGumroadLite: 'Free on Gumroad ($0+)'
+        }
+      };
+
+      var state = {
+        activeSample: SAMPLES[0],
+        customName: null,
+        shape: 'sphere',
+        blend: 'screen',
+        strength: 0.75,
+        baseRgb: [43, 49, 66],
+        yaw: 0.35,
+        pitch: 0.18,
+        autoRotate: !window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+        catFilter: 'all',
+        mcData: null,
+        mcW: 0,
+        mcH: 0
+      };
+
+      var canvas = document.getElementById('previewCanvas');
+      var ctx = canvas.getContext('2d', { willReadFrequently: false });
+      var CW = canvas.width;
+      var CH = canvas.height;
+      var frameBuf = ctx.createImageData(CW, CH);
+      var zBuf = new Float32Array(CW * CH);
+
+      // Build procedural 3D meshes once (lightweight, crisp smooth vertex normals)
+      function buildTorusKnotMesh(uSeg, vSeg) {
+        var verts = [];
+        var norms = [];
+        var tris = [];
+        var p = 2, q = 3, rTube = 0.27;
+
+        function knotPoint(t) {
+          var ct = Math.cos(q * t), st = Math.sin(q * t);
+          var r = 0.62 + 0.26 * ct;
+          return [r * Math.cos(p * t), r * Math.sin(p * t), 0.32 * st];
+        }
+
+        for (var i = 0; i <= uSeg; i++) {
+          var t = (i / uSeg) * Math.PI * 2;
+          var p0 = knotPoint(t);
+          var p1 = knotPoint(t + 0.004);
+          var tx = p1[0] - p0[0], ty = p1[1] - p0[1], tz = p1[2] - p0[2];
+          var tl = Math.hypot(tx, ty, tz) || 1;
+          tx /= tl; ty /= tl; tz /= tl;
+
+          // Frenet-like frame using radial reference
+          var rx = p0[0], ry = p0[1], rz = p0[2];
+          var bx = ty * rz - tz * ry, by = tz * rx - tx * rz, bz = tx * ry - ty * rx;
+          var bl = Math.hypot(bx, by, bz) || 1;
+          bx /= bl; by /= bl; bz /= bl;
+          var nx = by * tz - bz * ty, ny = bz * tx - bx * tz, nz = bx * ty - by * tx;
+
+          for (var j = 0; j <= vSeg; j++) {
+            var v = (j / vSeg) * Math.PI * 2;
+            var cv = Math.cos(v), sv = Math.sin(v);
+            var vnx = nx * cv + bx * sv;
+            var vny = ny * cv + by * sv;
+            var vnz = nz * cv + bz * sv;
+            verts.push(p0[0] + vnx * rTube, p0[1] + vny * rTube, p0[2] + vnz * rTube);
+            norms.push(vnx, vny, vnz);
+          }
+        }
+
+        var stride = vSeg + 1;
+        for (var i2 = 0; i2 < uSeg; i2++) {
+          for (var j2 = 0; j2 < vSeg; j2++) {
+            var a = i2 * stride + j2;
+            var b = (i2 + 1) * stride + j2;
+            var c = (i2 + 1) * stride + (j2 + 1);
+            var d = i2 * stride + (j2 + 1);
+            tris.push(a, c, b, a, d, c);
+          }
+        }
+        return { verts: new Float32Array(verts), norms: new Float32Array(norms), tris: new Uint16Array(tris) };
+      }
+
+      // Build a cute 3D Anime Silhouette Bust (sculpted head + rounded crown hair + side locks + cat ears + neck/collar)
+      function buildAnimeBustMesh() {
+        var verts = [];
+        var norms = [];
+        var tris = [];
+
+        function addEllipsoid(cx, cy, cz, rx, ry, rz, latN, lonN, deformFn) {
+          var baseIdx = verts.length / 3;
+          for (var i = 0; i <= latN; i++) {
+            var phi = (i / latN) * Math.PI;
+            var sp = Math.sin(phi), cp = Math.cos(phi);
+            for (var j = 0; j <= lonN; j++) {
+              var th = (j / lonN) * Math.PI * 2;
+              var st = Math.sin(th), ct = Math.cos(th);
+              var lx = sp * ct, ly = cp, lz = sp * st;
+              var px = lx * rx, py = ly * ry, pz = lz * rz;
+              if (deformFn) {
+                var d = deformFn(px, py, pz, lx, ly, lz);
+                px = d[0]; py = d[1]; pz = d[2];
+              }
+              var nx = lx / rx, ny = ly / ry, nz = lz / rz;
+              var nl = Math.hypot(nx, ny, nz) || 1;
+              verts.push(cx + px, cy + py, cz + pz);
+              norms.push(nx / nl, ny / nl, nz / nl);
+            }
+          }
+          var s = lonN + 1;
+          for (var i2 = 0; i2 < latN; i2++) {
+            for (var j2 = 0; j2 < lonN; j2++) {
+              var a = baseIdx + i2 * s + j2;
+              var b = baseIdx + (i2 + 1) * s + j2;
+              var c = baseIdx + (i2 + 1) * s + (j2 + 1);
+              var d2 = baseIdx + i2 * s + (j2 + 1);
+              tris.push(a, c, b, a, d2, c);
+            }
+          }
+        }
+
+        // Anime head (gently tapered chin)
+        addEllipsoid(0, 0.06, 0.02, 0.56, 0.62, 0.54, 18, 26, function (px, py, pz) {
+          var chin = py < 0 ? 1.0 + py * 0.42 : 1.0;
+          return [px * chin, py, pz * (0.92 + 0.08 * chin)];
+        });
+        // Hair volume crown + soft side locks
+        addEllipsoid(0, 0.16, -0.06, 0.64, 0.64, 0.61, 16, 24, function (px, py, pz) {
+          return [px * (py < -0.1 ? 1.08 : 1.0), py, pz];
+        });
+        // Left & Right front hair side-locks (great for checking anisotropic angel ring!)
+        addEllipsoid(-0.48, -0.18, 0.14, 0.17, 0.48, 0.18, 12, 16, function (px, py, pz) {
+          var taper = py < 0 ? Math.max(0.28, 1.0 + py * 1.1) : 1.0;
+          return [px * taper - py * 0.08, py, pz * taper];
+        });
+        addEllipsoid(0.48, -0.18, 0.14, 0.17, 0.48, 0.18, 12, 16, function (px, py, pz) {
+          var taper = py < 0 ? Math.max(0.28, 1.0 + py * 1.1) : 1.0;
+          return [px * taper + py * 0.08, py, pz * taper];
+        });
+        // Twin fluffy cat-ears / hair ribbons on top
+        addEllipsoid(-0.36, 0.72, -0.02, 0.19, 0.30, 0.15, 10, 14, function (px, py, pz) {
+          var tip = py > 0 ? Math.max(0.18, 1.0 - py * 2.2) : 1.0;
+          return [px * tip - py * 0.30, py, pz * tip];
+        });
+        addEllipsoid(0.36, 0.72, -0.02, 0.19, 0.30, 0.15, 10, 14, function (px, py, pz) {
+          var tip = py > 0 ? Math.max(0.18, 1.0 - py * 2.2) : 1.0;
+          return [px * tip + py * 0.30, py, pz * tip];
+        });
+        // Neck & rounded shoulders
+        addEllipsoid(0, -0.62, -0.02, 0.19, 0.24, 0.19, 10, 14, null);
+        addEllipsoid(0, -0.92, -0.04, 0.72, 0.28, 0.34, 12, 20, null);
+
+        return { verts: new Float32Array(verts), norms: new Float32Array(norms), tris: new Uint16Array(tris) };
+      }
+
+      var knotMesh = buildTorusKnotMesh(72, 18);
+      var animeMesh = buildAnimeBustMesh();
+
+      function shadePixel(nx, ny, nz) {
+        // Sample MatCap at (0.5 + 0.5*nx, 0.5 - 0.5*ny) — exact Unity/lilToon view-space MatCap UV
+        var mr = 210, mg = 210, mb = 210;
+        if (state.mcData) {
+          var u = Math.min(state.mcW - 1, Math.max(0, ((0.5 + 0.5 * nx) * (state.mcW - 1)) | 0));
+          var v = Math.min(state.mcH - 1, Math.max(0, ((0.5 - 0.5 * ny) * (state.mcH - 1)) | 0));
+          var idx = (v * state.mcW + u) * 4;
+          mr = state.mcData[idx];
+          mg = state.mcData[idx + 1];
+          mb = state.mcData[idx + 2];
+        }
+
+        // Subtle base toon shading so Base Color reads as 3D even at 0% strength
+        var ndl = Math.max(0, nx * -0.35 + ny * 0.55 + nz * 0.75);
+        var lit = 0.58 + 0.42 * ndl;
+        var br = state.baseRgb[0] * lit;
+        var bg = state.baseRgb[1] * lit;
+        var bb = state.baseRgb[2] * lit;
+
+        var s = state.strength;
+        var r, g, b;
+        if (state.blend === 'add') {
+          r = Math.min(255, br + mr * s);
+          g = Math.min(255, bg + mg * s);
+          b = Math.min(255, bb + mb * s);
+        } else if (state.blend === 'screen') {
+          var sr = 255 - ((255 - br) * (255 - mr)) / 255;
+          var sg = 255 - ((255 - bg) * (255 - mg)) / 255;
+          var sb = 255 - ((255 - bb) * (255 - mb)) / 255;
+          r = br + (sr - br) * s;
+          g = bg + (sg - bg) * s;
+          b = bb + (sb - bb) * s;
+        } else if (state.blend === 'multiply') {
+          var mulR = (br * mr) / 255;
+          var mulG = (bg * mg) / 255;
+          var mulB = (bb * mb) / 255;
+          r = br + (mulR - br) * s;
+          g = bg + (mulG - bg) * s;
+          b = bb + (mulB - bb) * s;
+        } else {
+          // Normal (lerp)
+          r = br + (mr - br) * s;
+          g = bg + (mg - bg) * s;
+          b = bb + (mb - bb) * s;
+        }
+        return [r | 0, g | 0, b | 0];
+      }
+
+      function clearFrame() {
+        var d = frameBuf.data;
+        for (var y = 0; y < CH; y++) {
+          // Subtle warm studio radial vignette backdrop
+          var dy = (y / CH - 0.5) * 2.0;
+          for (var x = 0; x < CW; x++) {
+            var dx = (x / CW - 0.5) * 2.0;
+            var vig = Math.max(0, 1.0 - (dx * dx + dy * dy) * 0.42);
+            var base = (24 + vig * 15) | 0;
+            var i = (y * CW + x) * 4;
+            d[i] = base + 3;
+            d[i + 1] = base + 1;
+            d[i + 2] = base;
+            d[i + 3] = 255;
+          }
+        }
+        zBuf.fill(-1e9);
+      }
+
+      function renderSphere() {
+        clearFrame();
+        var d = frameBuf.data;
+        var rad = CW * 0.42;
+        var cx = CW * 0.5, cy = CH * 0.5;
+        // Subtle orbit tilt of highlight orientation if dragged
+        var cyaw = Math.cos(state.yaw * 0.25), syaw = Math.sin(state.yaw * 0.25);
+
+        for (var y = 0; y < CH; y++) {
+          var ny0 = -(y - cy) / rad;
+          for (var x = 0; x < CW; x++) {
+            var nx0 = (x - cx) / rad;
+            var r2 = nx0 * nx0 + ny0 * ny0;
+            if (r2 <= 1.0) {
+              var nz0 = Math.sqrt(1.0 - r2);
+              // Gentle surface normal twist on drag so sphere responds tactilely too
+              var nx = nx0 * cyaw + nz0 * syaw * 0.12;
+              var ny = ny0;
+              var nz = nz0;
+              var nl = Math.hypot(nx, ny, nz) || 1;
+              var col = shadePixel(nx / nl, ny / nl, nz / nl);
+              // Smooth 1px anti-aliased edge
+              var aa = r2 > 0.985 ? Math.max(0, Math.min(1, (1.0 - r2) / 0.015)) : 1.0;
+              var p = (y * CW + x) * 4;
+              d[p] = (d[p] * (1 - aa) + col[0] * aa) | 0;
+              d[p + 1] = (d[p + 1] * (1 - aa) + col[1] * aa) | 0;
+              d[p + 2] = (d[p + 2] * (1 - aa) + col[2] * aa) | 0;
+            }
+          }
+        }
+        ctx.putImageData(frameBuf, 0, 0);
+      }
+
+      function renderMesh(mesh, scaleFactor) {
+        clearFrame();
+        var d = frameBuf.data;
+        var cy = Math.cos(state.yaw), sy = Math.sin(state.yaw);
+        var cp = Math.cos(state.pitch), sp = Math.sin(state.pitch);
+        var verts = mesh.verts, norms = mesh.norms, tris = mesh.tris;
+        var nVerts = verts.length / 3;
+
+        var px = new Float32Array(nVerts);
+        var py = new Float32Array(nVerts);
+        var pz = new Float32Array(nVerts);
+        var rnx = new Float32Array(nVerts);
+        var rny = new Float32Array(nVerts);
+        var rnz = new Float32Array(nVerts);
+
+        var fov = CW * scaleFactor;
+        var camZ = 3.1;
+
+        for (var i = 0; i < nVerts; i++) {
+          var vx = verts[i * 3], vy = verts[i * 3 + 1], vz = verts[i * 3 + 2];
+          var x1 = vx * cy + vz * sy;
+          var z1 = -vx * sy + vz * cy;
+          var y2 = vy * cp - z1 * sp;
+          var z2 = vy * sp + z1 * cp;
+          var invZ = 1.0 / (camZ - z2);
+          px[i] = CW * 0.5 + x1 * fov * invZ;
+          py[i] = CH * 0.5 - y2 * fov * invZ;
+          pz[i] = z2;
+
+          var nx0 = norms[i * 3], ny0 = norms[i * 3 + 1], nz0 = norms[i * 3 + 2];
+          var nx1 = nx0 * cy + nz0 * sy;
+          var nz1 = -nx0 * sy + nz0 * cy;
+          rnx[i] = nx1;
+          rny[i] = ny0 * cp - nz1 * sp;
+          rnz[i] = ny0 * sp + nz1 * cp;
+        }
+
+        for (var t = 0; t < tris.length; t += 3) {
+          var i0 = tris[t], i1 = tris[t + 1], i2 = tris[t + 2];
+          var x0 = px[i0], y0 = py[i0];
+          var x1 = px[i1], y1 = py[i1];
+          var x2 = px[i2], y2 = py[i2];
+
+          var area = (x1 - x0) * (y2 - y0) - (x2 - x0) * (y1 - y0);
+          if (area >= 0) continue; // Backface cull
+          var invArea = 1.0 / area;
+
+          var minX = Math.max(0, Math.floor(Math.min(x0, x1, x2)));
+          var maxX = Math.min(CW - 1, Math.ceil(Math.max(x0, x1, x2)));
+          var minY = Math.max(0, Math.floor(Math.min(y0, y1, y2)));
+          var maxY = Math.min(CH - 1, Math.ceil(Math.max(y0, y1, y2)));
+
+          for (var yy = minY; yy <= maxY; yy++) {
+            var pyf = yy + 0.5;
+            for (var xx = minX; xx <= maxX; xx++) {
+              var pxf = xx + 0.5;
+              var w0 = ((x1 - pxf) * (y2 - pyf) - (x2 - pxf) * (y1 - pyf)) * invArea;
+              if (w0 < 0) continue;
+              var w1 = ((x2 - pxf) * (y0 - pyf) - (x0 - pxf) * (y2 - pyf)) * invArea;
+              if (w1 < 0) continue;
+              var w2 = 1.0 - w0 - w1;
+              if (w2 < 0) continue;
+
+              var z = w0 * pz[i0] + w1 * pz[i1] + w2 * pz[i2];
+              var zi = yy * CW + xx;
+              if (z > zBuf[zi]) {
+                zBuf[zi] = z;
+                var nx = w0 * rnx[i0] + w1 * rnx[i1] + w2 * rnx[i2];
+                var ny = w0 * rny[i0] + w1 * rny[i1] + w2 * rny[i2];
+                var nz = w0 * rnz[i0] + w1 * rnz[i1] + w2 * rnz[i2];
+                var nl = Math.hypot(nx, ny, nz) || 1;
+                var col = shadePixel(nx / nl, ny / nl, nz / nl);
+                var p = zi * 4;
+                d[p] = col[0];
+                d[p + 1] = col[1];
+                d[p + 2] = col[2];
+                d[p + 3] = 255;
+              }
+            }
+          }
+        }
+        ctx.putImageData(frameBuf, 0, 0);
+      }
+
+      var needsRedraw = true;
+
+      function renderOnce() {
+        if (state.shape === 'sphere') {
+          renderSphere();
+        } else if (state.shape === 'knot') {
+          renderMesh(knotMesh, 1.02);
+        } else {
+          renderMesh(animeMesh, 1.15);
+        }
+        needsRedraw = false;
+      }
+
+      function tick() {
+        if (state.autoRotate && state.shape !== 'sphere' && !isDragging) {
+          state.yaw += 0.015;
+          needsRedraw = true;
+        }
+        if (needsRedraw) renderOnce();
+        requestAnimationFrame(tick);
+      }
+
+      // Load MatCap image pixels into offscreen buffer
+      var offCanvas = document.createElement('canvas');
+      var offCtx = offCanvas.getContext('2d', { willReadFrequently: true });
+
+      function loadMatcapSrc(src, label, metaText) {
+        var img = new Image();
+        img.onload = function () {
+          var s = 256;
+          offCanvas.width = s;
+          offCanvas.height = s;
+          offCtx.drawImage(img, 0, 0, s, s);
+          var idata = offCtx.getImageData(0, 0, s, s);
+          state.mcData = idata.data;
+          state.mcW = s;
+          state.mcH = s;
+          document.getElementById('activeThumb').src = src;
+          document.getElementById('activeName').textContent = label;
+          document.getElementById('activeMeta').textContent = metaText;
+          needsRedraw = true;
+          renderOnce();
+        };
+        img.src = src;
+      }
+
+      function hexToRgb(hex) {
+        var h = hex.replace('#', '');
+        return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+      }
+
+      function syncUI() {
+        document.querySelectorAll('[data-blend]').forEach(function (b) {
+          b.classList.toggle('is-active', b.getAttribute('data-blend') === state.blend);
+        });
+        document.querySelectorAll('[data-shape]').forEach(function (b) {
+          b.classList.toggle('is-active', b.getAttribute('data-shape') === state.shape);
+        });
+        var pct = Math.round(state.strength * 100);
+        document.getElementById('strengthRange').value = pct;
+        document.getElementById('strengthVal').textContent = pct + '%';
+        var bLabel = state.blend.charAt(0).toUpperCase() + state.blend.slice(1);
+        document.getElementById('stageBadge').textContent = bLabel + ' · ' + pct + '%';
+        var hex = '#' + state.baseRgb.map(function (v) { return ('0' + v.toString(16)).slice(-2); }).join('');
+        document.getElementById('baseColorPicker').value = hex;
+        document.getElementById('baseColorHex').textContent = hex;
+        needsRedraw = true;
+      }
+
+      function selectSample(sample, applyRec) {
+        state.activeSample = sample;
+        state.customName = null;
+        if (applyRec) {
+          state.blend = sample.blend;
+          state.strength = sample.strength / 100;
+          state.baseRgb = hexToRgb(sample.base);
+        }
+        syncUI();
+        document.querySelectorAll('.mc-card').forEach(function (c) {
+          c.classList.toggle('is-active', c.getAttribute('data-id') === sample.id);
+        });
+        loadMatcapSrc('assets/' + sample.file, sample.name, sample.catLabel + ' · Recommended: ' + sample.blend.toUpperCase());
+      }
+
+      function renderGallery() {
+        var grid = document.getElementById('matcapGrid');
+        grid.innerHTML = '';
+        var list = SAMPLES.filter(function (s) {
+          return state.catFilter === 'all' || s.cat === state.catFilter;
+        });
+        document.getElementById('galleryCount').textContent = list.length + ' / ' + SAMPLES.length;
+        list.forEach(function (s) {
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'mc-card' + (state.activeSample && state.activeSample.id === s.id && !state.customName ? ' is-active' : '');
+          btn.setAttribute('data-id', s.id);
+          btn.innerHTML =
+            '<div class="mc-thumb-wrap"><img src="assets/' + s.file + '" alt="' + s.name + '" loading="lazy"></div>' +
+            '<span class="mc-card-name">' + s.name + '</span>' +
+            '<span class="mc-card-tag">' + s.catLabel + ' · ' + s.blend + '</span>';
+          btn.addEventListener('click', function () {
+            selectSample(s, true);
+          });
+          grid.appendChild(btn);
+        });
+      }
+
+      // Wire events
+      document.querySelectorAll('[data-shape]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          state.shape = btn.getAttribute('data-shape');
+          if (state.shape === 'anime') {
+            state.yaw = 0.28;
+            state.pitch = 0.05;
+          }
+          syncUI();
+        });
+      });
+
+      document.querySelectorAll('[data-blend]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          state.blend = btn.getAttribute('data-blend');
+          syncUI();
+        });
+      });
+
+      document.getElementById('strengthRange').addEventListener('input', function (e) {
+        state.strength = Number(e.target.value) / 100;
+        syncUI();
+      });
+
+      document.getElementById('baseColorPicker').addEventListener('input', function (e) {
+        state.baseRgb = hexToRgb(e.target.value);
+        syncUI();
+      });
+
+      document.querySelectorAll('.swatch-dot').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          state.baseRgb = hexToRgb(btn.getAttribute('data-color'));
+          syncUI();
+        });
+      });
+
+      document.getElementById('btnApplyRec').addEventListener('click', function () {
+        if (state.activeSample) selectSample(state.activeSample, true);
+      });
+
+      document.getElementById('btnReset').addEventListener('click', function () {
+        state.yaw = 0.35;
+        state.pitch = 0.18;
+        selectSample(SAMPLES[0], true);
+      });
+
+      function updateRotateLabel() {
+        var lang = window.KitWorksLang === 'en' ? 'en' : 'ja';
+        var btn = document.getElementById('btnRotate');
+        btn.textContent = state.autoRotate ? DICT[lang].btnRotateOn : DICT[lang].btnRotateOff;
+        btn.setAttribute('aria-pressed', state.autoRotate ? 'true' : 'false');
+      }
+
+      document.getElementById('btnRotate').addEventListener('click', function () {
+        state.autoRotate = !state.autoRotate;
+        updateRotateLabel();
+      });
+
+      document.querySelectorAll('.cat-tab').forEach(function (tab) {
+        tab.addEventListener('click', function () {
+          state.catFilter = tab.getAttribute('data-cat');
+          document.querySelectorAll('.cat-tab').forEach(function (t) {
+            t.classList.toggle('is-active', t === tab);
+          });
+          renderGallery();
+        });
+      });
+
+      // Drag to orbit
+      var isDragging = false, lastX = 0, lastY = 0;
+      var stageEl = document.getElementById('stageDrop');
+      stageEl.addEventListener('pointerdown', function (e) {
+        isDragging = true;
+        lastX = e.clientX;
+        lastY = e.clientY;
+        stageEl.setPointerCapture(e.pointerId);
+      });
+      stageEl.addEventListener('pointermove', function (e) {
+        if (!isDragging) return;
+        state.yaw += (e.clientX - lastX) * 0.012;
+        state.pitch = Math.max(-1.2, Math.min(1.2, state.pitch + (e.clientY - lastY) * 0.012));
+        lastX = e.clientX;
+        lastY = e.clientY;
+        needsRedraw = true;
+      });
+      stageEl.addEventListener('pointerup', function () { isDragging = false; });
+      stageEl.addEventListener('pointercancel', function () { isDragging = false; });
+
+      // Custom PNG drag & drop + file picker
+      function handleFile(file) {
+        if (!file || !file.type.startsWith('image/')) return;
+        var reader = new FileReader();
+        reader.onload = function (ev) {
+          state.customName = file.name;
+          document.querySelectorAll('.mc-card').forEach(function (c) { c.classList.remove('is-active'); });
+          loadMatcapSrc(ev.target.result, file.name, 'Custom PNG · Local Preview');
+        };
+        reader.readAsDataURL(file);
+      }
+
+      document.getElementById('customFileInput').addEventListener('change', function (e) {
+        if (e.target.files && e.target.files[0]) handleFile(e.target.files[0]);
+      });
+
+      [stageEl, document.getElementById('fileDropzone')].forEach(function (el) {
+        el.addEventListener('dragover', function (e) {
+          e.preventDefault();
+          el.classList.add('is-dragover');
+        });
+        el.addEventListener('dragleave', function () {
+          el.classList.remove('is-dragover');
+        });
+        el.addEventListener('drop', function (e) {
+          e.preventDefault();
+          el.classList.remove('is-dragover');
+          if (e.dataTransfer.files && e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+        });
+      });
+
+      window.addEventListener('kitworks:langchange', updateRotateLabel);
+      window.KitWorksTools.initI18n(DICT);
+      updateRotateLabel();
+      renderGallery();
+      selectSample(SAMPLES[0], true);
+      requestAnimationFrame(tick);
+    })();
+  </script>
+</body>
+</html>

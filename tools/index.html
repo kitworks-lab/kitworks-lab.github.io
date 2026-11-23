@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>無料Webツール一覧｜KitWorks Lab（配信者・個人制作者向け）</title>
-  <meta name="description" content="ログイン不要・ブラウザ内完結で使えるクリエイター向け無料Webツール集。YouTubeサムネイル実寸チェッカー、OBSライブチャットCSSジェネレーター、ローカル画像一括リサイズ＆WebP変換を公開中。">
+  <meta name="description" content="ログイン不要・ブラウザ内完結で使えるクリエイター・VRChat制作者向け無料Webツール集。YouTubeサムネイル実寸チェッカー、OBSチャットCSS、画像一括リサイズ、3D MatCapプレビュー、VRChat VPMリポジトリを公開中。">
   <link rel="canonical" href="https://kitworks-lab.github.io/tools/">
   <meta property="og:title" content="KitWorks Lab — Free Browser-Local Creator Tools">
-  <meta property="og:description" content="Zero-login, 100% browser-local utilities for streamers and creators: YouTube Thumbnail Checker, OBS Live Chat CSS Generator, and Local Batch Image Resizer.">
+  <meta property="og:description" content="Zero-login, 100% browser-local utilities for streamers, VTubers, and VRChat creators: YouTube Thumbnail Checker, OBS Live Chat CSS, Batch Image Resizer, Live 3D MatCap Previewer, and VCC/VPM Repository.">
   <meta property="og:type" content="website">
   <meta property="og:image" content="../assets/avatar-600.png">
   <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
@@ -203,6 +203,99 @@
       border-radius: 3px;
     }
 
+    .hub-grid-vrc {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 22px;
+      margin-top: 22px;
+    }
+
+    .mini-matcap {
+      display: grid;
+      gap: 10px;
+    }
+
+    .mini-matcap-spheres {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .mini-matcap-swatch {
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      border: 1.5px solid var(--ink);
+      box-shadow: 2px 2px 0 var(--ink);
+      object-fit: cover;
+      background: #1e1b18;
+      flex-shrink: 0;
+    }
+
+    .mini-matcap-readout {
+      flex: 1;
+      background: #1e1b18;
+      color: #f3eee6;
+      border: 1.5px solid var(--ink);
+      border-radius: 5px;
+      padding: 7px 10px;
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      line-height: 1.45;
+    }
+
+    .mini-matcap-readout strong {
+      display: block;
+      color: #e8b959;
+      font-size: 11px;
+    }
+
+    .mini-vpm {
+      display: grid;
+      gap: 8px;
+    }
+
+    .mini-vpm-box {
+      background: var(--paper-card);
+      border: 1.5px solid var(--ink);
+      box-shadow: 2px 2px 0 var(--ink);
+      border-radius: 5px;
+      padding: 9px 11px;
+    }
+
+    .mini-vpm-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .mini-vpm-head strong {
+      font-size: 12.5px;
+      color: var(--ink);
+    }
+
+    .mini-vpm-badge {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 3px;
+      background: var(--sage);
+      color: #fff;
+    }
+
+    .mini-vpm-url {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--ink-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
     .hub-products-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -241,6 +334,12 @@
       gap: 8px;
     }
 
+    @media (max-width: 980px) {
+      .hub-grid-vrc {
+        grid-template-columns: 1fr;
+      }
+    }
+
     @media (max-width: 820px) {
       .hub-products-grid {
         grid-template-columns: 1fr;
@@ -261,6 +360,8 @@
           <a href="./yt-thumb-preview/" data-i18n="navYt">サムネ確認</a>
           <a href="./obs-chat-css/" data-i18n="navChat">OBSチャットCSS</a>
           <a href="./image-batch-resize/" data-i18n="navResize">画像リサイズ</a>
+          <a href="./matcap-preview/" data-i18n="navMatcap">MatCapプレビュー</a>
+          <a href="../vpm/" data-i18n="navVpm">VPMリポジトリ</a>
           <a href="../" data-i18n="navObs">OBS製品デモ</a>
         </nav>
         <div class="lang-toggle" role="group" aria-label="Language">
@@ -274,6 +375,8 @@
       <a href="./yt-thumb-preview/" data-i18n="navYt">サムネ確認</a>
       <a href="./obs-chat-css/" data-i18n="navChat">OBSチャットCSS</a>
       <a href="./image-batch-resize/" data-i18n="navResize">画像リサイズ</a>
+      <a href="./matcap-preview/" data-i18n="navMatcap">MatCapプレビュー</a>
+      <a href="../vpm/" data-i18n="navVpm">VPMリポジトリ</a>
     </nav>
   </header>
 
@@ -389,6 +492,67 @@
             </div>
           </article>
         </div>
+        <div class="hub-grid-vrc">
+          <!-- Tool 4: Live 3D MatCap Previewer -->
+          <article class="hub-card">
+            <div class="hub-card-visual" aria-hidden="true">
+              <div class="mini-matcap">
+                <div class="mini-matcap-spheres">
+                  <img class="mini-matcap-swatch" src="./matcap-preview/assets/01_Silk_Angel_Ring_Silver.png" alt="" width="58" height="58" loading="lazy">
+                  <img class="mini-matcap-swatch" src="./matcap-preview/assets/06_Four_Point_Starlight.png" alt="" width="58" height="58" loading="lazy">
+                  <div class="mini-matcap-readout">
+                    <strong>lilToon MatCap 3D</strong>
+                    Blend: Add · 0.85<br>Sphere / Knot / Hair
+                  </div>
+                </div>
+                <div class="mini-presets-row">
+                  <span>20 Sample PNGs</span>
+                  <span>Normal / Add / Screen / Multiply</span>
+                  <span>D&amp;D PNG</span>
+                </div>
+              </div>
+            </div>
+            <div class="hub-card-body">
+              <span class="hub-card-tag">04 / VRCHAT · LILTOON</span>
+              <h2 class="hub-card-title" data-i18n="t4Title">Live 3D MatCap プレビュー（lilToon合成シミュレーター）</h2>
+              <p class="hub-card-desc" data-i18n="t4Desc">VRChat・VTuberアバター向けのMatCapテクスチャをブラウザ上で即3D確認。球体・トーラスノット・アニメ調シルエットで通常/加算/スクリーン/乗算や強度をリアルタイム比較できます。</p>
+              <p class="hub-card-specs" data-i18n="t4Specs">サンプル20種内蔵・手持ちPNGのドラッグ＆ドロップ対応・WebGLローカル描画</p>
+            </div>
+            <div class="hub-card-foot">
+              <a class="btn btn-primary btn-sm" href="./matcap-preview/" data-i18n="openTool">ツールを開く →</a>
+            </div>
+          </article>
+
+          <!-- Tool 5: KitWorks VCC / VPM Repository -->
+          <article class="hub-card">
+            <div class="hub-card-visual" aria-hidden="true">
+              <div class="mini-vpm">
+                <div class="mini-vpm-box">
+                  <div class="mini-vpm-head">
+                    <strong>AvatarAudit Lite</strong>
+                    <span class="mini-vpm-badge">v1.0.0 · Free</span>
+                  </div>
+                  <div class="mini-vpm-url">vcc://vpm/addRepo?url=kitworks-lab.github.io/vpm/index.json</div>
+                </div>
+                <div class="mini-presets-row">
+                  <span>Unity 2022.3 LTS</span>
+                  <span>PC &amp; Quest Rank</span>
+                  <span>GPU VRAM</span>
+                  <span>1-Click VCC</span>
+                </div>
+              </div>
+            </div>
+            <div class="hub-card-body">
+              <span class="hub-card-tag">05 / VRCHAT · VCC / VPM</span>
+              <h2 class="hub-card-title" data-i18n="t5Title">KitWorks VCC / VPM 公式リポジトリ</h2>
+              <p class="hub-card-desc" data-i18n="t5Desc">VRChat Creator Companion（VCC）に1クリック追加できる公式VPMリポジトリ。無料アバター診断ツール「AvatarAudit Lite」でPC/Questランク詳細とGPUテクスチャVRAMを確認できます。</p>
+              <p class="hub-card-specs" data-i18n="t5Specs">Unity 2022.3 LTS対応・VRCSDK未導入でもコンパイル可・日英バイリンガルUI</p>
+            </div>
+            <div class="hub-card-foot">
+              <a class="btn btn-primary btn-sm" href="../vpm/" data-i18n="openVpm">VPMページを開く →</a>
+            </div>
+          </article>
+        </div>
       </div>
     </section>
 
@@ -479,11 +643,13 @@
       var DICT = {
         ja: {
           pageTitle: '無料Webツール一覧｜KitWorks Lab（配信者・個人制作者向け）',
-          pageDesc: 'ログイン不要・ブラウザ内完結で使えるクリエイター向け無料Webツール集。YouTubeサムネイル実寸チェッカー、OBSライブチャットCSSジェネレーター、ローカル画像一括リサイズ＆WebP変換を公開中。',
+          pageDesc: 'ログイン不要・ブラウザ内完結で使えるクリエイター・VRChat制作者向け無料Webツール集。YouTubeサムネイル実寸チェッカー、OBSチャットCSS、画像一括リサイズ、3D MatCapプレビュー、VRChat VPMリポジトリを公開中。',
           navTools: '無料ツール一覧',
           navYt: 'サムネ確認',
           navChat: 'OBSチャットCSS',
           navResize: '画像リサイズ',
+          navMatcap: 'MatCapプレビュー',
+          navVpm: 'VPMリポジトリ',
           navObs: 'OBS製品デモ',
           title: '配信者・個人制作者のための無料Webツール集',
           lead: '自分たちの配信や商品ページ制作で毎回ほしかった小道具を、アカウント登録なし・ブラウザ内ローカル動作の単体ツールとしてまとめました。画像も設定もサーバーには一切送りません。',
@@ -497,7 +663,14 @@
           t3Title: 'ローカル画像一括リサイズ＆形式変換',
           t3Desc: 'YouTube・BOOTH・note・X・ココナラ・アイコン用の1クリックプリセットで複数画像をまとめて変換。変換前後の容量比較つき、ZIPで1回ダウンロードできます。',
           t3Specs: 'WebP / JPEG / PNG対応・画質調整・トリミング/余白切替・サンプル3枚内蔵',
+          t4Title: 'Live 3D MatCap プレビュー（lilToon合成シミュレーター）',
+          t4Desc: 'VRChat・VTuberアバター向けのMatCapテクスチャをブラウザ上で即3D確認。球体・トーラスノット・アニメ調シルエットで通常/加算/スクリーン/乗算や強度をリアルタイム比較できます。',
+          t4Specs: 'サンプル20種内蔵・手持ちPNGのドラッグ＆ドロップ対応・WebGLローカル描画',
+          t5Title: 'KitWorks VCC / VPM 公式リポジトリ',
+          t5Desc: 'VRChat Creator Companion（VCC）に1クリック追加できる公式VPMリポジトリ。無料アバター診断ツール「AvatarAudit Lite」でPC/Questランク詳細とGPUテクスチャVRAMを確認できます。',
+          t5Specs: 'Unity 2022.3 LTS対応・VRCSDK未導入でもコンパイル可・日英バイリンガルUI',
           openTool: 'ツールを開く →',
+          openVpm: 'VPMページを開く →',
           obsHeading: 'OBSで使える配信オーバーレイも作っています',
           obsDesc: '同じ「外部サーバーなし・ローカルHTML完結」の方針で、OBSカスタムブラウザドックから手元操作できる配信ツールを BOOTH と Gumroad で配布しています。',
           obsDemoBtn: 'ブラウザでライブデモを触る',
@@ -522,11 +695,13 @@
         },
         en: {
           pageTitle: 'Free Creator Web Tools — KitWorks Lab (100% Browser-Local)',
-          pageDesc: 'Zero-login, client-side web utilities for streamers and indie creators: YouTube Thumbnail Real-Size Checker, OBS Live Chat CSS Generator, and Local Batch Image Resizer.',
+          pageDesc: 'Zero-login, client-side web utilities for streamers, VTubers, and VRChat creators: YouTube Thumbnail Checker, OBS Chat CSS Generator, Batch Image Resizer, Live 3D MatCap Previewer, and VCC/VPM Repository.',
           navTools: 'Free Tools',
           navYt: 'Thumb Preview',
           navChat: 'OBS Chat CSS',
           navResize: 'Image Resizer',
+          navMatcap: 'MatCap Preview',
+          navVpm: 'VPM Repo',
           navObs: 'OBS Overlays',
           title: 'Free Browser-Local Web Tools for Creators & Streamers',
           lead: 'Small practical utilities we wanted every time we prepped a stream or product listing. Zero accounts, zero uploads—everything runs locally in your browser.',
@@ -540,7 +715,14 @@
           t3Title: 'Local Browser Image Resizer & Format Converter',
           t3Desc: 'Batch resize and convert images to WebP, JPEG, or PNG with 1-click creator presets (YouTube, BOOTH, note, X, Coconala, 512×512). Shows before/after file size and exports a ZIP.',
           t3Specs: 'HTML5 Canvas · Cover / Contain / Aspect modes · 3 built-in demo files',
+          t4Title: 'Live 3D MatCap Previewer (lilToon Blend Simulator)',
+          t4Desc: 'Inspect VRChat & VTuber MatCap textures in real-time 3D right in your browser. Compare Normal, Add, Screen, and Multiply blends on Sphere, Torus Knot, and Anime Silhouette meshes.',
+          t4Specs: '20 built-in sample PNGs · Drag & drop your own PNG · 100% local WebGL',
+          t5Title: 'KitWorks VCC / VPM Repository',
+          t5Desc: 'Official 1-click VRChat Creator Companion repository. Install AvatarAudit Lite for PC & Android/Quest Performance Rank breakdowns, GPU Texture VRAM ranking, and broken material diagnostics.',
+          t5Specs: 'Unity 2022.3 LTS · Zero hard VRCSDK dependency · JP/EN Editor UI',
           openTool: 'Open Tool →',
+          openVpm: 'Open VPM Repo →',
           obsHeading: 'Local HTML Overlays for OBS Studio',
           obsDesc: 'Built with the same zero-server philosophy: control timers, goals, and topic roulettes from OBS Custom Browser Docks without showing buttons on stream.',
           obsDemoBtn: 'Try Live Demos',
