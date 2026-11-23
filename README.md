@@ -47,9 +47,9 @@ Open `index.html` directly in any browser, or run any static server (e.g. `npx s
 ## Products & Links
 
 - **BOOTH Shop**: https://kitworks.booth.pm/
-- **TokiDock Lite (Free)**: https://kitworks.booth.pm/items/9206837
+- **TokiDock Lite (Free)**: https://kitworks.booth.pm/items/9206701
 - **TokiDock Pro (¥500)**: https://kitworks.booth.pm/items/9206701
-- **GoalDock Lite (Free)**: https://kitworks.booth.pm/items/9207744
+- **GoalDock Lite (Free)**: https://kitworks.booth.pm/items/9207731
 - **GoalDock Pro (¥500)**: https://kitworks.booth.pm/items/9207731
 - **Zenn Book**: https://zenn.dev/kitworks/books/388f2b2ed4c788
 - **note**: https://note.com/kitworks_lab

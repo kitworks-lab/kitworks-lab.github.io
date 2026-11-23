@@ -180,9 +180,9 @@
       links: {
         storeHome: 'https://kitworks.booth.pm/',
         tokiPro: 'https://kitworks.booth.pm/items/9206701',
-        tokiLite: 'https://kitworks.booth.pm/items/9206837',
+        tokiLite: 'https://kitworks.booth.pm/items/9206701',
         goalPro: 'https://kitworks.booth.pm/items/9207731',
-        goalLite: 'https://kitworks.booth.pm/items/9207744'
+        goalLite: 'https://kitworks.booth.pm/items/9207731'
       }
     },
 
