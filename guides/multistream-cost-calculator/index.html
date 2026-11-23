@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multistreaming Cost &amp; Bandwidth Calculator (2026): Restream vs StreamYard vs Riverside vs OBS Multi-RTMP — KitWorks Lab</title>
+  <meta name="description" content="Calculate 2026 multistreaming costs and upload bandwidth limits across Restream, StreamYard, Riverside, and free OBS Multi-RTMP. Models 2-8 destinations, 720p/1080p/4K local multitrack, dual vertical streaming, and Individual vs Business licensing.">
+  <link rel="canonical" href="https://kitworks-lab.github.io/guides/multistream-cost-calculator/">
+  <meta property="og:title" content="Multistreaming Cost &amp; Bandwidth Calculator (2026): Restream vs StreamYard vs Riverside vs OBS Multi-RTMP">
+  <meta property="og:description" content="Interactive 2026 pricing and upload bottleneck calculator comparing Restream, StreamYard, Riverside, and OBS Multi-RTMP.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="../../assets/avatar-600.png">
+  <link rel="icon" type="image/svg+xml" href="../../assets/favicon.svg">
+  <link rel="icon" type="image/png" href="../../assets/favicon.png">
+  <link rel="stylesheet" href="../../css/styles.css">
+  <link rel="stylesheet" href="../guides.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand-link" href="https://kitworks-lab.github.io/">
+        <img class="brand-avatar" src="../../assets/avatar-600.png" alt="KitWorks Lab" width="36" height="36">
+        <span class="brand-name">KitWorks Lab</span>
+      </a>
+      <div class="header-right">
+        <nav class="site-nav" aria-label="Primary">
+          <a href="https://kitworks-lab.github.io/">Home</a>
+          <a href="https://kitworks-lab.github.io/tools/">Free Tools</a>
+          <a href="../" class="is-current">SaaS Guides</a>
+          <a href="https://github.com/kitworks-lab" target="_blank" rel="noopener noreferrer">GitHub</a>
+        </nav>
+      </div>
+    </div>
+    <nav class="mobile-guide-nav" aria-label="Guides navigation">
+      <a href="../">All Guides</a>
+      <a href="./" class="is-current">Multistream</a>
+      <a href="../creator-newsletter-profit-calculator/">Newsletter</a>
+      <a href="../automation-cost-calculator/">Automation</a>
+      <a href="../seo-stack-cost-calculator/">SEO Stack</a>
+      <a href="../pm-seat-cost-calculator/">PM Seats</a>
+    </nav>
+  </header>
+
+  <aside class="disclosure-bar" aria-label="Affiliate disclosure">
+    <div class="container">
+      <span class="disclosure-label">Disclosure</span>
+      <p>KitWorks Lab may earn an affiliate commission if you sign up through partner links on this page, at no extra cost to you. Pricing tiers, policy limits, and OBS Multi-RTMP ($0) math are calculated strictly from published November 2026 vendor documentation.</p>
+    </div>
+  </aside>
+
+  <main>
+    <section class="guide-hero">
+      <div class="container">
+        <nav class="breadcrumb" aria-label="Breadcrumb">
+          <a href="https://kitworks-lab.github.io/">KitWorks Lab</a>
+          <span class="breadcrumb-sep">/</span>
+          <a href="../">SaaS Guides</a>
+          <span class="breadcrumb-sep">/</span>
+          <span aria-current="page">Multistream Cost &amp; Bandwidth Calculator</span>
+        </nav>
+        <h1>Multistreaming Cost &amp; Bandwidth Calculator (2026)</h1>
+        <p class="guide-hero-lead">Compare Restream, StreamYard, Riverside, and free OBS Multi-RTMP using your real stream setup. Check whether your home upload speed can carry local multi-RTMP streams, and spot hidden tier gates like StreamYard's Individual-only terms, Essential watermarks, and Restream's 720p Studio cap.</p>
+        <div class="meta-stamp">
+          <span class="meta-pill">Pricing Snapshot: Nov 2026</span>
+          <span>Restream · StreamYard · Riverside · OBS Multi-RTMP</span>
+          <span>Client-Side Calculation</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="guide-section" aria-labelledby="calculator-heading">
+      <div class="container">
+        <h2 class="section-heading" id="calculator-heading">Configure Your Stream &amp; Upload Line</h2>
+        <p class="section-sub">Adjust your destinations, recording quality, studio workflow, and measured upload bandwidth. Costs and policy warnings recalculate immediately.</p>
+
+        <div class="calc-shell">
+          <form class="calc-inputs" id="ms-form" novalidate>
+            <div class="calc-inputs-head">
+              <h3 class="calc-inputs-title">Stream Parameters</h3>
+              <button type="button" class="calc-reset-btn" id="ms-reset">Reset defaults</button>
+            </div>
+
+            <div class="field-group">
+              <div class="field-label">
+                <span>Simultaneous destinations</span>
+                <span class="field-value" id="lbl-destinations">3 channels</span>
+              </div>
+              <div class="seg-group" role="group" aria-label="Simultaneous destinations" data-field="destinations">
+                <button type="button" class="seg-btn" data-val="2" aria-pressed="false">2</button>
+                <button type="button" class="seg-btn is-active" data-val="3" aria-pressed="true">3</button>
+                <button type="button" class="seg-btn" data-val="5" aria-pressed="false">5</button>
+                <button type="button" class="seg-btn" data-val="8" aria-pressed="false">8</button>
+              </div>
+              <p class="field-hint">Example: Twitch + YouTube + TikTok = 3 simultaneous endpoints.</p>
+            </div>
+
+            <div class="field-group">
+              <div class="field-label">
+                <span>Output quality &amp; local recording</span>
+                <span class="field-value" id="lbl-quality">1080p</span>
+              </div>
+              <div class="seg-group" role="group" aria-label="Output quality and local recording" data-field="quality">
+                <button type="button" class="seg-btn" data-val="720p" aria-pressed="false">720p</button>
+                <button type="button" class="seg-btn is-active" data-val="1080p" aria-pressed="true">1080p</button>
+                <button type="button" class="seg-btn" data-val="4k" aria-pressed="false">4K Multitrack</button>
+              </div>
+              <p class="field-hint">4K Multitrack means separate local 4K guest tracks for post-production VODs or clips.</p>
+            </div>
+
+            <div class="field-group">
+              <div class="field-label">
+                <span>Production workflow</span>
+                <span class="field-value" id="lbl-workflow">OBS Studio</span>
+              </div>
+              <div class="seg-group" role="group" aria-label="Production workflow" data-field="workflow">
+                <button type="button" class="seg-btn is-active" data-val="obs" aria-pressed="true">OBS Studio</button>
+                <button type="button" class="seg-btn" data-val="browser" aria-pressed="false">Browser Guest Studio</button>
+              </div>
+              <p class="field-hint">OBS sends an encoded RTMP feed from your PC; Browser Studio hosts remote guests in Chrome.</p>
+            </div>
+
+            <div class="field-group">
+              <label class="toggle-row" for="inp-dual">
+                <input type="checkbox" id="inp-dual">
+                <span class="toggle-copy">
+                  <span class="toggle-title">Dual Vertical + Horizontal stream (16:9 + 9:16)</span>
+                  <span class="toggle-sub">Stream widescreen to YouTube/Twitch and vertical to TikTok/Shorts simultaneously.</span>
+                </span>
+              </label>
+            </div>
+
+            <div class="field-group">
+              <div class="field-label">
+                <span>Account type</span>
+                <span class="field-value" id="lbl-account">Individual</span>
+              </div>
+              <div class="seg-group" role="group" aria-label="Account type" data-field="account">
+                <button type="button" class="seg-btn is-active" data-val="individual" aria-pressed="true">Individual</button>
+                <button type="button" class="seg-btn" data-val="business" aria-pressed="false">Business / LLC</button>
+              </div>
+              <p class="field-hint">Triggers licensing rules for agencies, companies, and registered organizations.</p>
+            </div>
+
+            <div class="field-group">
+              <div class="field-label">
+                <span>Billing cycle</span>
+                <span class="field-value" id="lbl-billing">Annual</span>
+              </div>
+              <div class="seg-group" role="group" aria-label="Billing cycle" data-field="billing">
+                <button type="button" class="seg-btn is-active" data-val="annual" aria-pressed="true">Annual</button>
+                <button type="button" class="seg-btn" data-val="monthly" aria-pressed="false">Monthly</button>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <div class="field-label">
+                <label for="inp-upload">Measured upload speed</label>
+                <span class="field-value" id="lbl-upload">20 Mbps</span>
+              </div>
+              <div class="range-row">
+                <input type="range" id="inp-upload" min="5" max="100" step="1" value="20">
+                <div class="range-scale">
+                  <span>5 Mbps</span>
+                  <span>25 Mbps</span>
+                  <span>50 Mbps</span>
+                  <span>100 Mbps</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <div class="field-label">
+                <label for="inp-bitrate">Bitrate per destination</label>
+                <span class="field-value" id="lbl-bitrate">6.0 Mbps</span>
+              </div>
+              <div class="range-row">
+                <input type="range" id="inp-bitrate" min="2.5" max="12" step="0.5" value="6">
+                <div class="range-scale">
+                  <span>2.5 Mbps (720p)</span>
+                  <span>6.0 Mbps (1080p60)</span>
+                  <span>12.0 Mbps</span>
+                </div>
+              </div>
+            </div>
+          </form>
+
+          <div class="calc-results" aria-live="polite">
+            <div class="kpi-strip" id="ms-kpis"></div>
+            <div class="meter-box" id="ms-bandwidth"></div>
+            <div class="alert-stack" id="ms-alerts"></div>
+            <div class="result-grid" id="ms-cards"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="guide-section" aria-labelledby="tiers-heading">
+      <div class="container">
+        <h2 class="section-heading" id="tiers-heading">Published 2026 Tier Reference Table</h2>
+        <p class="section-sub">Verified public USD pricing tiers checked in November 2026. Annual rates show the monthly equivalent billed upfront for 12 months.</p>
+
+        <div class="compare-table-wrap">
+          <table class="compare-table">
+            <thead>
+              <tr>
+                <th>Platform &amp; Plan</th>
+                <th class="num">Monthly</th>
+                <th class="num">Annual (/mo)</th>
+                <th>Destinations</th>
+                <th>Key Limits &amp; Policy Gates</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Restream Free</strong></td>
+                <td class="num">$0</td>
+                <td class="num">$0</td>
+                <td>2</td>
+                <td>OBS/RTMP passthrough up to 4K; Restream Studio capped at 720p with watermark; 15-day cloud retention.</td>
+              </tr>
+              <tr>
+                <td><strong>Restream Standard</strong></td>
+                <td class="num">$19</td>
+                <td class="num">$16</td>
+                <td>3</td>
+                <td>Removes Studio watermark, custom RTMP; Restream Studio still capped at 720p; 15-day retention.</td>
+              </tr>
+              <tr>
+                <td><strong>Restream Professional</strong></td>
+                <td class="num">$49</td>
+                <td class="num">$39</td>
+                <td>5</td>
+                <td>1080p Studio, dual horizontal + vertical streaming, split-feed downloads, up to 4K local recording, 30-day retention.</td>
+              </tr>
+              <tr>
+                <td><strong>Restream Business</strong></td>
+                <td class="num">$239</td>
+                <td class="num">$199</td>
+                <td>8</td>
+                <td>Embeddable player (1,000 viewers), SRT ingest, disconnect protection, co-producer mode.</td>
+              </tr>
+              <tr>
+                <td><strong>StreamYard Free</strong></td>
+                <td class="num">$0</td>
+                <td class="num">$0</td>
+                <td>1</td>
+                <td>StreamYard watermark, streaming limits, 2 hrs/mo local recording. Individual use only.</td>
+              </tr>
+              <tr>
+                <td><strong>StreamYard Essential</strong></td>
+                <td class="num">$18.99</td>
+                <td class="num">$14.99</td>
+                <td>2</td>
+                <td>1080p multistreaming, Individual use only. Watermark removal is not included until Core.</td>
+              </tr>
+              <tr>
+                <td><strong>StreamYard Core</strong></td>
+                <td class="num">$44.99</td>
+                <td class="num">$35.99</td>
+                <td>3</td>
+                <td>Removes watermark, unlimited local recordings (non-4K), 50 hrs permanent storage, AI clips. Individual use only.</td>
+              </tr>
+              <tr>
+                <td><strong>StreamYard Advanced</strong></td>
+                <td class="num">$88.99</td>
+                <td class="num">$68.99</td>
+                <td>8</td>
+                <td>4K local recordings, 15 backstage participants, On-Air webinars (100 viewers). Individual use only.</td>
+              </tr>
+              <tr>
+                <td><strong>StreamYard Business</strong></td>
+                <td class="num">Custom</td>
+                <td class="num">Custom</td>
+                <td>Custom</td>
+                <td>Required for companies, LLCs, agencies, and organizations under StreamYard's Plan Usage Policy.</td>
+              </tr>
+              <tr>
+                <td><strong>Riverside Pro</strong></td>
+                <td class="num">$35</td>
+                <td class="num">$24</td>
+                <td>0 (No live multi)</td>
+                <td>Local 4K multitrack recording (15 hrs/mo separate-track downloads), AI clips. Multistreaming not included.</td>
+              </tr>
+              <tr>
+                <td><strong>Riverside Grow</strong></td>
+                <td class="num">$45</td>
+                <td class="num">$34</td>
+                <td>Unlimited</td>
+                <td>1080p multistreaming + custom RTMP, multi-aspect ratio, 4K local multitrack (20 hrs/mo downloads), Omnichat.</td>
+              </tr>
+              <tr>
+                <td><strong>Riverside Webinar</strong></td>
+                <td class="num">$99</td>
+                <td class="num">$79</td>
+                <td>Unlimited</td>
+                <td>Adds 100-registrant webinars, pre-record as live, HubSpot sync, 25 hrs/mo separate-track downloads.</td>
+              </tr>
+              <tr>
+                <td><strong>OBS Multi-RTMP (Plugin)</strong></td>
+                <td class="num">$0</td>
+                <td class="num">$0</td>
+                <td>Upload-limited</td>
+                <td>Free open-source OBS plugin. Consumes 1x full upload bitrate per destination on your local ISP line.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="guide-section" aria-labelledby="skip-heading">
+      <div class="container">
+        <h2 class="section-heading" id="skip-heading">Who Should Skip Each Tool</h2>
+        <p class="section-sub">No single multistreaming service fits every broadcast setup. The pricing cliffs above create clear cases where a tool costs more than it returns.</p>
+
+        <div class="prose-grid">
+          <div class="skip-card">
+            <h3>Skip Restream if...</h3>
+            <p>You run a browser-based talk show at 1080p on a sub-$20 budget. Restream Standard ($19/mo monthly, $16/mo annual) keeps Restream Studio locked at 720p, forcing a jump to Professional ($49/$39). Also skip Restream if you expect bundled AI clip editing or long-term cloud VOD archival; recordings expire after 15 to 30 days and AI Clips cost extra.</p>
+          </div>
+
+          <div class="skip-card">
+            <h3>Skip StreamYard if...</h3>
+            <p>You broadcast on behalf of an LLC, agency, brand, or employer and want transparent self-serve pricing. StreamYard's Plan Usage Policy limits Essential, Core, and Advanced strictly to individual personal use. Solo streamers who want no watermark at 2 destinations should also note that Essential ($18.99/$14.99) still displays the StreamYard watermark until Core ($44.99/$35.99).</p>
+          </div>
+
+          <div class="skip-card">
+            <h3>Skip Riverside if...</h3>
+            <p>You stream primarily from OBS Studio with custom scenes, VTuber rigging, or browser-dock overlays and only need a passive RTMP cloud splitter. Riverside is built around its own browser studio, locks multistreaming behind Grow ($45/$34), and caps separate-track local recording downloads at 20 hours per month on Grow.</p>
+          </div>
+
+          <div class="skip-card">
+            <h3>Skip OBS Multi-RTMP if...</h3>
+            <p>Your ISP upload line lacks at least 25% headroom above combined stream bitrates, or you regularly host non-technical remote guests. Pushing three 6 Mbps streams locally requires 18 Mbps raw (22.5 Mbps safe headroom). Any upload congestion drops frames across all platforms at once.</p>
+          </div>
+        </div>
+
+        <div class="related-strip">
+          <div class="related-strip-copy">
+            <h3 class="related-strip-title">Streaming from OBS Studio? Local HTML Docks Use Zero Cloud Seats</h3>
+            <p class="related-strip-desc">KitWorks Lab builds browser-local OBS Custom Browser Docks (TokiDock timers and GoalDock progress bars/roulettes) that run directly inside OBS with zero external servers or recurring subscriptions.</p>
+          </div>
+          <div class="cta-row" style="margin-top:0;">
+            <a class="cta-btn-secondary" data-aff="gumroad_kitworks" href="https://earnbot7.gumroad.com/" target="_blank" rel="noopener noreferrer">View KitWorks OBS Docks on Gumroad</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="guide-section" aria-labelledby="method-heading">
+      <div class="container">
+        <div class="prose-section">
+          <h2 id="method-heading">Methodology &amp; Bandwidth Assumptions</h2>
+          <p>This calculator is built directly from official published pricing pages and policy documents verified in November 2026 (<a data-aff="restream" data-aff-pricing href="https://restream.io/pricing" target="_blank" rel="noopener noreferrer">Restream</a>, <a data-aff="streamyard" data-aff-pricing href="https://streamyard.com/pricing" target="_blank" rel="noopener noreferrer">StreamYard</a>, <a data-aff="riverside" data-aff-pricing href="https://riverside.com/pricing" target="_blank" rel="noopener noreferrer">Riverside</a>). It does not include fabricated hands-on benchmark scores or subjective latency ratings.</p>
+          <ul>
+            <li><strong>OBS Multi-RTMP upload formula:</strong> Raw upload equals <code>destinations × bitrate (Mbps)</code>. Safe required upload applies a <strong>1.25× headroom multiplier</strong> (25% buffer for audio streams, RTMP protocol overhead, chat traffic, and ISP jitter).</li>
+            <li><strong>Cloud relay upload formula:</strong> A single upstream ingest equals <code>1 × bitrate × 1.25</code>. Savings equal <code>(destinations - 1) × bitrate</code> raw Mbps removed from your home upload line. Note: if you push two separate encoded feeds (16:9 and 9:16) from OBS instead of cloud-cropping one feed, cloud ingest doubles to 2× bitrate.</li>
+            <li><strong>Currency &amp; promos:</strong> All numbers are published USD list prices excluding local taxes/VAT and temporary introductory discounts (such as StreamYard's occasional first-year promo banners).</li>
+            <li><strong>Open-source math:</strong> Inspect the full pricing logic in <code>app.js</code> or on <a href="https://github.com/kitworks-lab" target="_blank" rel="noopener noreferrer">github.com/kitworks-lab</a>.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <img class="brand-avatar" src="../../assets/avatar-600.png" alt="KitWorks Lab" width="32" height="32">
+        <p class="footer-note">KitWorks Lab — Open-source creator utilities and client-side SaaS pricing calculators.</p>
+      </div>
+      <nav class="footer-links" aria-label="Official channels">
+        <a href="https://kitworks-lab.github.io/">Home</a>
+        <a href="https://kitworks-lab.github.io/tools/">Free Tools</a>
+        <a href="../">All Guides</a>
+        <a href="../creator-newsletter-profit-calculator/">Newsletter Profit Calc</a>
+        <a href="https://github.com/kitworks-lab" target="_blank" rel="noopener noreferrer">GitHub</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script src="../guides-common.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>

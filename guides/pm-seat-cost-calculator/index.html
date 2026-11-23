@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Small-Team &amp; Freelance PM Seat Cost Calculator (2026): ClickUp vs monday.com vs Notion vs Bonsai — KitWorks Lab</title>
+  <meta name="description" content="Compare real 2026 project management costs across ClickUp Core/Business, monday.com seat buckets (3/5/10/15/20), Notion Plus/Business AI, and Hello Bonsai freelance invoicing consolidation.">
+  <link rel="canonical" href="https://kitworks-lab.github.io/guides/pm-seat-cost-calculator/">
+  <meta property="og:title" content="Small-Team & Freelance PM Seat Cost Calculator (2026): ClickUp vs monday.com vs Notion vs Bonsai">
+  <meta property="og:description" content="Calculate real seat costs, monday.com paid empty-seat traps, Notion AI upgrade jumps, and Bonsai client-billing consolidation savings.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="../../assets/avatar-600.png">
+  <link rel="icon" type="image/svg+xml" href="../../assets/favicon.svg">
+  <link rel="icon" type="image/png" href="../../assets/favicon.png">
+  <link rel="stylesheet" href="../../css/styles.css">
+  <link rel="stylesheet" href="../guides.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand-link" href="../../">
+        <img class="brand-avatar" src="../../assets/avatar-600.png" alt="KitWorks Lab" width="36" height="36">
+        <span class="brand-name">KitWorks Lab</span>
+      </a>
+      <div class="header-right">
+        <nav class="site-nav" aria-label="Primary">
+          <a href="../../">Home</a>
+          <a href="../../tools/">Free Tools</a>
+          <a href="../" class="is-current">SaaS Guides</a>
+        </nav>
+      </div>
+    </div>
+    <nav class="mobile-guide-nav" aria-label="Guides navigation">
+      <a href="../">All Guides</a>
+      <a href="../multistream-cost-calculator/">Multistream</a>
+      <a href="../creator-newsletter-profit-calculator/">Newsletter</a>
+      <a href="../automation-cost-calculator/">Automation</a>
+      <a href="../seo-stack-cost-calculator/">SEO Stack</a>
+      <a href="./" class="is-current">PM Seats</a>
+    </nav>
+  </header>
+
+  <aside class="disclosure-bar" aria-label="Affiliate disclosure">
+    <div class="container">
+      <span class="disclosure-label">Disclosure</span>
+      <p>KitWorks Lab may earn an affiliate commission if you sign up through partner links to ClickUp, monday.com, or Hello Bonsai on this page, at no extra cost to you. Notion's affiliate program is closed to new applicants as of November 2026 and is included as a direct pricing benchmark.</p>
+    </div>
+  </aside>
+
+  <main>
+    <section class="guide-hero">
+      <div class="container">
+        <nav class="breadcrumb" aria-label="Breadcrumb">
+          <a href="../../">Home</a>
+          <span class="breadcrumb-sep">/</span>
+          <a href="../">Guides</a>
+          <span class="breadcrumb-sep">/</span>
+          <span aria-current="page">PM Seat Cost Calculator</span>
+        </nav>
+        <h1>Small-Team &amp; Freelance PM Seat Cost Calculator (2026): ClickUp vs monday.com vs Notion vs Bonsai</h1>
+        <p class="guide-hero-lead">Per-seat list prices hide three major billing traps: monday.com enforces a 3-seat minimum and 5-seat billing buckets (6 users pay for 10 seats), Notion bundles full AI behind Business ($20/user), and general PM tools still force freelance studios to pay separately for client contracts and invoicing. Slide your headcount below to compare real monthly and annual bills.</p>
+        <div class="meta-stamp">
+          <span class="meta-pill">Pricing Verified: Nov 24, 2026</span>
+          <span>ClickUp &middot; monday.com &middot; Notion &middot; Hello Bonsai</span>
+          <span>USD &middot; Client-Side Math</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="guide-section" aria-labelledby="calc-heading">
+      <div class="container">
+        <h2 class="section-heading" id="calc-heading">Calculate Real Seat &amp; Stack Spend</h2>
+        <p class="section-sub">Set your team size, built-in AI requirement, freelance client-billing needs, and billing cycle. Paid empty seats and consolidation savings recalculate immediately.</p>
+
+        <div class="calc-shell">
+          <form class="calc-inputs" id="pm-form" novalidate>
+            <div class="calc-inputs-head">
+              <h3 class="calc-inputs-title">Team &amp; Feature Parameters</h3>
+              <button type="button" class="calc-reset-btn" id="pm-reset">Reset defaults</button>
+            </div>
+
+            <div class="field-group">
+              <div class="field-label">
+                <span>Quick team presets</span>
+              </div>
+              <div class="preset-row" role="group" aria-label="Team presets">
+                <button type="button" class="preset-btn" data-preset="solo">Solo Freelancer (1 + billing)</button>
+                <button type="button" class="preset-btn" data-preset="studio">3-Seat Studio (3 + billing)</button>
+                <button type="button" class="preset-btn is-active" data-preset="trap6">6-Seat Team (10-seat bucket)</button>
+                <button type="button" class="preset-btn" data-preset="ai10">10-Seat AI Team</button>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <div class="field-label">
+                <label for="seatsInput">Team size (active users)</label>
+                <span class="field-value" id="seatsOut">6 users</span>
+              </div>
+              <div class="range-row">
+                <input type="range" id="seatsInput" min="1" max="20" step="1" value="6">
+                <div class="range-scale">
+                  <span>1</span>
+                  <span>5</span>
+                  <span>10</span>
+                  <span>15</span>
+                  <span>20 seats</span>
+                </div>
+              </div>
+              <p class="field-hint">monday.com bills in fixed buckets of 3, 5, 10, 15, and 20 seats. ClickUp, Notion, and Bonsai Basic-Premium bill exact headcount.</p>
+            </div>
+
+            <div class="field-group">
+              <div class="field-label">
+                <span>Billing cycle</span>
+                <span class="field-value" id="billingOut">Annual</span>
+              </div>
+              <div class="seg-group" role="group" aria-label="Billing cycle">
+                <button type="button" class="seg-btn is-active" data-billing="annual" aria-pressed="true">Annual</button>
+                <button type="button" class="seg-btn" data-billing="monthly" aria-pressed="false">Monthly</button>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label class="toggle-row" for="aiToggle">
+                <input type="checkbox" id="aiToggle">
+                <span class="toggle-copy">
+                  <span class="toggle-title">Need built-in AI features</span>
+                  <span class="toggle-sub">Moves Notion from Plus ($10/user) to Business ($20/user annual); ClickUp Core ($9/user) already bundles 1,000 pooled AI credits/user/mo.</span>
+                </span>
+              </label>
+            </div>
+
+            <div class="field-group">
+              <label class="toggle-row" for="clientModeToggle">
+                <input type="checkbox" id="clientModeToggle">
+                <span class="toggle-copy">
+                  <span class="toggle-title">Freelancer / Agency Mode (invoicing + contracts + time tracking)</span>
+                  <span class="toggle-sub">Selects Bonsai Essentials ($19/user annual, all-in-one) vs adding a $35/mo separate invoicing &amp; e-sign stack to ClickUp, monday.com Pro, and Notion.</span>
+                </span>
+              </label>
+            </div>
+          </form>
+
+          <div class="calc-results" aria-live="polite">
+            <div class="kpi-strip">
+              <div class="kpi-box is-highlight">
+                <div class="kpi-label">Lowest Monthly Stack</div>
+                <div class="kpi-val" id="kpiWinner">$54/mo</div>
+                <div class="kpi-note" id="kpiWinnerName">ClickUp Core / Bonsai Basic</div>
+              </div>
+              <div class="kpi-box">
+                <div class="kpi-label">monday.com Billed Seats</div>
+                <div class="kpi-val" id="kpiMondaySeats">10 seats</div>
+                <div class="kpi-note" id="kpiMondayWaste">4 empty seats ($48/mo wasted)</div>
+              </div>
+              <div class="kpi-box">
+                <div class="kpi-label">Spread (High vs Low)</div>
+                <div class="kpi-val" id="kpiSpread">$792/yr</div>
+                <div class="kpi-note" id="kpiSpreadNote">Annual gap across 4 tools</div>
+              </div>
+            </div>
+
+            <div class="alert-stack">
+              <div class="alert-box alert-warn" id="mondayBucketAlert"></div>
+              <div class="alert-box" id="summaryAlert"></div>
+            </div>
+
+            <div class="result-grid">
+              <article class="result-card" id="cardClickup">
+                <div class="result-card-head">
+                  <div>
+                    <h3 class="result-card-title">ClickUp</h3>
+                    <div class="result-tier" id="clickupTier">Core</div>
+                  </div>
+                  <span class="result-badge" id="clickupBadge">Per-Seat</span>
+                </div>
+                <div class="result-price" id="clickupPrice">$54<small>/mo</small></div>
+                <p class="result-sub" id="clickupSub">$648/yr billed annually</p>
+                <ul class="result-breakdown" id="clickupSpecs"></ul>
+                <p class="result-note" id="clickupNote"></p>
+                <div class="result-card-foot">
+                  <a class="cta-btn" href="https://clickup.com/pricing" data-aff="clickup" data-aff-pricing target="_blank" rel="noopener noreferrer">View ClickUp Pricing</a>
+                </div>
+              </article>
+
+              <article class="result-card" id="cardMonday">
+                <div class="result-card-head">
+                  <div>
+                    <h3 class="result-card-title">monday.com</h3>
+                    <div class="result-tier" id="mondayTier">Standard</div>
+                  </div>
+                  <span class="result-badge" id="mondayBadge">Seat Buckets</span>
+                </div>
+                <div class="result-price" id="mondayPrice">$120<small>/mo</small></div>
+                <p class="result-sub" id="mondaySub">$1,440/yr billed annually</p>
+                <ul class="result-breakdown" id="mondaySpecs"></ul>
+                <p class="result-note" id="mondayNote"></p>
+                <div class="result-card-foot">
+                  <a class="cta-btn" href="https://monday.com/pricing" data-aff="monday" data-aff-pricing target="_blank" rel="noopener noreferrer">View monday.com Pricing</a>
+                </div>
+              </article>
+
+              <article class="result-card" id="cardNotion">
+                <div class="result-card-head">
+                  <div>
+                    <h3 class="result-card-title">Notion</h3>
+                    <div class="result-tier" id="notionTier">Plus</div>
+                  </div>
+                  <span class="result-badge" id="notionBadge">Docs + Wiki</span>
+                </div>
+                <div class="result-price" id="notionPrice">$60<small>/mo</small></div>
+                <p class="result-sub" id="notionSub">$720/yr billed annually</p>
+                <ul class="result-breakdown" id="notionSpecs"></ul>
+                <p class="result-note" id="notionNote"></p>
+                <div class="result-card-foot">
+                  <a class="cta-btn cta-btn-secondary" href="https://www.notion.com/pricing" data-aff="notion" data-aff-pricing target="_blank" rel="noopener noreferrer">View Notion Pricing</a>
+                </div>
+              </article>
+
+              <article class="result-card" id="cardBonsai">
+                <div class="result-card-head">
+                  <div>
+                    <h3 class="result-card-title">Hello Bonsai</h3>
+                    <div class="result-tier" id="bonsaiTier">Basic</div>
+                  </div>
+                  <span class="result-badge" id="bonsaiBadge">Client Studio</span>
+                </div>
+                <div class="result-price" id="bonsaiPrice">$54<small>/mo</small></div>
+                <p class="result-sub" id="bonsaiSub">$648/yr billed annually</p>
+                <ul class="result-breakdown" id="bonsaiSpecs"></ul>
+                <p class="result-note" id="bonsaiNote"></p>
+                <div class="result-card-foot">
+                  <a class="cta-btn" href="https://www.hellobonsai.com/pricing" data-aff="bonsai" data-aff-pricing target="_blank" rel="noopener noreferrer">View Bonsai Pricing</a>
+                </div>
+              </article>
+            </div>
+
+            <div class="meter-box" aria-label="Monthly USD stack comparison">
+              <div class="meter-head">
+                <h3 class="meter-title" id="barTitle">Total Monthly Workspace Comparison</h3>
+                <span class="meter-stats" id="barMeta">6 active users</span>
+              </div>
+              <div class="meter-track-row">
+                <div class="meter-track-label"><span>ClickUp</span><span id="barValClickup">$54/mo</span></div>
+                <div class="meter-track"><div class="meter-fill" id="barClickup"></div></div>
+              </div>
+              <div class="meter-track-row">
+                <div class="meter-track-label"><span>monday.com</span><span id="barValMonday">$120/mo</span></div>
+                <div class="meter-track"><div class="meter-fill" id="barMonday"></div></div>
+              </div>
+              <div class="meter-track-row">
+                <div class="meter-track-label"><span>Notion</span><span id="barValNotion">$60/mo</span></div>
+                <div class="meter-track"><div class="meter-fill" id="barNotion"></div></div>
+              </div>
+              <div class="meter-track-row">
+                <div class="meter-track-label"><span>Hello Bonsai</span><span id="barValBonsai">$54/mo</span></div>
+                <div class="meter-track"><div class="meter-fill" id="barBonsai"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="guide-section" aria-labelledby="table-heading">
+      <div class="container">
+        <h2 class="section-heading" id="table-heading">Published 2026 PM Seat Pricing &amp; Feature Gates</h2>
+        <p class="section-sub">Verified public USD pricing checked November 24, 2026. ClickUp replaced legacy Unlimited ($7) and Business ($12) with Core ($9) and Business ($17) with pooled AI credits bundled.</p>
+        <div class="compare-table-wrap">
+          <table class="compare-table">
+            <thead>
+              <tr>
+                <th>Platform</th>
+                <th>Seat Billing Rule</th>
+                <th class="num">Entry Paid (Ann / Mo)</th>
+                <th class="num">Mid Tier (Ann / Mo)</th>
+                <th>AI, Time Tracking &amp; Client Billing</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>ClickUp</strong></td>
+                <td>Exact per-user (no minimum); Free Forever available (60 MB storage cap)</td>
+                <td class="num">Core: $9 / $12</td>
+                <td class="num">Business: $17 / $25</td>
+                <td>1,000-1,500 pooled AI credits/user/mo included; Gantt on Core; Workload on Business; no native contracts/invoicing</td>
+              </tr>
+              <tr>
+                <td><strong>monday.com</strong></td>
+                <td>Strict 3-seat minimum; fixed buckets (3, 5, 10, 15, 20 seats); Free max 2 seats</td>
+                <td class="num">Standard: $12 / $14</td>
+                <td class="num">Pro: $19 / $24</td>
+                <td>Basic ($9/$12) omits Gantt &amp; automations; time tracking &amp; formulas require Pro; no native client contracts/invoicing</td>
+              </tr>
+              <tr>
+                <td><strong>Notion</strong></td>
+                <td>Exact per-member (no minimum); external page guests are free; solo Free plan</td>
+                <td class="num">Plus: $10 / $12</td>
+                <td class="num">Business: $20 / $24</td>
+                <td>Full Notion AI bundled inside Business (1,500 Standard + 500 Select credits/user); no native time tracking or invoicing</td>
+              </tr>
+              <tr>
+                <td><strong>Hello Bonsai</strong></td>
+                <td>Exact per-user on Basic, Essentials &amp; Premium (3-seat min on Elite); 7-day trial, no free plan</td>
+                <td class="num">Basic: $9 / $15</td>
+                <td class="num">Essentials: $19 / $25</td>
+                <td>Essentials adds proposals, contracts, invoicing, client portal &amp; scheduling; Premium ($29/$39) adds Gantt, QuickBooks/Xero &amp; removes branding</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="guide-section">
+      <div class="container prose-section">
+        <h2>How the Three Pricing Traps Hit Small Teams</h2>
+        <h3>1. The monday.com 5-seat bucket jump</h3>
+        <p>monday.com does not sell single paid seats or 4, 6, 7, 8, or 9-seat subscriptions. Paid tiers jump in fixed buckets of 3, 5, 10, 15, and 20 seats. Hiring a sixth teammate forces a jump from 5 billed seats to 10 billed seats overnight. On Standard annual ($12/seat), adding person #6 doubles your bill from $60/month to $120/month, spending $48/month ($576/year) on four empty seats. On Pro annual ($19/seat, required for time tracking), that sixth user pushes the invoice from $95/month to $190/month ($912/year for unused seats).</p>
+
+        <h3>2. The Notion AI upgrade vs ClickUp bundled AI</h3>
+        <p>Notion no longer offers a $10 standalone Notion AI add-on for Free or Plus workspaces. Unlocking Notion Agent, AI Meeting Notes, and Enterprise Search requires upgrading every workspace member to Business ($20/user annual, $24 monthly). For a 6-person team, enabling full Notion AI doubles workspace spend from $720/year to $1,440/year. ClickUp Core ($9/user annual) includes 1,000 pooled AI credits per user per month ($648/year for 6 users), and ClickUp Business ($17/user annual) raises that to 1,500 credits/user/month alongside Workload and resource views.</p>
+
+        <h3>3. Freelance tool sprawl vs Bonsai consolidation</h3>
+        <p>When Freelancer / Agency Mode is turned on, the calculator adds a transparent $35/month flat benchmark for separate invoicing and e-signature software to ClickUp, monday.com Pro, and Notion, because none of those three ship native legally binding contracts and client invoicing. For a solo freelancer or 2-to-3-person studio, Hello Bonsai Essentials ($19/user annual, $25 monthly) combines project management, time tracking, proposals, contracts, scheduling, and invoicing into one invoice and usually lowers total spend. Once a team grows past 4 to 6 people where only one person sends invoices, paying $19 to $29 per user across every seat on Bonsai costs more than pairing ClickUp Core ($9/user) with one separate billing tool.</p>
+
+        <h2>Honest Tradeoffs Before You Choose</h2>
+        <p><strong>ClickUp</strong> wins on raw price-to-feature density at awkward headcounts (1, 2, 4, 6, 7 users) and includes Gantt views plus 1,000 pooled AI credits on Core. Its tradeoff is setup friction: ClickUp exposes far more configuration panels than Notion or monday.com, and its Free Forever tier limits total file storage to 60 MB.</p>
+        <p><strong>monday.com</strong> is straightforward for non-technical operations and marketing teams to adopt quickly. If your headcount lands cleanly on 3, 5, 10, or 15 users, you avoid paid empty seats, though time tracking and formula columns still require Pro ($19/seat annual).</p>
+        <p><strong>Notion</strong> remains the cleanest workspace for docs, company wikis, and lightweight relational databases, helped by free external guests and a usable free solo tier. It lacks native Gantt/workload management and time tracking unless you build and maintain custom templates or third-party integrations.</p>
+        <p><strong>Hello Bonsai</strong> is designed specifically for client-service freelancers and boutique agencies rather than software sprint teams. It has no permanent free tier (only a 7-day trial), requires Essentials ($19/user annual) for contracts and invoicing, and gates branding removal plus QuickBooks, Xero, and Zapier integrations behind Premium ($29/user annual).</p>
+
+        <div class="cta-row">
+          <a class="cta-btn" href="https://clickup.com/pricing" data-aff="clickup" data-aff-pricing target="_blank" rel="noopener noreferrer">Explore ClickUp Plans</a>
+          <a class="cta-btn" href="https://www.hellobonsai.com/pricing" data-aff="bonsai" data-aff-pricing target="_blank" rel="noopener noreferrer">Explore Hello Bonsai</a>
+          <a class="cta-btn cta-btn-secondary" href="https://monday.com/pricing" data-aff="monday" data-aff-pricing target="_blank" rel="noopener noreferrer">Check monday.com Tiers</a>
+          <a class="cta-btn cta-btn-secondary" href="https://www.notion.com/pricing" data-aff="notion" data-aff-pricing target="_blank" rel="noopener noreferrer">Check Notion Pricing</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <img class="brand-avatar" src="../../assets/avatar-600.png" alt="KitWorks Lab" width="32" height="32">
+        <p class="footer-note">KitWorks Lab — Open-source SaaS cost calculators and browser utilities. All pricing math runs locally from published vendor schedules.</p>
+      </div>
+      <nav class="footer-links" aria-label="Footer links">
+        <a href="../">All Guides</a>
+        <a href="../../tools/">Free Tools</a>
+        <a href="../../">Home</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script src="../guides-common.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>

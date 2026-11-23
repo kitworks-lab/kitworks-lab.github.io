@@ -1,0 +1,209 @@
+{
+  "restream": {
+    "name": "Restream",
+    "official_url": "https://restream.io",
+    "pricing_url": "https://restream.io/pricing",
+    "affiliate_url": "",
+    "network": "PartnerStack",
+    "status": "official_fallback",
+    "note": "Cloud RTMP multistreaming and Restream Studio. Verified Nov 2026."
+  },
+  "streamyard": {
+    "name": "StreamYard",
+    "official_url": "https://streamyard.com",
+    "pricing_url": "https://streamyard.com/pricing",
+    "affiliate_url": "",
+    "network": "FirstPromoter",
+    "status": "official_fallback",
+    "note": "Browser-based live studio; consumer tiers restricted to Individual use. Verified Nov 2026."
+  },
+  "riverside": {
+    "name": "Riverside",
+    "official_url": "https://riverside.com",
+    "pricing_url": "https://riverside.com/pricing",
+    "affiliate_url": "",
+    "network": "PartnerStack",
+    "status": "official_fallback",
+    "note": "Local 4K multitrack studio; multistreaming requires Grow plan. Verified Nov 2026."
+  },
+  "descript": {
+    "name": "Descript",
+    "official_url": "https://www.descript.com",
+    "pricing_url": "https://www.descript.com/pricing",
+    "affiliate_url": "",
+    "network": "PartnerStack",
+    "status": "official_fallback",
+    "note": "Text-based video and podcast editor with dual Media Hours + AI Credits metering. Verified Nov 2026."
+  },
+  "elevenlabs": {
+    "name": "ElevenLabs",
+    "official_url": "https://elevenlabs.io",
+    "pricing_url": "https://elevenlabs.io/pricing",
+    "affiliate_url": "",
+    "network": "PartnerStack",
+    "status": "official_fallback",
+    "note": "AI voice synthesis, cloning, and dubbing studio. Verified Nov 2026."
+  },
+  "epidemic_sound": {
+    "name": "Epidemic Sound",
+    "official_url": "https://www.epidemicsound.com",
+    "pricing_url": "https://www.epidemicsound.com/pricing/",
+    "affiliate_url": "",
+    "network": "Direct / CJ Affiliate",
+    "status": "official_fallback",
+    "note": "Royalty-free music and SFX licensing for creators and agencies. Verified Nov 2026."
+  },
+  "kit": {
+    "name": "Kit (formerly ConvertKit)",
+    "official_url": "https://kit.com",
+    "pricing_url": "https://kit.com/pricing",
+    "affiliate_url": "",
+    "network": "PartnerStack",
+    "status": "official_fallback",
+    "note": "Creator email marketing and Kit Commerce (3.5% + $0.30/sale). Verified Nov 2026."
+  },
+  "beehiiv": {
+    "name": "beehiiv",
+    "official_url": "https://www.beehiiv.com",
+    "pricing_url": "https://www.beehiiv.com/pricing",
+    "affiliate_url": "",
+    "network": "Dub.co",
+    "status": "official_fallback",
+    "note": "Newsletter platform with Oct 2026 Lite/Pro tiers and 0% platform commerce cut. Verified Nov 2026."
+  },
+  "framer": {
+    "name": "Framer",
+    "official_url": "https://www.framer.com",
+    "pricing_url": "https://www.framer.com/pricing/",
+    "affiliate_url": "",
+    "network": "Dub.co",
+    "status": "official_fallback",
+    "note": "Visual web builder with per-site Basic and Pro tiers. Verified Nov 2026."
+  },
+  "cloudways": {
+    "name": "Cloudways",
+    "official_url": "https://www.cloudways.com",
+    "pricing_url": "https://www.cloudways.com/en/pricing.php",
+    "affiliate_url": "",
+    "network": "Direct / Awin",
+    "status": "official_fallback",
+    "note": "Managed cloud PHP/WordPress hosting with hourly pay-as-you-go billing. Verified Nov 2026."
+  },
+  "gumroad_kitworks": {
+    "name": "KitWorks Lab on Gumroad",
+    "official_url": "https://earnbot7.gumroad.com/",
+    "pricing_url": "https://earnbot7.gumroad.com/",
+    "affiliate_url": "",
+    "network": "KitWorks Lab Direct Store",
+    "status": "official_fallback",
+    "note": "KitWorks Lab own OBS Custom Browser Dock overlays (TokiDock & GoalDock)."
+  },
+  "make": {
+    "name": "Make.com",
+    "official_url": "https://www.make.com/",
+    "pricing_url": "https://www.make.com/en/pricing",
+    "affiliate_url": "",
+    "network": "Direct",
+    "status": "official_fallback",
+    "note": "Visual workflow automation billed by credits/operations. Verified Nov 2026."
+  },
+  "zapier": {
+    "name": "Zapier",
+    "official_url": "https://zapier.com/",
+    "pricing_url": "https://zapier.com/pricing",
+    "affiliate_url": "",
+    "network": "None (Benchmark Only)",
+    "status": "official_fallback",
+    "note": "Task-based workflow automation benchmark (no open public affiliate program). Verified Nov 2026."
+  },
+  "n8n": {
+    "name": "n8n Cloud",
+    "official_url": "https://n8n.io/",
+    "pricing_url": "https://n8n.io/pricing/",
+    "affiliate_url": "",
+    "network": "PartnerStack",
+    "status": "official_fallback",
+    "note": "Workflow automation billed per full execution rather than per step. Verified Nov 2026."
+  },
+  "semrush": {
+    "name": "Semrush",
+    "official_url": "https://www.semrush.com/",
+    "pricing_url": "https://www.semrush.com/pricing/",
+    "affiliate_url": "",
+    "network": "Impact.com",
+    "status": "official_fallback",
+    "note": "Semrush One SEO & AI visibility suite with paid extra user seats. Verified Nov 2026."
+  },
+  "seranking": {
+    "name": "SE Ranking",
+    "official_url": "https://seranking.com/",
+    "pricing_url": "https://seranking.com/subscription.html",
+    "affiliate_url": "",
+    "network": "Direct",
+    "status": "official_fallback",
+    "note": "SEO platform with daily keyword tracking, API, and MCP access. Verified Nov 2026."
+  },
+  "mangools": {
+    "name": "Mangools",
+    "official_url": "https://mangools.com/",
+    "pricing_url": "https://mangools.com/plans-and-pricing",
+    "affiliate_url": "",
+    "network": "Direct",
+    "status": "official_fallback",
+    "note": "Budget-focused keyword research and SERP analysis suite. Verified Nov 2026."
+  },
+  "surfer": {
+    "name": "Surfer SEO",
+    "official_url": "https://surferseo.com/",
+    "pricing_url": "https://surferseo.com/pricing/",
+    "affiliate_url": "",
+    "network": "PartnerStack",
+    "status": "official_fallback",
+    "note": "On-page content optimization and AI content visibility tool. Verified Nov 2026."
+  },
+  "clickup": {
+    "name": "ClickUp",
+    "official_url": "https://clickup.com/",
+    "pricing_url": "https://clickup.com/pricing",
+    "affiliate_url": "",
+    "network": "PartnerStack",
+    "status": "official_fallback",
+    "note": "Project management workspace with per-seat Core and Business plans. Verified Nov 2026."
+  },
+  "monday": {
+    "name": "monday.com",
+    "official_url": "https://monday.com/",
+    "pricing_url": "https://monday.com/pricing",
+    "affiliate_url": "",
+    "network": "PartnerStack",
+    "status": "official_fallback",
+    "note": "Work OS billed in 3/5/10/15-seat buckets. Verified Nov 2026."
+  },
+  "notion": {
+    "name": "Notion",
+    "official_url": "https://www.notion.com/",
+    "pricing_url": "https://www.notion.com/pricing",
+    "affiliate_url": "",
+    "network": "PartnerStack (Paused)",
+    "status": "official_fallback",
+    "note": "Workspace docs and databases; Notion AI bundled in Business tier. Verified Nov 2026."
+  },
+  "bonsai": {
+    "name": "Bonsai (Hello Bonsai)",
+    "official_url": "https://www.hellobonsai.com/",
+    "pricing_url": "https://www.hellobonsai.com/pricing",
+    "affiliate_url": "",
+    "network": "FirstPromoter",
+    "status": "official_fallback",
+    "note": "Freelance and small-agency PM, contracts, time tracking, and invoicing suite. Verified Nov 2026."
+  },
+  "brevo": {
+    "name": "Brevo",
+    "official_url": "https://www.brevo.com/",
+    "pricing_url": "https://www.brevo.com/pricing/",
+    "affiliate_url": "",
+    "network": "PartnerStack",
+    "status": "official_fallback",
+    "note": "Email marketing billed by monthly send volume rather than stored contacts. Verified Nov 2026."
+  }
+}

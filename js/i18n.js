@@ -12,6 +12,7 @@
       navCompare: 'Lite / Pro 比較',
       navGuides: '解説・書籍',
       navTools: '無料Webツール',
+      navGlobalGuides: 'SaaS計算機 (EN)',
       toolsStripTitle: 'ブラウザで使える無料Webツール（登録不要・ローカル処理）',
       tlHubName: '無料ツール一覧 →',
       tlHubDesc: '配信者・制作者向けの単体ブラウザツールまとめ',
@@ -27,6 +28,8 @@
       tlMatcapDesc: 'VRChat / lilToon向けMatCap合成をブラウザ上で3D確認',
       tlVpmName: 'KitWorks VCC / VPMリポジトリ',
       tlVpmDesc: 'AvatarAudit LiteをVCCへ1クリック追加・PC/Questランク診断',
+      tlGuidesName: '海外SaaS料金＆比較計算機 (EN) →',
+      tlGuidesDesc: 'マルチ配信・メルマガ・自動化・SEO・PMの英語コスト計算機5本',
 
       heroTitle: 'OBSの操作ボタンを、\n配信画面に映さない。',
       heroLead: 'タイマーの開始も、登録者カウントの+1も、OBSの「カスタムブラウザドック」から手元でワンクリック。外部サーバーやログイン不要、ローカルHTMLだけで動く配信ツールを作っています。',
@@ -201,6 +204,7 @@
       navCompare: 'Lite vs Pro',
       navGuides: 'Guides & Book',
       navTools: 'Free Tools',
+      navGlobalGuides: 'SaaS Guides (EN)',
       toolsStripTitle: 'Free Browser-Local Web Tools (Zero Login · Zero Upload)',
       tlHubName: 'All Free Tools →',
       tlHubDesc: 'Zero-upload client-side utilities for streamers and creators',
@@ -216,6 +220,8 @@
       tlMatcapDesc: 'Test VRChat / lilToon MatCap blends in browser-local 3D',
       tlVpmName: 'KitWorks VCC / VPM Repo',
       tlVpmDesc: '1-click VCC repository for AvatarAudit Lite (PC & Quest Rank)',
+      tlGuidesName: 'SaaS Cost Calculators (EN) →',
+      tlGuidesDesc: '5 interactive calculators: Multistream, Newsletter, Automation, SEO & PM',
 
       heroTitle: 'Keep OBS controls off\nyour stream canvas.',
       heroLead: 'Start a Pomodoro session or bump a subscriber goal with one click from OBS Studio’s Custom Browser Dock. 100% local HTML widgets—no accounts, no cloud servers, no install.',

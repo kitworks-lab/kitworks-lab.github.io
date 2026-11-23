@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Solo &amp; Small-Agency SEO Stack Cost Calculator (2026): Semrush One vs SE Ranking vs Mangools — KitWorks Lab</title>
+  <meta name="description" content="Compare real late-2026 SEO suite costs across Semrush One, SE Ranking, Mangools, and optional Surfer SEO add-ons by seats, daily tracked keywords, active projects, and AI visibility tracking.">
+  <link rel="canonical" href="https://kitworks-lab.github.io/guides/seo-stack-cost-calculator/">
+  <meta property="og:title" content="Solo & Small-Agency SEO Stack Cost Calculator (2026): Semrush One vs SE Ranking vs Mangools">
+  <meta property="og:description" content="Calculate monthly cost, annual spend, and per-seat pricing for Semrush One, SE Ranking, Mangools, and optional Surfer SEO content optimization.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="../../assets/avatar-600.png">
+  <link rel="icon" type="image/svg+xml" href="../../assets/favicon.svg">
+  <link rel="icon" type="image/png" href="../../assets/favicon.png">
+  <link rel="stylesheet" href="../../css/styles.css">
+  <link rel="stylesheet" href="../guides.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand-link" href="../../">
+        <img class="brand-avatar" src="../../assets/avatar-600.png" alt="KitWorks Lab" width="36" height="36">
+        <span class="brand-name">KitWorks Lab</span>
+      </a>
+      <div class="header-right">
+        <nav class="site-nav" aria-label="Primary">
+          <a href="../../">Home</a>
+          <a href="../../tools/">Free Tools</a>
+          <a href="../" class="is-current">SaaS Guides</a>
+        </nav>
+      </div>
+    </div>
+    <nav class="mobile-guide-nav" aria-label="Guides navigation">
+      <a href="../">All Guides</a>
+      <a href="../multistream-cost-calculator/">Multistream</a>
+      <a href="../creator-newsletter-profit-calculator/">Newsletter</a>
+      <a href="../automation-cost-calculator/">Automation</a>
+      <a href="./" class="is-current">SEO Stack</a>
+      <a href="../pm-seat-cost-calculator/">PM Seats</a>
+    </nav>
+  </header>
+
+  <aside class="disclosure-bar" aria-label="Affiliate disclosure">
+    <div class="container">
+      <span class="disclosure-label">Disclosure</span>
+      <p>KitWorks Lab may earn an affiliate commission if you sign up through partner links to Semrush, SE Ranking, Mangools, or Surfer SEO on this page, at no extra cost to you. Every tier cap and dollar figure below comes strictly from published November 2026 vendor pricing pages.</p>
+    </div>
+  </aside>
+
+  <main>
+    <section class="guide-hero">
+      <div class="container">
+        <nav class="breadcrumb" aria-label="Breadcrumb">
+          <a href="../../">Home</a>
+          <span class="breadcrumb-sep">/</span>
+          <a href="../">Guides</a>
+          <span class="breadcrumb-sep">/</span>
+          <span aria-current="page">SEO Stack Cost Calculator</span>
+        </nav>
+        <h1>Solo &amp; Small-Agency SEO Stack Cost Calculator (2026): Semrush One vs SE Ranking vs Mangools</h1>
+        <p class="guide-hero-lead">Late-2026 tier updates moved Semrush into consolidated Semrush One plans ($199 to $549/month plus $45+/extra seat) while SE Ranking bundles 2,000 daily keywords and MCP access into Core ($129/month) and Mangools stays at $29.90 to $89.90/month annual. Adjust seats, tracked keywords, active projects, and AI visibility tracking below to compare monthly, annual, and per-seat totals.</p>
+        <div class="meta-stamp">
+          <span class="meta-pill">Pricing Verified: Nov 24, 2026</span>
+          <span>Semrush One &middot; SE Ranking &middot; Mangools &middot; Surfer SEO</span>
+          <span>USD &middot; Client-Side Math</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="guide-section" aria-labelledby="calc-heading">
+      <div class="container">
+        <h2 class="section-heading" id="calc-heading">Configure Your SEO Team &amp; Tracking Limits</h2>
+        <p class="section-sub">Set your seats, daily keyword quota, active sites, and AI visibility needs. Monthly spend, annual bills, per-seat costs, and cap warnings update immediately.</p>
+
+        <div class="calc-shell">
+          <form class="calc-inputs" id="seo-form" novalidate>
+            <div class="calc-inputs-head">
+              <h3 class="calc-inputs-title">SEO Stack Parameters</h3>
+              <button type="button" class="calc-reset-btn" id="seo-reset">Reset defaults</button>
+            </div>
+
+            <div class="field-group">
+              <div class="field-label">
+                <span>Quick team profiles</span>
+              </div>
+              <div class="preset-row" role="group" aria-label="SEO team presets">
+                <button type="button" class="preset-btn" data-preset="blogger">Solo Blogger (1 seat, 200 kw)</button>
+                <button type="button" class="preset-btn is-active" data-preset="indie">Indie SaaS (1 seat, 500 kw)</button>
+                <button type="button" class="preset-btn" data-preset="boutique">Small Agency (3 seats, 1.5k kw)</button>
+                <button type="button" class="preset-btn" data-preset="heavy">High-Volume (4 seats, 2k kw)</button>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <div class="field-label">
+                <label for="seatsInput">Team seats needed</label>
+                <span class="field-value" id="seatsOut">1 seat</span>
+              </div>
+              <div class="range-row">
+                <input type="range" id="seatsInput" min="1" max="5" step="1" value="1">
+                <div class="range-scale">
+                  <span>1</span>
+                  <span>2</span>
+                  <span>3</span>
+                  <span>4</span>
+                  <span>5 seats</span>
+                </div>
+              </div>
+              <p class="field-hint">Semrush charges +$45/mo minimum per extra seat; SE Ranking Growth includes 3 seats; Mangools Premium/Agency include 4 to 6 seats.</p>
+            </div>
+
+            <div class="field-group">
+              <div class="field-label">
+                <label for="keywordsInput">Daily tracked keywords</label>
+                <span class="field-value" id="keywordsOut">500 keywords</span>
+              </div>
+              <div class="range-row">
+                <input type="range" id="keywordsInput" min="100" max="2000" step="100" value="500">
+                <div class="range-scale">
+                  <span>100</span>
+                  <span>500</span>
+                  <span>1,000</span>
+                  <span>1,500</span>
+                  <span>2,000</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <div class="field-label">
+                <label for="projectsInput">Active client / site projects</label>
+                <span class="field-value" id="projectsOut">5 projects</span>
+              </div>
+              <div class="range-row">
+                <input type="range" id="projectsInput" min="1" max="20" step="1" value="5">
+                <div class="range-scale">
+                  <span>1</span>
+                  <span>5</span>
+                  <span>10</span>
+                  <span>15</span>
+                  <span>20</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <div class="field-label">
+                <span>Billing cycle</span>
+                <span class="field-value" id="billingOut">Annual</span>
+              </div>
+              <div class="seg-group" role="group" aria-label="Billing cycle">
+                <button type="button" class="seg-btn is-active" data-billing="annual" aria-pressed="true">Annual</button>
+                <button type="button" class="seg-btn" data-billing="monthly" aria-pressed="false">Monthly</button>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label class="toggle-row" for="aiToggle">
+                <input type="checkbox" id="aiToggle" checked>
+                <span class="toggle-copy">
+                  <span class="toggle-title">Need AI Visibility / GEO prompt tracking</span>
+                  <span class="toggle-sub">Triggers Semrush One ($199+ monthly), Mangools AI Search Watcher (+$7.80-$12/mo), and SE Ranking's included 25 AI prompts/day.</span>
+                </span>
+              </label>
+            </div>
+
+            <div class="field-group">
+              <label class="toggle-row" for="surferToggle">
+                <input type="checkbox" id="surferToggle">
+                <span class="toggle-copy">
+                  <span class="toggle-title">Add optional Surfer SEO content optimization</span>
+                  <span class="toggle-sub">Models pairing an on-page NLP Content Editor (Discovery/Standard/Pro) on top of your base SEO suite.</span>
+                </span>
+              </label>
+            </div>
+          </form>
+
+          <div class="calc-results" aria-live="polite">
+            <div class="kpi-strip">
+              <div class="kpi-box is-highlight">
+                <div class="kpi-label">Lowest Qualifying Stack</div>
+                <div class="kpi-val" id="kpiWinner">$52.70/mo</div>
+                <div class="kpi-note" id="kpiWinnerName">Mangools Premium + AI</div>
+              </div>
+              <div class="kpi-box">
+                <div class="kpi-label">Lowest With Crawler + Daily</div>
+                <div class="kpi-val" id="kpiFullSuite">$103.20/mo</div>
+                <div class="kpi-note" id="kpiFullSuiteName">SE Ranking Core</div>
+              </div>
+              <div class="kpi-box">
+                <div class="kpi-label">Annual Savings vs Semrush</div>
+                <div class="kpi-val" id="kpiSavings">$1,350/yr</div>
+                <div class="kpi-note" id="kpiSavingsNote">Compared to Semrush One Starter</div>
+              </div>
+            </div>
+
+            <div class="alert-stack">
+              <div class="alert-box" id="summaryAlert"></div>
+              <div class="alert-box alert-warn" id="limitWarn" hidden></div>
+            </div>
+
+            <div class="result-grid cols-3">
+              <article class="result-card" id="cardSemrush">
+                <div class="result-card-head">
+                  <div>
+                    <h3 class="result-card-title">Semrush</h3>
+                    <div class="result-tier" id="semrushTier">Semrush One Starter</div>
+                  </div>
+                  <span class="result-badge" id="semrushBadge">Full Suite</span>
+                </div>
+                <div class="result-price" id="semrushPrice">$165.17<small>/mo</small></div>
+                <p class="result-sub" id="semrushSub">$1,982/yr billed annually</p>
+                <ul class="result-breakdown" id="semrushSpecs"></ul>
+                <p class="result-note" id="semrushNote"></p>
+                <div class="result-card-foot">
+                  <a class="cta-btn" href="https://www.semrush.com/pricing/" data-aff="semrush" data-aff-pricing target="_blank" rel="noopener noreferrer">View Semrush Pricing</a>
+                </div>
+              </article>
+
+              <article class="result-card" id="cardSeranking">
+                <div class="result-card-head">
+                  <div>
+                    <h3 class="result-card-title">SE Ranking</h3>
+                    <div class="result-tier" id="serankingTier">Core</div>
+                  </div>
+                  <span class="result-badge" id="serankingBadge">Daily + Crawler</span>
+                </div>
+                <div class="result-price" id="serankingPrice">$103.20<small>/mo</small></div>
+                <p class="result-sub" id="serankingSub">$1,238/yr billed annually</p>
+                <ul class="result-breakdown" id="serankingSpecs"></ul>
+                <p class="result-note" id="serankingNote"></p>
+                <div class="result-card-foot">
+                  <a class="cta-btn" href="https://seranking.com/subscription.html" data-aff="seranking" data-aff-pricing target="_blank" rel="noopener noreferrer">View SE Ranking Plans</a>
+                </div>
+              </article>
+
+              <article class="result-card" id="cardMangools">
+                <div class="result-card-head">
+                  <div>
+                    <h3 class="result-card-title">Mangools</h3>
+                    <div class="result-tier" id="mangoolsTier">Premium + AI</div>
+                  </div>
+                  <span class="result-badge" id="mangoolsBadge">Solo Entry</span>
+                </div>
+                <div class="result-price" id="mangoolsPrice">$52.70<small>/mo</small></div>
+                <p class="result-sub" id="mangoolsSub">$632/yr billed annually</p>
+                <ul class="result-breakdown" id="mangoolsSpecs"></ul>
+                <p class="result-note" id="mangoolsNote"></p>
+                <div class="result-card-foot">
+                  <a class="cta-btn" href="https://mangools.com/plans-and-pricing" data-aff="mangools" data-aff-pricing target="_blank" rel="noopener noreferrer">View Mangools Plans</a>
+                </div>
+              </article>
+            </div>
+
+            <div class="meter-box" id="surferPanel" hidden>
+              <div class="meter-head">
+                <h3 class="meter-title">Optional Content Editor Add-On: Surfer SEO (<span id="surferTierName">Standard</span>)</h3>
+                <span class="meter-stats" id="surferPrice">+$99/mo</span>
+              </div>
+              <p class="result-sub" id="surferDesc"></p>
+              <div class="cta-row">
+                <a class="cta-btn cta-btn-secondary" href="https://surferseo.com/pricing/" data-aff="surfer" data-aff-pricing target="_blank" rel="noopener noreferrer">View Surfer SEO Pricing</a>
+              </div>
+            </div>
+
+            <div class="meter-box" aria-label="Monthly USD cost scale">
+              <div class="meter-head">
+                <h3 class="meter-title">Monthly Cost Scale (Base SEO Suite)</h3>
+                <span class="meter-stats" id="meterMeta">1 seat &middot; 500 keywords &middot; 5 projects</span>
+              </div>
+              <div class="meter-track-row">
+                <div class="meter-track-label"><span>Semrush</span><span id="barValSemrush">$165/mo</span></div>
+                <div class="meter-track"><div class="meter-fill" id="barSemrush"></div></div>
+              </div>
+              <div class="meter-track-row">
+                <div class="meter-track-label"><span>SE Ranking</span><span id="barValSeranking">$103/mo</span></div>
+                <div class="meter-track"><div class="meter-fill" id="barSeranking"></div></div>
+              </div>
+              <div class="meter-track-row">
+                <div class="meter-track-label"><span>Mangools</span><span id="barValMangools">$53/mo</span></div>
+                <div class="meter-track"><div class="meter-fill" id="barMangools"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="guide-section" aria-labelledby="table-heading">
+      <div class="container">
+        <h2 class="section-heading" id="table-heading">Published 2026 SEO Suite Pricing &amp; Quota Table</h2>
+        <p class="section-sub">Verified public USD tiers checked November 24, 2026. Pay close attention to included seats, daily vs weekly rank updates, and site crawl availability.</p>
+        <div class="compare-table-wrap">
+          <table class="compare-table">
+            <thead>
+              <tr>
+                <th>Platform &amp; Plan</th>
+                <th class="num">Monthly</th>
+                <th class="num">Annual (/mo)</th>
+                <th>Included Seats</th>
+                <th>Keywords, Projects &amp; Key Capabilities</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Semrush SEO (Classic)</strong></td>
+                <td class="num">$139.95</td>
+                <td class="num">$117.33</td>
+                <td>1 (+$45+/seat)</td>
+                <td>500 keywords, 5 projects, core backlinks &amp; audit; no AI Visibility ($99/mo standalone per domain)</td>
+              </tr>
+              <tr>
+                <td><strong>Semrush One Starter</strong></td>
+                <td class="num">$199</td>
+                <td class="num">$165.17</td>
+                <td>1 (+$45+/seat)</td>
+                <td>500 keywords, 5 projects, 50 custom AI prompts, 100K audit pages/mo</td>
+              </tr>
+              <tr>
+                <td><strong>Semrush One Pro+</strong></td>
+                <td class="num">$299</td>
+                <td class="num">$248.17</td>
+                <td>1 (+$45-$100/seat)</td>
+                <td>1,500 keywords, 15 projects, 100 AI prompts, 300K audit pages/mo, historical data, JS rendering</td>
+              </tr>
+              <tr>
+                <td><strong>Semrush One Advanced</strong></td>
+                <td class="num">$549</td>
+                <td class="num">$455.67</td>
+                <td>1 (+$45-$100/seat)</td>
+                <td>5,000 keywords, 40 projects, 200 AI prompts, 1M audit pages/mo, API access</td>
+              </tr>
+              <tr>
+                <td><strong>SE Ranking Core</strong></td>
+                <td class="num">$129</td>
+                <td class="num">$103.20</td>
+                <td>1 manager seat</td>
+                <td>2,000 daily keywords, 10 projects, 250K audit pages/mo, 25K API credits &amp; MCP, 25 AI prompts/day, 6-mo history</td>
+              </tr>
+              <tr>
+                <td><strong>SE Ranking Growth</strong></td>
+                <td class="num">$279</td>
+                <td class="num">$223.20</td>
+                <td>3 manager seats</td>
+                <td>5,000 daily keywords, 30 projects, 2M audit pages/mo, 100K API credits &amp; MCP, lifetime history, guest links</td>
+              </tr>
+              <tr>
+                <td><strong>Mangools Basic / Premium / Agency</strong></td>
+                <td class="num">$49 / $69 / $129</td>
+                <td class="num">$29.90 / $44.90 / $89.90</td>
+                <td>1 / 4 / 6 seats</td>
+                <td>200 (weekly) / 700 (weekly) / 1,500 (daily) keywords; AI bundle +$12/mo (+$7.80 annual); API &amp; MCP; no site crawler</td>
+              </tr>
+              <tr>
+                <td><strong>Surfer SEO (Content Add-On)</strong></td>
+                <td class="num">$59 / $119 / $219</td>
+                <td class="num">$49 / $99 / $182</td>
+                <td>1 / 3 / 5 seats</td>
+                <td>Discovery / Standard / Pro on-page NLP editor (10-30 docs/mo) + AI prompts; standalone AI Search Analytics $82/$95</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="guide-section">
+      <div class="container prose-section">
+        <h2>When Semrush One Is Overkill vs Worth $199+/Month</h2>
+        <p>For a solo publisher, niche site operator, or indie SaaS founder monitoring fewer than 500 keywords across 1 to 3 domains, Semrush One Starter ($199/month monthly or $165.17/month annual) is frequently overkill. You pay for massive enterprise datasets (28B+ keywords, 43T backlinks across 142 regions) when day-to-day work consists of keyword difficulty checks, SERP previews, and rank tracking. Mangools Basic ($29.90/month annual) or Premium ($44.90/month annual) covers keyword and SERP research at roughly 70% to 80% lower annual cost, while SE Ranking Core ($103.20/month annual) adds daily tracking on 2,000 keywords, a 250K-page site audit crawler, 25 daily AI prompts, and API/MCP access for $62/month less than Semrush One Starter.</p>
+        <p>Semrush One justifies $199 to $549/month when competitive research and deep backlink history directly close or retain client revenue. Agencies auditing international domains across dozens of markets, serving enterprise clients who request Semrush exports by name, or tracking 100 to 200 custom LLM prompts alongside paid-search competitor data benefit from Semrush's database scale. Watch extra-seat pricing carefully: adding two extra logins on Semrush adds at least $90/month (and up to $200/month on upper tiers), while SE Ranking Growth bundles 3 manager seats and Mangools Premium bundles 4 seats.</p>
+
+        <h2>Honest Limitations to Check Before Picking a Suite</h2>
+        <h3>Mangools lookup caps and missing technical crawler</h3>
+        <p>Mangools is the most affordable complete keyword and SERP suite for solo creators, and Premium/Agency tiers include 3 to 5 extra seats with zero seat surcharges. Two technical limits apply: Mangools has no full technical site audit crawler (requiring Screaming Frog or Google Search Console for crawl diagnostics), and Basic (100 lookups/24h) plus Premium (500 lookups/24h) update rank tracking weekly instead of daily. Daily rank tracking on Mangools starts at Agency ($89.90/month annual, capped at 1,500 keywords).</p>
+
+        <h3>SE Ranking session and historical depth limits</h3>
+        <p>SE Ranking Core allows only 1 active session per login, so multi-person teams need Growth (3 manager seats) or view-only guest links. Core also keeps 6 months of historical rank data, while project-lifetime history requires Growth ($223.20/month annual). Agencies needing white-label client portals can add SE Ranking's Agency Pack (+$69/month, annual billing only, includes 30 client seats).</p>
+
+        <h3>Where Surfer SEO fits in the stack</h3>
+        <p>Surfer SEO is a specialized on-page NLP content editor and AI search visibility tracker (25 weekly prompts on Standard at $99/month annual; 50 daily prompts plus MCP on Pro at $182/month annual). Because Surfer does not include a backlink index or full technical site crawler, content teams typically stack it alongside Mangools or SE Ranking rather than using it as a sole SEO tool.</p>
+
+        <div class="cta-row">
+          <a class="cta-btn" href="https://seranking.com/subscription.html" data-aff="seranking" data-aff-pricing target="_blank" rel="noopener noreferrer">Compare SE Ranking Plans</a>
+          <a class="cta-btn" href="https://mangools.com/plans-and-pricing" data-aff="mangools" data-aff-pricing target="_blank" rel="noopener noreferrer">Explore Mangools Pricing</a>
+          <a class="cta-btn cta-btn-secondary" href="https://www.semrush.com/pricing/" data-aff="semrush" data-aff-pricing target="_blank" rel="noopener noreferrer">Check Semrush One</a>
+          <a class="cta-btn cta-btn-secondary" href="https://surferseo.com/pricing/" data-aff="surfer" data-aff-pricing target="_blank" rel="noopener noreferrer">Check Surfer SEO</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <img class="brand-avatar" src="../../assets/avatar-600.png" alt="KitWorks Lab" width="32" height="32">
+        <p class="footer-note">KitWorks Lab — Open-source SaaS cost calculators and browser utilities. All pricing math runs locally from published vendor schedules.</p>
+      </div>
+      <nav class="footer-links" aria-label="Footer links">
+        <a href="../">All Guides</a>
+        <a href="../../tools/">Free Tools</a>
+        <a href="../../">Home</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script src="../guides-common.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>

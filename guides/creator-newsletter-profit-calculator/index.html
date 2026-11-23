@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Creator Newsletter &amp; Digital Product Profit Calculator (2026): Kit vs beehiiv vs Gumroad — KitWorks Lab</title>
+  <meta name="description" content="Calculate net monthly take-home, annual fee savings, and exact break-even GMV across Kit, beehiiv (October 2026 Lite/Pro pricing), and Gumroad. Models subscriber tiers, order price, visual automations, custom domains, and branding removal.">
+  <link rel="canonical" href="https://kitworks-lab.github.io/guides/creator-newsletter-profit-calculator/">
+  <meta property="og:title" content="Creator Newsletter & Digital Product Profit Calculator (2026): Kit vs beehiiv vs Gumroad">
+  <meta property="og:description" content="Find the exact monthly GMV where leaving Gumroad's 10% cut pays for Kit or beehiiv. Updated with late-2026 published pricing.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="../../assets/avatar-600.png">
+  <link rel="icon" type="image/svg+xml" href="../../assets/favicon.svg">
+  <link rel="icon" type="image/png" href="../../assets/favicon.png">
+  <link rel="stylesheet" href="../../css/styles.css">
+  <link rel="stylesheet" href="../guides.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand-link" href="https://kitworks-lab.github.io/">
+        <img class="brand-avatar" src="../../assets/avatar-600.png" alt="KitWorks Lab" width="36" height="36">
+        <span class="brand-name">KitWorks Lab</span>
+      </a>
+      <div class="header-right">
+        <nav class="site-nav" aria-label="Primary">
+          <a href="https://kitworks-lab.github.io/">Home</a>
+          <a href="https://kitworks-lab.github.io/tools/">Free Tools</a>
+          <a href="../" class="is-current">SaaS Guides</a>
+          <a href="https://github.com/kitworks-lab" target="_blank" rel="noopener noreferrer">GitHub</a>
+        </nav>
+      </div>
+    </div>
+    <nav class="mobile-guide-nav" aria-label="Guides navigation">
+      <a href="../">All Guides</a>
+      <a href="../multistream-cost-calculator/">Multistream</a>
+      <a href="./" class="is-current">Newsletter</a>
+      <a href="../automation-cost-calculator/">Automation</a>
+      <a href="../seo-stack-cost-calculator/">SEO Stack</a>
+      <a href="../pm-seat-cost-calculator/">PM Seats</a>
+    </nav>
+  </header>
+
+  <aside class="disclosure-bar" aria-label="Affiliate disclosure">
+    <div class="container">
+      <span class="disclosure-label">Disclosure</span>
+      <p>KitWorks Lab may earn an affiliate commission if you subscribe through partner links on this page, at no extra cost to you. Every fee model below uses verified November 2026 public pricing sheets with processing-fee assumptions shown next to the math.</p>
+    </div>
+  </aside>
+
+  <main>
+    <section class="guide-hero">
+      <div class="container">
+        <nav class="breadcrumb" aria-label="Breadcrumb">
+          <a href="https://kitworks-lab.github.io/">KitWorks Lab</a>
+          <span class="breadcrumb-sep">/</span>
+          <a href="../">SaaS Guides</a>
+          <span class="breadcrumb-sep">/</span>
+          <span aria-current="page">Newsletter &amp; Digital Product Profit Calculator</span>
+        </nav>
+        <h1>Creator Newsletter &amp; Digital Product Profit Calculator (2026)</h1>
+        <p class="guide-hero-lead">Compare net monthly take-home and annual fee savings across Kit, beehiiv, and Gumroad. See the exact monthly sales volume where leaving Gumroad's 10% platform fee pays for an owned email platform, factoring in average ticket price and late-2026 subscriber tier jumps.</p>
+        <div class="meta-stamp">
+          <span class="meta-pill">Pricing Snapshot: Nov 2026</span>
+          <span>Kit · beehiiv (Oct 2026 Tiers) · Gumroad</span>
+          <span>Client-Side Calculation</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="guide-section" aria-labelledby="calc-heading">
+      <div class="container">
+        <h2 class="section-heading" id="calc-heading">Model Your Audience &amp; Monthly Sales</h2>
+        <p class="section-sub">Set your active list size, monthly product or paid-membership gross revenue, and average order price. Lower ticket prices amplify fixed per-transaction charges ($0.30-$0.50).</p>
+
+        <div class="calc-shell">
+          <form class="calc-inputs" id="nl-form" novalidate>
+            <div class="calc-inputs-head">
+              <h3 class="calc-inputs-title">Creator Inputs</h3>
+              <button type="button" class="calc-reset-btn" id="nl-reset">Reset defaults</button>
+            </div>
+
+            <div class="field-group">
+              <div class="field-label">
+                <label for="inp-subs">Active email subscribers</label>
+                <span class="field-value" id="lbl-subs">2,500</span>
+              </div>
+              <div class="range-row">
+                <input type="range" id="inp-subs" min="500" max="50000" step="500" value="2500">
+                <div class="range-scale">
+                  <span>500</span>
+                  <span>10k</span>
+                  <span>25k</span>
+                  <span>50k</span>
+                </div>
+              </div>
+              <div class="preset-row" data-preset-for="subs" aria-label="Subscriber presets">
+                <button type="button" class="preset-btn" data-val="1000">1k</button>
+                <button type="button" class="preset-btn is-active" data-val="2500">2.5k</button>
+                <button type="button" class="preset-btn" data-val="5000">5k</button>
+                <button type="button" class="preset-btn" data-val="10000">10k</button>
+                <button type="button" class="preset-btn" data-val="25000">25k</button>
+                <button type="button" class="preset-btn" data-val="50000">50k</button>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <div class="field-label">
+                <label for="inp-gmv">Monthly digital product / paid sub GMV</label>
+                <span class="field-value" id="lbl-gmv">$1,500</span>
+              </div>
+              <div class="range-row">
+                <input type="range" id="inp-gmv" min="0" max="10000" step="100" value="1500">
+                <div class="range-scale">
+                  <span>$0</span>
+                  <span>$2,500</span>
+                  <span>$5,000</span>
+                  <span>$10,000</span>
+                </div>
+              </div>
+              <div class="preset-row" data-preset-for="gmv" aria-label="GMV presets">
+                <button type="button" class="preset-btn" data-val="0">$0</button>
+                <button type="button" class="preset-btn" data-val="500">$500</button>
+                <button type="button" class="preset-btn is-active" data-val="1500">$1.5k</button>
+                <button type="button" class="preset-btn" data-val="3000">$3k</button>
+                <button type="button" class="preset-btn" data-val="5000">$5k</button>
+                <button type="button" class="preset-btn" data-val="10000">$10k</button>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <div class="field-label">
+                <label for="inp-aov">Average order price</label>
+                <span class="field-value" id="lbl-aov">$25</span>
+              </div>
+              <div class="range-row">
+                <input type="range" id="inp-aov" min="5" max="100" step="5" value="25">
+                <div class="range-scale">
+                  <span>$5 (Micro pack)</span>
+                  <span>$25</span>
+                  <span>$50</span>
+                  <span>$100</span>
+                </div>
+              </div>
+              <p class="field-hint" id="hint-orders">Estimated 60 transactions/month at $25 average ticket.</p>
+            </div>
+
+            <div class="field-group">
+              <div class="field-label">
+                <span>Billing cycle</span>
+                <span class="field-value" id="lbl-billing">Annual</span>
+              </div>
+              <div class="seg-group" role="group" aria-label="Billing cycle" data-field="billing">
+                <button type="button" class="seg-btn is-active" data-val="annual" aria-pressed="true">Annual</button>
+                <button type="button" class="seg-btn" data-val="monthly" aria-pressed="false">Monthly</button>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label class="toggle-row" for="inp-auto">
+                <input type="checkbox" id="inp-auto" checked>
+                <span class="toggle-copy">
+                  <span class="toggle-title">Need visual email automations &amp; sequences</span>
+                  <span class="toggle-sub">Triggers paid tier on Kit (Creator) and beehiiv (Lite, up to 10 automations).</span>
+                </span>
+              </label>
+            </div>
+
+            <div class="field-group">
+              <label class="toggle-row" for="inp-domain">
+                <input type="checkbox" id="inp-domain" checked>
+                <span class="toggle-copy">
+                  <span class="toggle-title">Need a custom domain</span>
+                  <span class="toggle-sub">Required to leave beehiiv's Free tier (unlocks on Lite).</span>
+                </span>
+              </label>
+            </div>
+
+            <div class="field-group">
+              <label class="toggle-row" for="inp-brand">
+                <input type="checkbox" id="inp-brand">
+                <span class="toggle-copy">
+                  <span class="toggle-title">Remove platform footer branding</span>
+                  <span class="toggle-sub">Included on Kit Creator; requires upgrading beehiiv from Lite to Pro.</span>
+                </span>
+              </label>
+            </div>
+          </form>
+
+          <div class="calc-results" aria-live="polite">
+            <div class="kpi-strip" id="nl-kpis"></div>
+            <div class="alert-stack" id="nl-alerts"></div>
+            <div class="result-grid cols-3" id="nl-cards"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="guide-section" aria-labelledby="brackets-heading">
+      <div class="container">
+        <h2 class="section-heading" id="brackets-heading">Subscriber Tier Pricing Table (Verified Nov 2026)</h2>
+        <p class="section-sub">How base subscription costs scale before transaction fees. Notice how Kit jumps at 3k/5k/10k/25k/55k while beehiiv's October 2026 restructuring steps at 1k/2.5k/5k/10k/25k/50k.</p>
+
+        <div class="compare-table-wrap">
+          <table class="compare-table">
+            <thead>
+              <tr>
+                <th>Subscriber Tier</th>
+                <th class="num">Kit Creator (Mo / Ann)</th>
+                <th class="num">beehiiv Lite (Mo / Ann)</th>
+                <th class="num">beehiiv Pro (Mo / Ann)</th>
+                <th class="num">Gumroad Base</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Up to 1,000</strong></td>
+                <td class="num">$39 / $32.50</td>
+                <td class="num">$59 / $49</td>
+                <td class="num">$109 / $95</td>
+                <td class="num">$0</td>
+              </tr>
+              <tr>
+                <td><strong>Up to 2,500 (Kit: 3,000)</strong></td>
+                <td class="num">$59 / $49.17</td>
+                <td class="num">$79 / $69</td>
+                <td class="num">$149 / $129</td>
+                <td class="num">$0</td>
+              </tr>
+              <tr>
+                <td><strong>Up to 5,000</strong></td>
+                <td class="num">$89 / $74.17</td>
+                <td class="num">$109 / $95</td>
+                <td class="num">$199 / $169</td>
+                <td class="num">$0</td>
+              </tr>
+              <tr>
+                <td><strong>Up to 10,000</strong></td>
+                <td class="num">$139 / $115.83</td>
+                <td class="num">$139 / $119</td>
+                <td class="num">$239 / $199</td>
+                <td class="num">$0</td>
+              </tr>
+              <tr>
+                <td><strong>Up to 25,000</strong></td>
+                <td class="num">$199 / $165.83</td>
+                <td class="num">$199 / $169</td>
+                <td class="num">$349 / $299</td>
+                <td class="num">$0</td>
+              </tr>
+              <tr>
+                <td><strong>Up to 50,000 (Kit: 55,000)</strong></td>
+                <td class="num">$379 / $315.83</td>
+                <td class="num">$299 / $249</td>
+                <td class="num">$469 / $399</td>
+                <td class="num">$0</td>
+              </tr>
+              <tr>
+                <td><strong>Commerce Fee Rate</strong></td>
+                <td class="num">3.5% + $0.30</td>
+                <td class="num">0% + Stripe (~2.9%+$0.30)</td>
+                <td class="num">0% + Stripe (~2.9%+$0.30)</td>
+                <td class="num">10% + ~$0.50 est.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="guide-section" aria-labelledby="skip-heading">
+      <div class="container">
+        <h2 class="section-heading" id="skip-heading">Who Should Skip Each Platform</h2>
+        <p class="section-sub">Transaction fees are only half the decision. Each platform enforces trade-offs around merchant-of-record taxes, automation depth, and branding.</p>
+
+        <div class="prose-grid">
+          <div class="skip-card">
+            <h3>Skip Gumroad if...</h3>
+            <p>Your monthly direct sales consistently clear the break-even GMV shown above (often $600 to $1,600/mo depending on list size and ticket price). At $3,000/mo in direct sales, Gumroad's 10% flat cut plus processing costs roughly $360/mo, which easily exceeds an entire Kit Creator or beehiiv Lite subscription. Note that Gumroad acts as Merchant of Record for global VAT/sales tax, which Kit Commerce and Stripe do not handle automatically without extra tax configuration.</p>
+          </div>
+
+          <div class="skip-card">
+            <h3>Skip Kit if...</h3>
+            <p>Your list exceeds 25,000 subscribers and you do not need complex visual funnel branching. At 50,000 subscribers, Kit Creator steps up to the 55k bracket ($379/mo monthly), whereas beehiiv Lite sits at $299/mo monthly ($249/mo annual) with 0% platform commerce cut and a built-in Ad Network. Also skip Kit paid tiers if you only send simple broadcasts under 10,000 subscribers: Kit's Free Newsletter tier already covers up to 10k subscribers and Kit Commerce.</p>
+          </div>
+
+          <div class="skip-card">
+            <h3>Skip beehiiv if...</h3>
+            <p>You have under 2,500 subscribers, sell under $700/mo, and want branding removed cheaply. After beehiiv's October 2026 restructuring, Lite starts at $59/mo monthly ($49/mo annual) and keeps beehiiv footer branding. Removing branding requires Pro at $109/mo monthly ($95/mo annual), whereas Kit Creator removes branding at $39/mo monthly ($32.50/mo annual equivalent).</p>
+          </div>
+
+          <div class="skip-card">
+            <h3>Don't forget Merchant of Record tax overhead</h3>
+            <p>Gumroad's 10% fee includes global VAT, GST, and US state sales tax collection and remittance. If you move digital downloads to Kit Commerce or beehiiv + Stripe, check whether you need Stripe Tax or local VAT registration for EU/UK buyers before counting 100% of the fee spread as pure profit.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="guide-section" aria-labelledby="method-heading">
+      <div class="container">
+        <div class="prose-section">
+          <h2 id="method-heading">Methodology &amp; Fee Assumptions</h2>
+          <p>All fixed subscription brackets come directly from official public pricing pages checked in November 2026 (<a data-aff="kit" data-aff-pricing href="https://kit.com/pricing" target="_blank" rel="noopener noreferrer">Kit</a>, <a data-aff="beehiiv" data-aff-pricing href="https://www.beehiiv.com/pricing" target="_blank" rel="noopener noreferrer">beehiiv</a>, and <a href="https://gumroad.com/pricing" target="_blank" rel="noopener noreferrer">Gumroad</a>). Because payment processing varies by card network and country, the calculator uses three explicit assumptions:</p>
+          <ul>
+            <li><strong>Gumroad processing estimate:</strong> Modeled as <strong>10% flat platform fee + $0.50 per transaction</strong> (labeled estimate for card/PayPal processing overhead). Actual processor charges vary by buyer currency and PayPal vs card checkout. Excludes Gumroad Discover's 30% marketplace fee.</li>
+            <li><strong>Kit Commerce &amp; annual rates:</strong> Kit Commerce charges <strong>3.5% + $0.30 per sale</strong> across Free and paid plans. Kit's monthly Creator brackets ($39 / $59 / $89 / $139 / $199 / $379) are exact published figures; annual billing applies Kit's published 2-months-free discount (10× monthly billed annually, matching $390/yr on the 1k tier).</li>
+            <li><strong>beehiiv + Stripe processing estimate:</strong> Paid beehiiv tiers take <strong>0% platform cut</strong> on paid subscriptions and digital products. The calculator adds standard US Stripe card processing (<strong>2.9% + $0.30 per transaction</strong>) as a realistic apples-to-apples net take-home baseline. International cards or currency conversion add roughly 1% to 1.5% on Stripe.</li>
+            <li><strong>Break-even GMV formula:</strong> Let <code>P</code> be average order price. Switching from Gumroad saves <code>0.065 + 0.20 / P</code> per dollar of GMV on Kit and <code>0.071 + 0.20 / P</code> per dollar of GMV on beehiiv. Dividing the monthly SaaS fee by that per-dollar savings yields the exact monthly GMV break-even point.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <img class="brand-avatar" src="../../assets/avatar-600.png" alt="KitWorks Lab" width="32" height="32">
+        <p class="footer-note">KitWorks Lab — Open-source creator utilities and client-side SaaS pricing calculators.</p>
+      </div>
+      <nav class="footer-links" aria-label="Official channels">
+        <a href="https://kitworks-lab.github.io/">Home</a>
+        <a href="https://kitworks-lab.github.io/tools/">Free Tools</a>
+        <a href="../">All Guides</a>
+        <a href="../multistream-cost-calculator/">Multistream Calc</a>
+        <a href="https://github.com/kitworks-lab" target="_blank" rel="noopener noreferrer">GitHub</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script src="../guides-common.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
