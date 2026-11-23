@@ -1,0 +1,2744 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LLM API コスト＆日本語トークン・推論トラップ試算｜KitWorks Lab 無料Webツール</title>
+  <meta name="description" content="日本語・英語・コードのプロンプトを貼るだけでトークン数と月額APIコストをローカル試算。Claude / OpenAI / Gemini / DeepSeek / さくらのAI Engine（無料3,000 req/月）を比較し、思考トークンによるHTTP 200空レスポンス罠（finish_reason: length）とプロンプト冗長コストも検出。">
+  <link rel="canonical" href="https://kitworks-lab.github.io/tools/llm-cost-calc/">
+  <meta property="og:title" content="LLM API Cost, Token &amp; Reasoning-Trap Simulator — KitWorks Lab">
+  <meta property="og:description" content="Client-side multilingual token analyzer, monthly API cost comparator (Claude, OpenAI, Gemini, DeepSeek, Sakura AI Engine), HTTP 200 max_tokens silent-failure detector, and prompt bloat inspector.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="../../assets/avatar-600.png">
+  <link rel="icon" type="image/svg+xml" href="../../assets/favicon.svg">
+  <link rel="icon" type="image/png" href="../../assets/favicon.png">
+  <link rel="stylesheet" href="../../css/styles.css">
+  <link rel="stylesheet" href="../tools.css">
+  <style>
+    /* Workbench layout */
+    .calc-workbench {
+      display: grid;
+      grid-template-columns: 440px minmax(0, 1fr);
+      gap: 24px;
+      align-items: start;
+    }
+
+    .calc-col {
+      display: grid;
+      gap: 20px;
+      min-width: 0;
+    }
+
+    /* Prompt input area */
+    .preset-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .preset-btn {
+      padding: 5px 10px;
+      border: 1.5px solid var(--rule-strong);
+      border-radius: var(--radius-sm);
+      background: var(--paper);
+      color: var(--ink);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background-color 0.14s ease, color 0.14s ease;
+    }
+
+    .preset-btn:hover {
+      background: var(--paper-hover);
+    }
+
+    .preset-btn.is-active {
+      background: var(--ink);
+      color: var(--paper-card);
+    }
+
+    .prompt-textarea {
+      width: 100%;
+      min-height: 210px;
+      padding: 12px 13px;
+      border: 1.5px solid var(--rule-strong);
+      border-radius: var(--radius-sm);
+      background: #ffffff;
+      color: var(--ink);
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+      line-height: 1.62;
+      resize: vertical;
+      tab-size: 2;
+    }
+
+    .prompt-textarea:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+    }
+
+    .prompt-meta-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      color: var(--ink-muted);
+    }
+
+    .prompt-meta-counts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Tokenizer comparison readout */
+    .tok-compare-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .tok-box {
+      padding: 11px 12px;
+      border: 1.5px solid var(--rule-strong);
+      border-radius: var(--radius-sm);
+      background: var(--paper);
+    }
+
+    .tok-box.is-jp {
+      border-color: var(--sage);
+      background: var(--sage-tint);
+    }
+
+    .tok-box-label {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--ink-muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .tok-box-num {
+      font-family: var(--font-mono);
+      font-size: 23px;
+      font-weight: 800;
+      line-height: 1.2;
+      margin-top: 3px;
+      color: var(--ink);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .tok-box.is-jp .tok-box-num {
+      color: var(--sage);
+    }
+
+    .tok-box-sub {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      color: var(--ink-muted);
+      margin-top: 3px;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .ratio-badge {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      font-weight: 800;
+      padding: 1px 6px;
+      border-radius: 3px;
+      background: var(--sage);
+      color: #fff;
+    }
+
+    .ratio-badge.is-neutral {
+      background: var(--ink-muted);
+    }
+
+    /* Script proportion bar */
+    .script-bar-wrap {
+      margin-top: 14px;
+    }
+
+    .script-bar {
+      height: 10px;
+      border-radius: 3px;
+      overflow: hidden;
+      display: flex;
+      background: var(--paper-muted);
+      border: 1px solid var(--rule-strong);
+    }
+
+    .script-seg {
+      height: 100%;
+      transition: width 0.2s ease;
+    }
+
+    .seg-kanji { background: #c1522b; }
+    .seg-kana { background: #c8963e; }
+    .seg-ascii { background: #396851; }
+    .seg-code { background: #3a5a78; }
+    .seg-other { background: #9b9184; }
+
+    .script-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 12px;
+      margin-top: 8px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--ink-soft);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .script-legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .script-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 2px;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+
+    /* Workload controls */
+    .num-sync-row {
+      display: grid;
+      grid-template-columns: 1fr 94px;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .num-input-sm {
+      width: 100%;
+      padding: 6px 8px;
+      border: 1.5px solid var(--rule-strong);
+      border-radius: var(--radius-sm);
+      background: #ffffff;
+      color: var(--ink);
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+      font-weight: 700;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .num-input-sm:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+    }
+
+    .quick-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 6px;
+    }
+
+    .chip-btn {
+      padding: 3px 8px;
+      border: 1px solid var(--rule-strong);
+      border-radius: 4px;
+      background: var(--paper);
+      color: var(--ink-soft);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .chip-btn:hover {
+      background: var(--paper-hover);
+      color: var(--ink);
+    }
+
+    .chip-btn.is-active {
+      background: var(--ink);
+      color: var(--paper-card);
+    }
+
+    .fx-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding-top: 12px;
+      border-top: 1px dashed var(--rule);
+    }
+
+    .fx-input-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--ink-soft);
+    }
+
+    .fx-input-group input {
+      width: 72px;
+      padding: 5px 7px;
+      border: 1.5px solid var(--rule-strong);
+      border-radius: var(--radius-sm);
+      background: #fff;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Trap Warning Monitor */
+    .trap-card {
+      padding: 16px 18px;
+      border: 1.5px solid var(--rule-strong);
+      border-radius: var(--radius-md);
+      background: var(--paper-card);
+      box-shadow: var(--shadow-ink-sm);
+    }
+
+    .trap-card[data-state="safe"] {
+      border-color: var(--sage);
+      background: #f4f8f5;
+    }
+
+    .trap-card[data-state="tight"] {
+      border-color: #b47d1e;
+      background: #fcf7eb;
+    }
+
+    .trap-card[data-state="danger"] {
+      border-color: var(--accent);
+      background: #fdf2ee;
+      box-shadow: 4px 4px 0 var(--accent);
+    }
+
+    .trap-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+
+    .trap-title-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .trap-badge {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 3px;
+      letter-spacing: 0.03em;
+    }
+
+    .trap-card[data-state="safe"] .trap-badge {
+      background: var(--sage);
+      color: #fff;
+    }
+
+    .trap-card[data-state="tight"] .trap-badge {
+      background: #b47d1e;
+      color: #fff;
+    }
+
+    .trap-card[data-state="danger"] .trap-badge {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .trap-title {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--ink);
+    }
+
+    .trap-desc {
+      margin: 0 0 12px;
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--ink-soft);
+    }
+
+    .budget-meter {
+      position: relative;
+      height: 22px;
+      border-radius: 4px;
+      background: var(--paper-muted);
+      border: 1.5px solid var(--rule-strong);
+      overflow: hidden;
+      display: flex;
+    }
+
+    .budget-seg-reason {
+      height: 100%;
+      background: repeating-linear-gradient(
+        -45deg,
+        #c1522b,
+        #c1522b 6px,
+        #d76d47 6px,
+        #d76d47 12px
+      );
+      transition: width 0.2s ease;
+    }
+
+    .budget-seg-visible {
+      height: 100%;
+      background: var(--sage);
+      transition: width 0.2s ease;
+    }
+
+    .budget-limit-line {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: var(--ink);
+      z-index: 2;
+    }
+
+    .budget-stats {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      color: var(--ink-soft);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .trap-fix-btn {
+      padding: 5px 11px;
+      border: 1.5px solid var(--ink);
+      border-radius: var(--radius-sm);
+      background: var(--ink);
+      color: var(--paper-card);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .trap-fix-btn:hover {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    /* Summary verdict strip */
+    .verdict-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .verdict-tile {
+      padding: 13px 14px;
+      background: var(--paper-card);
+      border: 1.5px solid var(--rule-strong);
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow-ink-sm);
+      min-width: 0;
+    }
+
+    .verdict-k {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--ink-muted);
+      margin-bottom: 3px;
+    }
+
+    .verdict-v {
+      font-family: var(--font-mono);
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--ink);
+      line-height: 1.2;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .verdict-v.is-sage { color: var(--sage); }
+    .verdict-v.is-accent { color: var(--accent); }
+
+    .verdict-sub {
+      font-size: 11.5px;
+      color: var(--ink-soft);
+      margin-top: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Provider filter & sort controls */
+    .table-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--rule);
+      background: var(--paper);
+    }
+
+    .filter-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    .filter-pill {
+      padding: 4px 9px;
+      border: 1px solid var(--rule-strong);
+      border-radius: 4px;
+      background: var(--paper-card);
+      color: var(--ink-soft);
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .filter-pill.is-active {
+      background: var(--ink);
+      color: var(--paper-card);
+    }
+
+    /* Cost table */
+    .cost-table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .cost-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .cost-table th {
+      text-align: left;
+      padding: 9px 12px;
+      font-size: 11.5px;
+      font-weight: 800;
+      color: var(--ink-muted);
+      background: var(--paper-muted);
+      border-bottom: 1.5px solid var(--rule-strong);
+      white-space: nowrap;
+    }
+
+    .cost-table th.is-num,
+    .cost-table td.is-num {
+      text-align: right;
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .sort-btn {
+      border: 0;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      cursor: pointer;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .sort-btn:hover {
+      color: var(--accent);
+    }
+
+    .cost-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--rule);
+      vertical-align: middle;
+    }
+
+    .cost-table tbody tr:hover {
+      background: #f5efe3;
+    }
+
+    .cost-table tbody tr.is-cheapest {
+      background: #f1f7f3;
+    }
+
+    .model-name {
+      font-weight: 800;
+      color: var(--ink);
+      display: block;
+      line-height: 1.3;
+    }
+
+    .model-meta-line {
+      font-size: 11px;
+      color: var(--ink-muted);
+      line-height: 1.35;
+      margin-top: 2px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 4px 6px;
+    }
+
+    .model-provider-txt {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      color: var(--ink-soft);
+    }
+
+    .mobile-row-spec {
+      display: none;
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      color: var(--ink-muted);
+      margin-top: 2px;
+    }
+
+    .m-tag {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 3px;
+      border: 1px solid var(--rule-strong);
+      color: var(--ink-soft);
+      background: var(--paper);
+      white-space: nowrap;
+    }
+
+    .m-tag.is-free {
+      background: var(--sage);
+      border-color: var(--sage);
+      color: #fff;
+    }
+
+    .m-tag.is-jp {
+      background: var(--sage-tint);
+      border-color: var(--sage);
+      color: var(--sage);
+    }
+
+    .m-tag.is-warn {
+      background: #fcf4e2;
+      border-color: #b47d1e;
+      color: #845811;
+    }
+
+    .cost-bar-cell {
+      min-width: 135px;
+    }
+
+    .cost-bar-track {
+      height: 12px;
+      border-radius: 3px;
+      background: var(--paper-muted);
+      border: 1px solid var(--rule);
+      overflow: hidden;
+      display: flex;
+    }
+
+    .cost-bar-in {
+      height: 100%;
+      background: var(--sage);
+    }
+
+    .cost-bar-out {
+      height: 100%;
+      background: var(--accent);
+    }
+
+    .cost-bar-meta {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--ink-muted);
+      margin-top: 3px;
+    }
+
+    .cost-main {
+      font-size: 14.5px;
+      font-weight: 800;
+      color: var(--ink);
+      display: block;
+    }
+
+    .cost-main.is-free {
+      color: var(--sage);
+    }
+
+    .cost-sub {
+      font-size: 10.5px;
+      color: var(--ink-muted);
+      display: block;
+    }
+
+    /* Custom model editor drawer */
+    .custom-rate-bar {
+      padding: 14px 16px;
+      background: var(--paper);
+      border-top: 1.5px solid var(--rule-strong);
+    }
+
+    .custom-rate-title {
+      font-size: 12.5px;
+      font-weight: 800;
+      margin: 0 0 8px;
+      color: var(--ink);
+    }
+
+    .custom-rate-grid {
+      display: grid;
+      grid-template-columns: 1.4fr repeat(3, minmax(0, 1fr)) 1fr;
+      gap: 8px;
+      align-items: end;
+    }
+
+    .custom-field label {
+      display: block;
+      font-size: 10.5px;
+      font-weight: 700;
+      color: var(--ink-muted);
+      margin-bottom: 3px;
+    }
+
+    .custom-field input,
+    .custom-field select {
+      width: 100%;
+      padding: 5px 7px;
+      border: 1.5px solid var(--rule-strong);
+      border-radius: 4px;
+      background: #fff;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--ink);
+    }
+
+    .rate-footnote {
+      margin: 10px 0 0;
+      font-size: 11.5px;
+      line-height: 1.55;
+      color: var(--ink-muted);
+    }
+
+    /* Bloat & AI-Slop Inspector */
+    .bloat-summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 12px 14px;
+      border: 1.5px solid var(--rule-strong);
+      border-radius: var(--radius-sm);
+      background: var(--paper);
+      margin-bottom: 12px;
+    }
+
+    .bloat-savings-num {
+      font-family: var(--font-mono);
+      font-size: 19px;
+      font-weight: 800;
+      color: var(--sage);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .bloat-list {
+      display: grid;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .bloat-item {
+      padding: 10px 12px;
+      border: 1px solid var(--rule);
+      border-left: 3px solid var(--accent);
+      border-radius: 4px;
+      background: var(--paper);
+      font-size: 12.5px;
+      line-height: 1.55;
+    }
+
+    .bloat-item-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-weight: 800;
+      color: var(--ink);
+      margin-bottom: 3px;
+    }
+
+    .bloat-tok-tag {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent);
+      white-space: nowrap;
+    }
+
+    .bloat-matches {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      color: var(--ink-muted);
+      word-break: break-all;
+    }
+
+    .bloat-clean {
+      padding: 12px 14px;
+      border: 1px dashed var(--sage);
+      border-radius: var(--radius-sm);
+      background: #f4f8f5;
+      color: var(--sage);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .trim-preview-box {
+      margin-top: 12px;
+      border: 1.5px solid var(--rule-strong);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      display: none;
+    }
+
+    .trim-preview-box.is-open {
+      display: block;
+    }
+
+    .trim-preview-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 8px 12px;
+      background: var(--paper-muted);
+      border-bottom: 1px solid var(--rule);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .trim-preview-code {
+      margin: 0;
+      padding: 12px;
+      background: #ffffff;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      line-height: 1.55;
+      max-height: 220px;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .copy-feedback {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--sage);
+    }
+
+    /* Legend row for cost bars */
+    .bar-legend {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--ink-muted);
+    }
+
+    .bar-legend i {
+      width: 9px;
+      height: 9px;
+      border-radius: 2px;
+      display: inline-block;
+      margin-right: 4px;
+      vertical-align: -1px;
+    }
+
+    @media (max-width: 1060px) {
+      .calc-workbench {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .verdict-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .tok-compare-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .custom-rate-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .custom-rate-grid .custom-field:first-child {
+        grid-column: 1 / -1;
+      }
+
+      .cost-table th.col-hide-sm,
+      .cost-table td.col-hide-sm {
+        display: none;
+      }
+
+      .cost-table td.cost-bar-cell,
+      .cost-table th.cost-bar-cell {
+        display: none;
+      }
+
+      .cost-table th,
+      .cost-table td {
+        padding: 10px 10px;
+      }
+
+      .mobile-row-spec {
+        display: block;
+      }
+
+      .mobile-inline-bar {
+        display: flex !important;
+        margin-top: 6px;
+        max-width: 210px;
+      }
+    }
+
+    .mobile-inline-bar {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand-link" href="../../">
+        <img class="brand-avatar" src="../../assets/avatar-600.png" alt="KitWorks Lab" width="36" height="36">
+        <span class="brand-name">KitWorks Lab</span>
+      </a>
+      <div class="header-right">
+        <nav class="site-nav" aria-label="Primary">
+          <a href="../" data-i18n="navTools">無料ツール一覧</a>
+          <a href="../yt-thumb-preview/" data-i18n="navYt">サムネ確認</a>
+          <a href="../obs-chat-css/" data-i18n="navChat">OBSチャットCSS</a>
+          <a href="../image-batch-resize/" data-i18n="navResize">画像リサイズ</a>
+          <a href="../matcap-preview/" data-i18n="navMatcap">MatCapプレビュー</a>
+          <a href="./" class="is-current" data-i18n="navLlm">LLMコスト試算</a>
+          <a href="../../" data-i18n="navObs">OBS製品デモ</a>
+        </nav>
+        <div class="lang-toggle" role="group" aria-label="Language">
+          <button type="button" class="lang-btn is-active" data-lang-btn="ja" aria-pressed="true">JP</button>
+          <button type="button" class="lang-btn" data-lang-btn="en" aria-pressed="false">EN</button>
+        </div>
+      </div>
+    </div>
+    <nav class="mobile-tool-nav" aria-label="Tools navigation">
+      <a href="../" data-i18n="navTools">無料ツール一覧</a>
+      <a href="../yt-thumb-preview/" data-i18n="navYt">サムネ確認</a>
+      <a href="../obs-chat-css/" data-i18n="navChat">OBSチャットCSS</a>
+      <a href="../image-batch-resize/" data-i18n="navResize">画像リサイズ</a>
+      <a href="../matcap-preview/" data-i18n="navMatcap">MatCapプレビュー</a>
+      <a href="./" class="is-current" data-i18n="navLlm">LLMコスト試算</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="tool-hero">
+      <div class="container">
+        <div class="breadcrumb">
+          <a href="../../">KitWorks Lab</a>
+          <span class="breadcrumb-sep">/</span>
+          <a href="../" data-i18n="navTools">無料ツール一覧</a>
+          <span class="breadcrumb-sep">/</span>
+          <span data-i18n="navLlm">LLMコスト試算</span>
+        </div>
+        <div class="tool-hero-row">
+          <div>
+            <h1 class="tool-hero-title" data-i18n="title">LLM API コスト・日本語トークン＆推論トラップ試算</h1>
+            <p class="tool-hero-lead" data-i18n="lead">プロンプトを貼るだけで、日本語トークン膨張率（汎用BPE vs 日本語最適化）、月額API費用、キャッシュ割引、思考トークンによるHTTP 200空レスポンス罠（finish_reason: length）をブラウザ内で即チェックします。</p>
+          </div>
+          <div class="local-stamp">
+            <span class="local-stamp-dot" aria-hidden="true"></span>
+            <span data-i18n="localStamp">ブラウザ完結 / テキスト外部送信なし</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="tool-section">
+      <div class="container">
+        <div class="calc-workbench">
+          <!-- LEFT COLUMN: Prompt Analyzer + Workload Sliders -->
+          <div class="calc-col">
+            <!-- Panel 1: Multilingual Prompt Analyzer -->
+            <div class="tool-panel">
+              <div class="tool-panel-head">
+                <h2 class="tool-panel-title" data-i18n="p1Title">1. プロンプト＆日本語トークン解析</h2>
+                <button type="button" class="chip-btn" id="btnClearPrompt" data-i18n="btnClear">クリア</button>
+              </div>
+              <div class="tool-panel-body">
+                <div class="preset-row" role="group" aria-label="Sample prompts">
+                  <button type="button" class="preset-btn is-active" data-preset="support" data-i18n="preSupport">JPサポートBot</button>
+                  <button type="button" class="preset-btn" data-preset="codereview" data-i18n="preCode">コードレビュー</button>
+                  <button type="button" class="preset-btn" data-preset="stream" data-i18n="preStream">配信チャット要約</button>
+                </div>
+
+                <textarea id="promptInput" class="prompt-textarea" spellcheck="false" aria-label="Prompt text" data-i18n-placeholder="promptPlaceholder" placeholder="ここにシステムプロンプトやユーザー入力を貼り付け..."></textarea>
+
+                <div class="prompt-meta-bar">
+                  <div class="prompt-meta-counts">
+                    <span id="metaChars">0 chars</span>
+                    <span id="metaBytes">0 B</span>
+                    <span id="metaLines">0 lines</span>
+                  </div>
+                  <span id="metaJpPct">JP 0%</span>
+                </div>
+
+                <div class="tok-compare-grid">
+                  <div class="tok-box">
+                    <div class="tok-box-label">
+                      <span data-i18n="tokGlobalLabel">汎用BPE推定</span>
+                    </div>
+                    <div class="tok-box-num" id="tokGlobalVal">0</div>
+                    <div class="tok-box-sub" id="tokGlobalSub">0.00 tok/char · Claude/GPT</div>
+                  </div>
+                  <div class="tok-box is-jp">
+                    <div class="tok-box-label">
+                      <span data-i18n="tokJpLabel">日本語最適化</span>
+                      <span class="ratio-badge" id="tokRatioBadge">1.00×</span>
+                    </div>
+                    <div class="tok-box-num" id="tokJpVal">0</div>
+                    <div class="tok-box-sub" id="tokJpSub">0.00 tok/char · llm-jp</div>
+                  </div>
+                </div>
+
+                <div class="script-bar-wrap">
+                  <div class="script-bar" id="scriptBar" aria-label="Script breakdown">
+                    <div class="script-seg seg-kanji" id="segKanji" style="width:0%"></div>
+                    <div class="script-seg seg-kana" id="segKana" style="width:0%"></div>
+                    <div class="script-seg seg-ascii" id="segAscii" style="width:0%"></div>
+                    <div class="script-seg seg-code" id="segCode" style="width:0%"></div>
+                    <div class="script-seg seg-other" id="segOther" style="width:0%"></div>
+                  </div>
+                  <div class="script-legend" id="scriptLegend">
+                    <span><i class="script-dot seg-kanji"></i><b data-i18n="legKanji">漢字</b> <em id="cntKanji">0</em></span>
+                    <span><i class="script-dot seg-kana"></i><b data-i18n="legKana">かな/カナ</b> <em id="cntKana">0</em></span>
+                    <span><i class="script-dot seg-ascii"></i><b data-i18n="legAscii">英数</b> <em id="cntAscii">0</em></span>
+                    <span><i class="script-dot seg-code"></i><b data-i18n="legCode">記号/Code</b> <em id="cntCode">0</em></span>
+                    <span><i class="script-dot seg-other"></i><b data-i18n="legOther">空白他</b> <em id="cntOther">0</em></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Panel 2: Workload, Cache & Reasoning Parameters -->
+            <div class="tool-panel">
+              <div class="tool-panel-head">
+                <h2 class="tool-panel-title" data-i18n="p2Title">2. 稼働条件・キャッシュ・推論トークン設定</h2>
+                <span class="ctrl-value" id="monthlyReqLabel">6,000 req/mo</span>
+              </div>
+              <div class="tool-panel-body">
+                <div class="ctrl-grid">
+                  <!-- Requests / Day -->
+                  <div>
+                    <div class="ctrl-label">
+                      <label for="inpReqDay" data-i18n="lblReqDay">1日あたりのリクエスト数</label>
+                      <span class="ctrl-value" id="valReqDay">200 / day</span>
+                    </div>
+                    <div class="num-sync-row">
+                      <input type="range" id="rngReqDay" class="range-input" min="1" max="5000" step="1" value="200">
+                      <input type="number" id="inpReqDay" class="num-input-sm" min="1" max="500000" step="10" value="200">
+                    </div>
+                    <div class="quick-chips" role="group" aria-label="Request volume presets">
+                      <button type="button" class="chip-btn" data-req="50" data-i18n="reqChip50">50/日</button>
+                      <button type="button" class="chip-btn" data-req="100" data-i18n="reqChip100">100/日 (3k/月)</button>
+                      <button type="button" class="chip-btn is-active" data-req="200" data-i18n="reqChip200">200/日</button>
+                      <button type="button" class="chip-btn" data-req="1000" data-i18n="reqChip1000">1,000/日</button>
+                      <button type="button" class="chip-btn" data-req="5000" data-i18n="reqChip5000">5,000/日</button>
+                    </div>
+                  </div>
+
+                  <!-- Expected Output Tokens -->
+                  <div>
+                    <div class="ctrl-label">
+                      <label for="inpOutTok" data-i18n="lblOutTok">想定出力トークン（ユーザーに見える返答）</label>
+                      <span class="ctrl-value" id="valOutTok">450 tok</span>
+                    </div>
+                    <div class="num-sync-row">
+                      <input type="range" id="rngOutTok" class="range-input" min="32" max="4096" step="16" value="450">
+                      <input type="number" id="inpOutTok" class="num-input-sm" min="1" max="65536" step="50" value="450">
+                    </div>
+                  </div>
+
+                  <!-- Prompt Cache Hit Rate -->
+                  <div>
+                    <div class="ctrl-label">
+                      <label for="inpCache" data-i18n="lblCache">プロンプトキャッシュ命中率</label>
+                      <span class="ctrl-value" id="valCache">50%</span>
+                    </div>
+                    <div class="num-sync-row">
+                      <input type="range" id="rngCache" class="range-input" min="0" max="100" step="5" value="50">
+                      <input type="number" id="inpCache" class="num-input-sm" min="0" max="100" step="5" value="50">
+                    </div>
+                  </div>
+
+                  <!-- Reasoning Token Multiplier -->
+                  <div>
+                    <div class="ctrl-label">
+                      <label for="inpReason" data-i18n="lblReason">思考（Reasoning）トークン倍率</label>
+                      <span class="ctrl-value" id="valReason">1.0× (OFF)</span>
+                    </div>
+                    <div class="num-sync-row">
+                      <input type="range" id="rngReason" class="range-input" min="1" max="8" step="0.5" value="1">
+                      <input type="number" id="inpReason" class="num-input-sm" min="1" max="16" step="0.5" value="1">
+                    </div>
+                    <div class="quick-chips" role="group" aria-label="Reasoning presets">
+                      <button type="button" class="chip-btn is-active" data-reason="1">OFF 1×</button>
+                      <button type="button" class="chip-btn" data-reason="2">Low 2×</button>
+                      <button type="button" class="chip-btn" data-reason="4">Med 4×</button>
+                      <button type="button" class="chip-btn" data-reason="8">High 8×</button>
+                    </div>
+                  </div>
+
+                  <!-- Configured max_tokens -->
+                  <div>
+                    <div class="ctrl-label">
+                      <label for="inpMaxTok" data-i18n="lblMaxTok">APIリクエストの max_tokens 設定値</label>
+                      <span class="ctrl-value" id="valMaxTok">1,024 tok</span>
+                    </div>
+                    <div class="num-sync-row">
+                      <input type="range" id="rngMaxTok" class="range-input" min="128" max="8192" step="128" value="1024">
+                      <input type="number" id="inpMaxTok" class="num-input-sm" min="64" max="65536" step="128" value="1024">
+                    </div>
+                  </div>
+
+                  <!-- Currency & FX -->
+                  <div class="fx-bar">
+                    <div class="seg-group" role="group" aria-label="Currency">
+                      <button type="button" class="seg-btn is-active" data-currency="JPY">JPY (¥)</button>
+                      <button type="button" class="seg-btn" data-currency="USD">USD ($)</button>
+                    </div>
+                    <div class="fx-input-group">
+                      <label for="inpFx">1 USD =</label>
+                      <input type="number" id="inpFx" min="80" max="300" step="0.5" value="154">
+                      <span>JPY</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT COLUMN: Reasoning Trap Monitor + Verdicts + Cost Table + Bloat Inspector -->
+          <div class="calc-col">
+            <!-- Feature 3: HTTP 200 Silent Failure & Reasoning Trap Monitor -->
+            <div class="trap-card" id="trapCard" data-state="safe" role="status" aria-live="polite">
+              <div class="trap-head">
+                <div class="trap-title-group">
+                  <span class="trap-badge" id="trapBadge">SAFE</span>
+                  <h2 class="trap-title" id="trapTitle">max_tokens 予算に余裕があります</h2>
+                </div>
+                <button type="button" class="trap-fix-btn" id="btnApplySafeMax" style="display:none;" data-i18n="btnFixMax">安全値に設定</button>
+              </div>
+              <p class="trap-desc" id="trapDesc">思考トークン + 出力トークンの合計が max_tokens 内に収まっています。</p>
+              <div class="budget-meter" aria-hidden="true">
+                <div class="budget-seg-reason" id="barReason" style="width:0%"></div>
+                <div class="budget-seg-visible" id="barVisible" style="width:44%"></div>
+                <div class="budget-limit-line" id="barLimitLine" style="left:100%"></div>
+              </div>
+              <div class="budget-stats">
+                <span id="statBudgetBreakdown">Thinking: 0 + Output: 450 = 450 / 1,024 tok (44%)</span>
+                <span id="statSafeRec">Recommended max_tokens: ≥ 640</span>
+              </div>
+            </div>
+
+            <!-- Verdict KPI Strip -->
+            <div class="verdict-grid">
+              <div class="verdict-tile">
+                <div class="verdict-k" data-i18n="vCheapest">最安モデル（月額）</div>
+                <div class="verdict-v is-sage" id="vCheapestCost">¥0</div>
+                <div class="verdict-sub" id="vCheapestModel">—</div>
+              </div>
+              <div class="verdict-tile">
+                <div class="verdict-k" data-i18n="vMid">主力ハイエンド最安（月額）</div>
+                <div class="verdict-v" id="vMidCost">¥0</div>
+                <div class="verdict-sub" id="vMidModel">—</div>
+              </div>
+              <div class="verdict-tile">
+                <div class="verdict-k" data-i18n="vReasonTax">思考トークン上乗せ額（Sonnet基準）</div>
+                <div class="verdict-v is-accent" id="vReasonTaxVal">¥0</div>
+                <div class="verdict-sub" id="vReasonTaxSub">倍率 1.0×（OFF）</div>
+              </div>
+            </div>
+
+            <!-- Feature 2: Monthly Cost Comparison Table & Visual Bar Chart -->
+            <div class="tool-panel">
+              <div class="tool-panel-head">
+                <h2 class="tool-panel-title" data-i18n="p3Title">3. モデル別 月額コスト比較（キャッシュ・無料枠込み）</h2>
+                <div class="ctrl-row">
+                  <span class="copy-feedback" id="copyMdFeedback" aria-live="polite"></span>
+                  <button type="button" class="chip-btn" id="btnCopyMd" data-i18n="btnCopyMd">Markdown表をコピー</button>
+                </div>
+              </div>
+
+              <div class="table-toolbar">
+                <div class="filter-pills" role="group" aria-label="Provider filter">
+                  <button type="button" class="filter-pill is-active" data-provider="all" data-i18n="fltAll">すべて</button>
+                  <button type="button" class="filter-pill" data-provider="Anthropic">Claude</button>
+                  <button type="button" class="filter-pill" data-provider="OpenAI">OpenAI</button>
+                  <button type="button" class="filter-pill" data-provider="Google">Gemini</button>
+                  <button type="button" class="filter-pill" data-provider="DeepSeek">DeepSeek</button>
+                  <button type="button" class="filter-pill" data-provider="Sakura">Sakura JP</button>
+                  <button type="button" class="filter-pill" data-provider="Custom">Custom</button>
+                </div>
+                <div class="bar-legend">
+                  <span><i style="background:var(--sage);"></i><span data-i18n="legInput">入力</span></span>
+                  <span><i style="background:var(--accent);"></i><span data-i18n="legOutput">出力+思考</span></span>
+                </div>
+              </div>
+
+              <div class="cost-table-wrap">
+                <table class="cost-table" id="costTable">
+                  <thead>
+                    <tr>
+                      <th><button type="button" class="sort-btn" data-sort="name" data-i18n="thModel">モデル</button></th>
+                      <th class="is-num col-hide-sm"><button type="button" class="sort-btn" data-sort="inTok" data-i18n="thTok">入力tok</button></th>
+                      <th class="is-num col-hide-sm"><button type="button" class="sort-btn" data-sort="inRate" data-i18n="thRates">単価(In/Out)</button></th>
+                      <th class="cost-bar-cell" data-i18n="thBar">内訳バー</th>
+                      <th class="is-num"><button type="button" class="sort-btn" data-sort="monthly" data-i18n="thMonthly">月額コスト ▲</button></th>
+                    </tr>
+                  </thead>
+                  <tbody id="costTbody"></tbody>
+                </table>
+              </div>
+
+              <!-- Editable Custom Model Row -->
+              <div class="custom-rate-bar">
+                <p class="custom-rate-title" data-i18n="customTitle">カスタム単価で比較行を追加・上書き（社内契約・Azure・ローカルGPU試算用）</p>
+                <div class="custom-rate-grid">
+                  <div class="custom-field">
+                    <label for="custName" data-i18n="custLblName">モデル名</label>
+                    <input type="text" id="custName" value="Custom API">
+                  </div>
+                  <div class="custom-field">
+                    <label for="custIn" data-i18n="custLblIn">入力 ($/1M)</label>
+                    <input type="number" id="custIn" min="0" max="500" step="0.05" value="1.50">
+                  </div>
+                  <div class="custom-field">
+                    <label for="custCache" data-i18n="custLblCache">キャッシュ ($/1M)</label>
+                    <input type="number" id="custCache" min="0" max="500" step="0.01" value="0.15">
+                  </div>
+                  <div class="custom-field">
+                    <label for="custOut" data-i18n="custLblOut">出力 ($/1M)</label>
+                    <input type="number" id="custOut" min="0" max="500" step="0.10" value="6.00">
+                  </div>
+                  <div class="custom-field">
+                    <label for="custTok" data-i18n="custLblTok">トークナイザ</label>
+                    <select id="custTok">
+                      <option value="global">Global BPE</option>
+                      <option value="jp">JP-Opt</option>
+                    </select>
+                  </div>
+                </div>
+                <p class="rate-footnote" data-i18n="rateFootnote">※ 参考単価は 2026年11月時点の各社公開標準レート（100万トークンあたりUSD。さくらのAI Engineのみ税込JPY建て・月3,000リクエスト無料枠を自動控除）。Batch API（約50%割引）や独自契約単価は上のカスタム行で上書きできます。</p>
+              </div>
+            </div>
+
+            <!-- Feature 4: Prompt Bloat & AI-Slop Cost-Saver Inspector -->
+            <div class="tool-panel">
+              <div class="tool-panel-head">
+                <h2 class="tool-panel-title" data-i18n="p4Title">4. プロンプト冗長表現・AI定型文コスト削減チェック</h2>
+                <button type="button" class="chip-btn" id="btnToggleTrim" data-i18n="btnPreviewTrim">軽量化プレビュー</button>
+              </div>
+              <div class="tool-panel-body">
+                <div class="bloat-summary" id="bloatSummary">
+                  <div>
+                    <div style="font-size:12px; font-weight:700; color:var(--ink-muted);" data-i18n="bloatEstLabel">削れる冗長トークン / 推定月額節約（Claude Sonnet 5.5 基準）</div>
+                    <div class="bloat-savings-num" id="bloatSavingsVal">-0 tok/req · ¥0/mo</div>
+                  </div>
+                  <div class="ctrl-row">
+                    <button type="button" class="chip-btn" id="btnApplyTrim" data-i18n="btnApplyTrim">軽量版をエディタへ反映</button>
+                  </div>
+                </div>
+                <ul class="bloat-list" id="bloatList"></ul>
+                <div class="bloat-clean" id="bloatClean" style="display:none;" data-i18n="bloatCleanMsg">目立つ冗長表現や重複指示は見つかりませんでした。すっきりしたプロンプトです。</div>
+
+                <div class="trim-preview-box" id="trimPreviewBox">
+                  <div class="trim-preview-head">
+                    <span id="trimPreviewMeta">Trimmed preview</span>
+                    <button type="button" class="chip-btn" id="btnCopyTrim" data-i18n="btnCopyTrim">軽量版をコピー</button>
+                  </div>
+                  <pre class="trim-preview-code" id="trimPreviewCode"></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Subtle KitWorks Lab Product Strip -->
+        <div class="promo-strip">
+          <div class="promo-strip-copy">
+            <h2 class="promo-strip-title" data-i18n="promoTitle">ローカルHTML完結の制作ツール・OBSオーバーレイも配布中</h2>
+            <p class="promo-strip-desc" data-i18n="promoDesc">KitWorks Lab では、外部サーバーやログイン不要で動くOBS配信タイマー（TokiDock）・目標バー（GoalDock）やVRChat向けツールを BOOTH / Gumroad で公開しています。無料Lite版あり。</p>
+          </div>
+          <div class="promo-strip-actions">
+            <a class="btn btn-secondary btn-sm" href="../" data-i18n="promoTools">他の無料ツールを見る</a>
+            <a class="btn btn-primary btn-sm" href="https://kitworks.booth.pm/" target="_blank" rel="noopener noreferrer" data-i18n="promoStore" data-i18n-href="storeHome">BOOTH ショップ</a>
+          </div>
+        </div>
+
+        <!-- Compliant Amazon Associates PR Strip (verified ASINs from gear-catalog.json) -->
+        <div class="gear-pr-box">
+          <div class="gear-pr-head">
+            <h2 class="gear-pr-title"><span class="pr-mark">PR</span><span data-i18n="gearHeading">API連携・ローカル自動化を組むときの手元リファレンス</span></h2>
+            <p class="gear-pr-disclosure" data-i18n="gearDisclosure">Amazonのアソシエイトとして、KitWorks Labは適格販売により収入を得ています。</p>
+          </div>
+          <div class="gear-pr-grid">
+            <a class="gear-pr-item" href="https://www.amazon.co.jp/dp/4297129566?tag=kitworkslab-22" target="_blank" rel="noopener noreferrer sponsored">
+              <span class="gear-pr-name">実践Node.js入門 ―基礎・開発・運用（技術評論社）</span>
+              <span class="gear-pr-desc" data-i18n="gearBook1">非同期処理・HTTP API連携・CLIツール設計まで実務ベースでまとまった1冊。LLM APIラッパーやバッチ処理を組む土台固めに。</span>
+              <span class="gear-pr-cta" data-i18n="gearCta">Amazonで詳細を見る →</span>
+            </a>
+            <a class="gear-pr-item" href="https://www.amazon.co.jp/dp/4873119235?tag=kitworkslab-22" target="_blank" rel="noopener noreferrer sponsored">
+              <span class="gear-pr-name">ハンズオンNode.js（オライリー・ジャパン）</span>
+              <span class="gear-pr-desc" data-i18n="gearBook2">SSEストリーミング・エラーハンドリング・テスト設計まで手を動かして確認できます。APIタイムアウトやリトライ設計の参考に。</span>
+              <span class="gear-pr-cta" data-i18n="gearCta">Amazonで詳細を見る →</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <img class="brand-avatar" src="../../assets/avatar-600.png" alt="KitWorks Lab" width="32" height="32">
+        <p class="footer-note" data-i18n="footerNote">KitWorks Lab — 個人制作のOBS配信ツール・無料Webツール工房。すべての計算はブラウザ内ローカルで完結します。</p>
+      </div>
+      <nav class="footer-links" aria-label="Footer links">
+        <a href="../" data-i18n="navTools">無料ツール一覧</a>
+        <a href="../../" data-i18n="navObs">OBS製品デモ</a>
+        <a href="https://kitworks.booth.pm/" target="_blank" rel="noopener noreferrer">BOOTH</a>
+        <a href="https://earnbot7.gumroad.com/" target="_blank" rel="noopener noreferrer">Gumroad (EN)</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script src="../tools-common.js"></script>
+  <script>
+    (function () {
+      'use strict';
+
+      var SAMPLES = {
+        support: [
+          'あなたはSaaSカスタマーサポート担当のAIアシスタントです。以下のガイドラインを必ず厳守してください。',
+          'お手数ですが、お客様からのお問い合わせに対して、丁寧かつ分かりやすくご回答いただけますでしょうか。よろしくお願いいたします。',
+          '',
+          '【対応ルール】',
+          '- ここで重要なのは、常に事実ベースで回答し、推測で仕様を断定しないことです。',
+          '- 料金や返金ポリシーに関する質問では、利用規約の第8条を確認することができます。',
+          '- 常に事実ベースで回答し、推測で仕様を断定しないことです。',
+          '- 出力は必ず下記のJSON形式で返してください。各フィールドには詳細な説明文を含める必要があり、JSON以外の前置きや後書きは一切出力しないでください。',
+          '',
+          '```json',
+          '{',
+          '  "category": "billing | bug | feature | other",',
+          '  "urgency": "low | medium | high",',
+          '  "reply_ja": "お客様への返信ドラフト（200〜400文字）",',
+          '  "internal_note": "社内エスカレーション用の要約メモ"',
+          '}',
+          '```',
+          '',
+          '【お客様からの問い合わせ】',
+          '先月Proプランへアップグレードしたのですが、請求書PDFの宛名を法人名に変更したいです。管理画面のどこから設定できますか？急ぎで経理提出が必要です。'
+        ].join('\n'),
+
+        codereview: [
+          'You are a senior TypeScript & Node.js code reviewer. Please kindly review the diff below and provide a comprehensive, robust analysis.',
+          'It is important to note that you must check for race conditions, unhandled promise rejections, and unbounded memory growth.',
+          'In order to make the review actionable, always cite exact line numbers and propose a minimal patch.',
+          'Always cite exact line numbers and propose a minimal patch.',
+          '',
+          '```ts',
+          'export async function fetchWithRetry(url: string, retries = 3) {',
+          '  for (let i = 0; i <= retries; i++) {',
+          '    const res = await fetch(url);',
+          '    if (res.ok) return res.json();',
+          '    if (res.status === 429) {',
+          '      await new Promise(r => setTimeout(r, 500 * i));',
+          '      continue;',
+          '    }',
+          '    throw new Error(`HTTP ${res.status}`);',
+          '  }',
+          '}',
+          '```',
+          '',
+          'Return JSON with keys: severity, findings[], patch_diff. Keep explanations under 120 words.'
+        ].join('\n'),
+
+        stream: [
+          '以下のYouTube Live配信チャットログを3分で振り返れる箇条書きにまとめてください。',
+          'ぜひとも、視聴者の質問と次回の配信リクエストを見落とさないようにお願いいたします。',
+          '',
+          '[19:42] haru: 今日のOBSタイマー配色めっちゃ見やすい！',
+          '[19:43] kenji: max_tokens 512で推論モデル叩いたらHTTP 200で空文字返ってきて1時間溶かしたｗ',
+          '[19:43] mika: それ finish_reason が length になってるやつだ！',
+          '[19:44] dev_taro: さくらのAI Engine無料枠3000リクエストあるの知らなかった、個人Botならタダでは？',
+          '[19:45] haru: 次回はYouTubeサムネのコントラスト調整配信やってほしいです',
+          '[19:46] sora: Prompt caching 80%効かせたら月額ほぼ1/4になった',
+          '[19:47] kenji: 日本語プロンプトは英語の約2倍トークン食うの罠すぎる',
+          '',
+          '出力形式: 1) 主な話題3点 2) 視聴者からの質問・要望 3) 配信後に調べるメモ'
+        ].join('\n')
+      };
+
+      /* Verified Nov 2026 public list rates (USD per 1M tokens; Sakura native JPY tax-incl.) */
+      var BASE_MODELS = [
+        {
+          id: 'sakura-llm-jp',
+          name: 'llm-jp-3.1-8x13b',
+          provider: 'Sakura',
+          tier: 'budget',
+          tokenizer: 'jp',
+          currency: 'JPY',
+          inRate: 15,      // ¥0.15 / 10K = ¥15 / 1M
+          cacheRate: 15,
+          outRate: 75,     // ¥0.75 / 10K = ¥75 / 1M
+          freeReqs: 3000,
+          noteJa: '月3,000 req無料・国産JP最適化',
+          noteEn: '3,000 req/mo free · Domestic JP-opt'
+        },
+        {
+          id: 'sakura-gpt-oss',
+          name: 'gpt-oss-120b (Sakura)',
+          provider: 'Sakura',
+          tier: 'budget',
+          tokenizer: 'global',
+          currency: 'JPY',
+          inRate: 15,
+          cacheRate: 15,
+          outRate: 75,
+          freeReqs: 3000,
+          noteJa: '月3,000 req無料・国内DC',
+          noteEn: '3,000 req/mo free · Japan DC'
+        },
+        {
+          id: 'claude-haiku-5-5',
+          name: 'Claude Haiku 5.5',
+          provider: 'Anthropic',
+          tier: 'budget',
+          tokenizer: 'global',
+          currency: 'USD',
+          inRate: 0.10,
+          cacheRate: 0.01,
+          outRate: 0.50,
+          longCtxThreshold: 100000,
+          longInRate: 0.50,
+          longCacheRate: 0.05,
+          longOutRate: 2.50,
+          noteJa: '≤100K単価（超過時5×）',
+          noteEn: '≤100K tier (5× above 100K)'
+        },
+        {
+          id: 'gpt-6-luna',
+          name: 'GPT-6 Luna',
+          provider: 'OpenAI',
+          tier: 'budget',
+          tokenizer: 'global',
+          currency: 'USD',
+          inRate: 0.10,
+          cacheRate: 0.01,
+          outRate: 0.50,
+          noteJa: '軽量・高頻度向け',
+          noteEn: 'High-volume / low-cost'
+        },
+        {
+          id: 'deepseek-flash',
+          name: 'DeepSeek Flash (Off-Peak)',
+          provider: 'DeepSeek',
+          tier: 'budget',
+          tokenizer: 'global',
+          currency: 'USD',
+          inRate: 0.15,
+          cacheRate: 0.003,
+          outRate: 0.60,
+          noteJa: 'オフピーク（ピーク時2×）',
+          noteEn: 'Off-peak (2× during peak)'
+        },
+        {
+          id: 'gemini-3-5-flash-lite',
+          name: 'Gemini 3.5 Flash-Lite',
+          provider: 'Google',
+          tier: 'budget',
+          tokenizer: 'global',
+          currency: 'USD',
+          inRate: 0.30,
+          cacheRate: 0.03,
+          outRate: 2.50,
+          noteJa: '2.5 Flash 後継',
+          noteEn: '2.5 Flash successor'
+        },
+        {
+          id: 'gpt-4-1-mini',
+          name: 'GPT-4.1 mini (Legacy)',
+          provider: 'OpenAI',
+          tier: 'budget',
+          tokenizer: 'global',
+          currency: 'USD',
+          inRate: 0.40,
+          cacheRate: 0.10,
+          outRate: 1.60,
+          warnTagJa: '2027/1終了予定',
+          warnTagEn: 'Retires Jan 2027'
+        },
+        {
+          id: 'gemini-3-8-flash',
+          name: 'Gemini 3.8 Flash',
+          provider: 'Google',
+          tier: 'mid',
+          tokenizer: 'global',
+          currency: 'USD',
+          inRate: 0.75,
+          cacheRate: 0.075,
+          outRate: 3.75,
+          warnTagJa: '導入価格(~2026/12)',
+          warnTagEn: 'Intro rate (~Dec 2026)'
+        },
+        {
+          id: 'gpt-6-1-terra',
+          name: 'GPT-6.1 Terra',
+          provider: 'OpenAI',
+          tier: 'mid',
+          tokenizer: 'global',
+          currency: 'USD',
+          inRate: 1.00,
+          cacheRate: 0.05,
+          outRate: 5.00,
+          noteJa: '中堅エージェント向け',
+          noteEn: 'Mid-tier workloads'
+        },
+        {
+          id: 'deepseek-v4-pro',
+          name: 'DeepSeek V4 Pro (Peak)',
+          provider: 'DeepSeek',
+          tier: 'mid',
+          tokenizer: 'global',
+          currency: 'USD',
+          inRate: 1.32,
+          cacheRate: 0.044,
+          outRate: 3.96,
+          noteJa: 'オフピーク時50%OFF',
+          noteEn: '50% off during off-peak'
+        },
+        {
+          id: 'claude-sonnet-5-5',
+          name: 'Claude Sonnet 5.5',
+          provider: 'Anthropic',
+          tier: 'mid',
+          tokenizer: 'global',
+          currency: 'USD',
+          inRate: 2.00,
+          cacheRate: 0.10,
+          outRate: 10.00,
+          noteJa: '主力コーディング・設計',
+          noteEn: 'Primary coding & agents'
+        },
+        {
+          id: 'gpt-6-2-sol',
+          name: 'GPT-6.2 Sol',
+          provider: 'OpenAI',
+          tier: 'mid',
+          tokenizer: 'global',
+          currency: 'USD',
+          inRate: 2.00,
+          cacheRate: 0.10,
+          outRate: 10.00,
+          noteJa: '主力コーディング・推論',
+          noteEn: 'Everyday coding & agents'
+        },
+        {
+          id: 'claude-opus-5-5',
+          name: 'Claude Opus 5.5',
+          provider: 'Anthropic',
+          tier: 'flagship',
+          tokenizer: 'global',
+          currency: 'USD',
+          inRate: 4.00,
+          cacheRate: 0.20,
+          outRate: 20.00,
+          noteJa: '高難度・長文推論',
+          noteEn: 'Flagship complex reasoning'
+        }
+      ];
+
+      var state = {
+        prompt: SAMPLES.support,
+        reqPerDay: 200,
+        outTokens: 450,
+        cachePct: 50,
+        reasonMult: 1,
+        maxTokens: 1024,
+        currency: 'JPY',
+        fxRate: 154,
+        providerFilter: 'all',
+        sortKey: 'monthly',
+        sortAsc: true,
+        custom: {
+          name: 'Custom API',
+          inRate: 1.50,
+          cacheRate: 0.15,
+          outRate: 6.00,
+          tokenizer: 'global'
+        },
+        trimOpen: false,
+        lastTrimmedText: ''
+      };
+
+      var DICT = {
+        ja: {
+          pageTitle: 'LLM API コスト＆日本語トークン・推論トラップ試算｜KitWorks Lab 無料Webツール',
+          pageDesc: '日本語・英語・コードのプロンプトを貼るだけでトークン数と月額APIコストをローカル試算。Claude / OpenAI / Gemini / DeepSeek / さくらのAI Engineを比較。',
+          navTools: '無料ツール一覧',
+          navYt: 'サムネ確認',
+          navChat: 'OBSチャットCSS',
+          navResize: '画像リサイズ',
+          navMatcap: 'MatCapプレビュー',
+          navLlm: 'LLMコスト試算',
+          navObs: 'OBS製品デモ',
+          title: 'LLM API コスト・日本語トークン＆推論トラップ試算',
+          lead: 'プロンプトを貼るだけで、日本語トークン膨張率（汎用BPE vs 日本語最適化）、月額API費用、キャッシュ割引、思考トークンによるHTTP 200空レスポンス罠（finish_reason: length）をブラウザ内で即チェックします。',
+          localStamp: 'ブラウザ完結 / テキスト外部送信なし',
+          p1Title: '1. プロンプト＆日本語トークン解析',
+          btnClear: 'クリア',
+          preSupport: 'JPサポートBot',
+          preCode: 'コードレビュー',
+          preStream: '配信チャット要約',
+          promptPlaceholder: 'ここにシステムプロンプトやユーザー入力を貼り付け...',
+          tokGlobalLabel: '汎用BPE推定',
+          tokJpLabel: '日本語最適化',
+          legKanji: '漢字',
+          legKana: 'かな/カナ',
+          legAscii: '英数',
+          legCode: '記号/Code',
+          legOther: '空白他',
+          p2Title: '2. 稼働条件・キャッシュ・推論トークン設定',
+          lblReqDay: '1日あたりのリクエスト数',
+          reqChip50: '50/日',
+          reqChip100: '100/日 (3k/月)',
+          reqChip200: '200/日',
+          reqChip1000: '1,000/日',
+          reqChip5000: '5,000/日',
+          lblOutTok: '想定出力トークン（ユーザーに見える返答）',
+          lblCache: 'プロンプトキャッシュ命中率',
+          lblReason: '思考（Reasoning）トークン倍率',
+          lblMaxTok: 'APIリクエストの max_tokens 設定値',
+          btnFixMax: '安全値に設定',
+          vCheapest: '最安モデル（月額）',
+          vMid: '主力モデル最安（月額）',
+          vReasonTax: '思考トークン上乗せ額（Sonnet基準）',
+          p3Title: '3. モデル別 月額コスト比較（キャッシュ・無料枠込み）',
+          btnCopyMd: 'Markdown表をコピー',
+          copiedMd: 'コピー完了',
+          fltAll: 'すべて',
+          legInput: '入力',
+          legOutput: '出力+思考',
+          thModel: 'モデル',
+          thTok: '入力tok',
+          thRates: '単価(In/Out)',
+          thBar: '内訳バー',
+          thMonthly: '月額コスト',
+          customTitle: 'カスタム単価で比較行を追加・上書き（社内契約・Azure・ローカルGPU試算用）',
+          custLblName: 'モデル名',
+          custLblIn: '入力 ($/1M)',
+          custLblCache: 'キャッシュ ($/1M)',
+          custLblOut: '出力 ($/1M)',
+          custLblTok: 'トークナイザ',
+          rateFootnote: '※ 参考単価は 2026年11月時点の各社公開標準レート（100万トークンあたりUSD。さくらのAI Engineのみ税込JPY建て・月3,000リクエスト無料枠を自動控除）。Batch API（約50%割引）や独自契約単価は上のカスタム行で上書きできます。',
+          p4Title: '4. プロンプト冗長表現・AI定型文コスト削減チェック',
+          btnPreviewTrim: '軽量化プレビュー',
+          btnHideTrim: 'プレビューを閉じる',
+          bloatEstLabel: '削れる冗長トークン / 推定月額節約（Claude Sonnet 5.5 基準）',
+          btnApplyTrim: '軽量版をエディタへ反映',
+          bloatCleanMsg: '目立つ冗長表現や重複指示は見つかりませんでした。すっきりしたプロンプトです。',
+          btnCopyTrim: '軽量版をコピー',
+          promoTitle: 'ローカルHTML完結の制作ツール・OBSオーバーレイも配布中',
+          promoDesc: 'KitWorks Lab では、外部サーバーやログイン不要で動くOBS配信タイマー（TokiDock）・目標バー（GoalDock）やVRChat向けツールを BOOTH / Gumroad で公開しています。無料Lite版あり。',
+          promoTools: '他の無料ツールを見る',
+          promoStore: 'BOOTH ショップ',
+          gearHeading: 'API連携・ローカル自動化を組むときの手元リファレンス',
+          gearDisclosure: 'Amazonのアソシエイトとして、KitWorks Labは適格販売により収入を得ています。',
+          gearBook1: '非同期処理・HTTP API連携・CLIツール設計まで実務ベースでまとまった1冊。LLM APIラッパーやバッチ処理を組む土台固めに。',
+          gearBook2: 'SSEストリーミング・エラーハンドリング・テスト設計まで手を動かして確認できます。APIタイムアウトやリトライ設計の参考に。',
+          gearCta: 'Amazonで詳細を見る →',
+          footerNote: 'KitWorks Lab — 個人制作のOBS配信ツール・無料Webツール工房。すべての計算はブラウザ内ローカルで完結します。',
+          trapSafeTitle: 'max_tokens 予算に余裕があります',
+          trapSafeDesc: '思考トークンと表示出力の合計が max_tokens 内に収まっています。JSON途中切れのリスクは低めです。',
+          trapTightTitle: '境界ギリギリ：出力長が振れると途中切れします',
+          trapTightDesc: '使用率が80%を超えています。推論トークンは入力ごとに振れ幅が大きいため、JSON閉じ括弧が切れる前に余裕を持たせてください。',
+          trapDangerTitle: 'HTTP 200 空レスポンス罠（finish_reason: "length"）発動！',
+          trapDangerDesc: '内部の思考トークン＋出力が max_tokens を {over} tok 超過しています。推論モデルでは HTTP 200 のまま本文が空文字（""）または破損JSONになり、思考トークン分の課金だけ発生します。',
+          links: {
+            storeHome: 'https://kitworks.booth.pm/'
+          }
+        },
+        en: {
+          pageTitle: 'LLM API Cost, Token & Reasoning-Trap Simulator — KitWorks Lab',
+          pageDesc: 'Client-side multilingual token analyzer, monthly LLM API cost simulator (Claude, OpenAI, Gemini, DeepSeek, Sakura AI Engine), HTTP 200 max_tokens trap detector, and prompt bloat inspector.',
+          navTools: 'Free Tools',
+          navYt: 'Thumb Preview',
+          navChat: 'OBS Chat CSS',
+          navResize: 'Image Resizer',
+          navMatcap: 'MatCap Preview',
+          navLlm: 'LLM Cost Calc',
+          navObs: 'OBS Overlays',
+          title: 'LLM API Cost, Token & Reasoning-Trap Simulator',
+          lead: 'Paste any Japanese, English, or code prompt to inspect Global BPE vs JP-optimized token inflation, compare monthly API spend with prompt caching, and catch the HTTP 200 finish_reason: "length" empty-response trap before deploying.',
+          localStamp: '100% Browser-Local · Prompt Never Leaves',
+          p1Title: '1. Multilingual Prompt & Token Analyzer',
+          btnClear: 'Clear',
+          preSupport: 'JP Support Agent',
+          preCode: 'Code Review Agent',
+          preStream: 'Stream Chat Summary',
+          promptPlaceholder: 'Paste your system prompt, user message, or JSON schema here...',
+          tokGlobalLabel: 'Global BPE Est.',
+          tokJpLabel: 'JP-Opt Est.',
+          legKanji: 'Kanji',
+          legKana: 'Kana',
+          legAscii: 'ASCII',
+          legCode: 'Code/Sym',
+          legOther: 'Space/Etc',
+          p2Title: '2. Workload, Caching & Reasoning Settings',
+          lblReqDay: 'Requests per Day',
+          reqChip50: '50/day',
+          reqChip100: '100/day (3k/mo)',
+          reqChip200: '200/day',
+          reqChip1000: '1,000/day',
+          reqChip5000: '5,000/day',
+          lblOutTok: 'Expected Visible Output Tokens',
+          lblCache: 'Prompt Cache Hit Rate',
+          lblReason: 'Reasoning Token Multiplier',
+          lblMaxTok: 'Configured max_tokens Cap',
+          btnFixMax: 'Set safe max_tokens',
+          vCheapest: 'Cheapest Monthly Pick',
+          vMid: 'Cheapest Mid/Flagship',
+          vReasonTax: 'Hidden Reasoning Tax (Sonnet ref)',
+          p3Title: '3. Monthly Cost Comparison (Caching & Free Tier Included)',
+          btnCopyMd: 'Copy Markdown Table',
+          copiedMd: 'Copied!',
+          fltAll: 'All',
+          legInput: 'Input',
+          legOutput: 'Output + Thinking',
+          thModel: 'Model',
+          thTok: 'In tok',
+          thRates: 'Rate (In/Out)',
+          thBar: 'Cost Split',
+          thMonthly: 'Monthly Cost',
+          customTitle: 'Editable Custom Rate Row (Enterprise contract, Azure/Bedrock, Batch tier, or self-hosted GPU)',
+          custLblName: 'Model Name',
+          custLblIn: 'Input ($/1M)',
+          custLblCache: 'Cache ($/1M)',
+          custLblOut: 'Output ($/1M)',
+          custLblTok: 'Tokenizer',
+          rateFootnote: 'Reference public list rates verified Nov 2026 (USD per 1M tokens; Sakura AI Engine billed natively in JPY tax-incl. with 3,000 free requests/month deducted automatically). Use the Custom row to model Batch 50% discounts or contract rates.',
+          p4Title: '4. Prompt Bloat & AI-Slop Cost-Saver Inspector',
+          btnPreviewTrim: 'Preview Trimmed',
+          btnHideTrim: 'Hide Preview',
+          bloatEstLabel: 'Trimmable bloat / Est. monthly savings (Claude Sonnet 5.5 baseline)',
+          btnApplyTrim: 'Apply Trimmed to Editor',
+          bloatCleanMsg: 'No obvious filler, duplicated rules, or verbose bloat detected. Your prompt is already lean.',
+          btnCopyTrim: 'Copy Trimmed',
+          promoTitle: 'Local-HTML Creator Utilities & OBS Overlays',
+          promoDesc: 'KitWorks Lab also ships zero-server OBS timers (TokiDock), goal bars (GoalDock), and VRChat utilities on Gumroad and BOOTH—free Lite editions included.',
+          promoTools: 'More Free Tools',
+          promoStore: 'Gumroad Store (EN)',
+          gearHeading: 'Developer Reference Books (Amazon.co.jp)',
+          gearDisclosure: 'As an Amazon Associate, KitWorks Lab earns from qualifying purchases.',
+          gearBook1: 'Practical Node.js architecture, async HTTP API pipelines, and CLI tooling—solid reference when building LLM API wrappers.',
+          gearBook2: 'Hands-on coverage of SSE streaming, error handling, and automated testing for resilient API clients.',
+          gearCta: 'View on Amazon.co.jp →',
+          footerNote: 'KitWorks Lab — Indie OBS overlays & zero-upload developer utilities. All math runs locally in your browser.',
+          trapSafeTitle: 'Healthy max_tokens headroom',
+          trapSafeDesc: 'Hidden reasoning tokens plus visible output stay safely inside your max_tokens cap.',
+          trapTightTitle: 'Tight margin: risk of truncated JSON output',
+          trapTightDesc: 'Above 80% utilization. Reasoning length varies per prompt—leave extra buffer so JSON closing braces do not get clipped.',
+          trapDangerTitle: 'HTTP 200 Silent Failure Trap (finish_reason: "length")!',
+          trapDangerDesc: 'Reasoning + visible output exceeds max_tokens by {over} tokens. Reasoning models can return HTTP 200 with empty content ("") or broken JSON while still billing every hidden thinking token.',
+          links: {
+            storeHome: 'https://earnbot7.gumroad.com/'
+          }
+        }
+      };
+
+      var $ = function (id) { return document.getElementById(id); };
+
+      var els = {
+        promptInput: $('promptInput'),
+        btnClearPrompt: $('btnClearPrompt'),
+        metaChars: $('metaChars'),
+        metaBytes: $('metaBytes'),
+        metaLines: $('metaLines'),
+        metaJpPct: $('metaJpPct'),
+        tokGlobalVal: $('tokGlobalVal'),
+        tokGlobalSub: $('tokGlobalSub'),
+        tokJpVal: $('tokJpVal'),
+        tokJpSub: $('tokJpSub'),
+        tokRatioBadge: $('tokRatioBadge'),
+        segKanji: $('segKanji'),
+        segKana: $('segKana'),
+        segAscii: $('segAscii'),
+        segCode: $('segCode'),
+        segOther: $('segOther'),
+        cntKanji: $('cntKanji'),
+        cntKana: $('cntKana'),
+        cntAscii: $('cntAscii'),
+        cntCode: $('cntCode'),
+        cntOther: $('cntOther'),
+        monthlyReqLabel: $('monthlyReqLabel'),
+        rngReqDay: $('rngReqDay'),
+        inpReqDay: $('inpReqDay'),
+        valReqDay: $('valReqDay'),
+        rngOutTok: $('rngOutTok'),
+        inpOutTok: $('inpOutTok'),
+        valOutTok: $('valOutTok'),
+        rngCache: $('rngCache'),
+        inpCache: $('inpCache'),
+        valCache: $('valCache'),
+        rngReason: $('rngReason'),
+        inpReason: $('inpReason'),
+        valReason: $('valReason'),
+        rngMaxTok: $('rngMaxTok'),
+        inpMaxTok: $('inpMaxTok'),
+        valMaxTok: $('valMaxTok'),
+        inpFx: $('inpFx'),
+        trapCard: $('trapCard'),
+        trapBadge: $('trapBadge'),
+        trapTitle: $('trapTitle'),
+        trapDesc: $('trapDesc'),
+        btnApplySafeMax: $('btnApplySafeMax'),
+        barReason: $('barReason'),
+        barVisible: $('barVisible'),
+        barLimitLine: $('barLimitLine'),
+        statBudgetBreakdown: $('statBudgetBreakdown'),
+        statSafeRec: $('statSafeRec'),
+        vCheapestCost: $('vCheapestCost'),
+        vCheapestModel: $('vCheapestModel'),
+        vMidCost: $('vMidCost'),
+        vMidModel: $('vMidModel'),
+        vReasonTaxVal: $('vReasonTaxVal'),
+        vReasonTaxSub: $('vReasonTaxSub'),
+        costTbody: $('costTbody'),
+        btnCopyMd: $('btnCopyMd'),
+        copyMdFeedback: $('copyMdFeedback'),
+        custName: $('custName'),
+        custIn: $('custIn'),
+        custCache: $('custCache'),
+        custOut: $('custOut'),
+        custTok: $('custTok'),
+        bloatSavingsVal: $('bloatSavingsVal'),
+        bloatList: $('bloatList'),
+        bloatClean: $('bloatClean'),
+        btnToggleTrim: $('btnToggleTrim'),
+        btnApplyTrim: $('btnApplyTrim'),
+        trimPreviewBox: $('trimPreviewBox'),
+        trimPreviewMeta: $('trimPreviewMeta'),
+        trimPreviewCode: $('trimPreviewCode'),
+        btnCopyTrim: $('btnCopyTrim')
+      };
+
+      function getLang() {
+        return window.KitWorksLang === 'en' ? 'en' : 'ja';
+      }
+
+      function utf8ByteLength(str) {
+        if (window.TextEncoder) {
+          return new TextEncoder().encode(str).length;
+        }
+        return unescape(encodeURIComponent(str)).length;
+      }
+
+      /* Empirical multilingual tokenizer analyzer (zero-allocation codePointAt loop) */
+      function analyzePrompt(text) {
+        var str = text || '';
+        var len = str.length;
+        var total = 0;
+        var kanji = 0, hiragana = 0, katakana = 0, asciiWord = 0, digits = 0, codeSym = 0, jpPunct = 0, whitespace = 0, other = 0;
+        var lines = len === 0 ? 0 : 1;
+
+        for (var i = 0; i < len; i++) {
+          var cp = str.codePointAt(i);
+          if (cp > 0xFFFF) i++;
+          total++;
+          if (cp === 0x0A) {
+            lines++;
+            whitespace++;
+          } else if (cp === 0x20 || cp === 0x09 || cp === 0x0D || cp === 0x3000) {
+            whitespace++;
+          } else if ((cp >= 0x4E00 && cp <= 0x9FFF) || (cp >= 0x3400 && cp <= 0x4DBF) || (cp >= 0xF900 && cp <= 0xFAFF)) {
+            kanji++;
+          } else if (cp >= 0x3040 && cp <= 0x309F) {
+            hiragana++;
+          } else if ((cp >= 0x30A0 && cp <= 0x30FF) || (cp >= 0xFF66 && cp <= 0xFF9F)) {
+            katakana++;
+          } else if ((cp >= 0x3001 && cp <= 0x303F) || (cp >= 0xFF01 && cp <= 0xFF65)) {
+            jpPunct++;
+          } else if ((cp >= 0x41 && cp <= 0x5A) || (cp >= 0x61 && cp <= 0x7A)) {
+            asciiWord++;
+          } else if (cp >= 0x30 && cp <= 0x39) {
+            digits++;
+          } else if (cp >= 0x21 && cp <= 0x7E) {
+            codeSym++;
+          } else {
+            other++;
+          }
+        }
+
+        var kana = hiragana + katakana;
+        var jpTotal = kanji + kana + jpPunct;
+        var asciiTotal = asciiWord + digits;
+
+        /* Weighted token estimators calibrated against o200k/Claude BPE vs llm-jp SentencePiece */
+        var globalRaw =
+          kanji * 1.48 +
+          hiragana * 0.92 +
+          katakana * 0.98 +
+          jpPunct * 1.10 +
+          asciiWord * 0.255 +
+          digits * 0.40 +
+          codeSym * 0.56 +
+          whitespace * 0.22 +
+          other * 1.85;
+
+        var jpOptRaw =
+          kanji * 0.72 +
+          hiragana * 0.52 +
+          katakana * 0.56 +
+          jpPunct * 0.68 +
+          asciiWord * 0.28 +
+          digits * 0.42 +
+          codeSym * 0.54 +
+          whitespace * 0.22 +
+          other * 1.50;
+
+        var globalTokens = total === 0 ? 0 : Math.max(1, Math.round(globalRaw));
+        var jpOptTokens = total === 0 ? 0 : Math.max(1, Math.round(jpOptRaw));
+        var ratio = jpOptTokens > 0 ? (globalTokens / jpOptTokens) : 1;
+
+        return {
+          chars: total,
+          bytes: utf8ByteLength(str),
+          lines: lines,
+          kanji: kanji,
+          kana: kana,
+          ascii: asciiTotal,
+          code: codeSym + jpPunct,
+          other: whitespace + other,
+          jpPct: total > 0 ? Math.round((jpTotal / total) * 100) : 0,
+          globalTokens: globalTokens,
+          jpOptTokens: jpOptTokens,
+          ratio: ratio
+        };
+      }
+
+      /* Deterministic local Prompt Bloat & AI-Slop Inspector */
+      function inspectBloat(text) {
+        if (!text || !text.trim()) {
+          return { findings: [], trimTokens: 0, trimmedText: '' };
+        }
+
+        var findings = [];
+        var trimmed = text;
+        var isEn = getLang() === 'en';
+
+        /* Rule 1: Polite filler phrases (JP & EN) */
+        var politeRegex = /(お手数ですが[、,]?\s*|よろしくお願いいたします[。.]?|お願いします[。.]?|いただけますでしょうか[。?？]?|ぜひとも[、,]?\s*|ご丁寧に|Please kindly\s+|please kindly\s+|if you don't mind[,\s]*|I would really appreciate it if you could\s+)/gi;
+        var politeMatches = text.match(politeRegex) || [];
+        if (politeMatches.length > 0) {
+          var pTok = politeMatches.reduce(function (acc, m) { return acc + analyzePrompt(m).globalTokens; }, 0);
+          findings.push({
+            title: isEn ? 'Polite filler (no accuracy gain)' : '丁寧語フィラー（精度に寄与しない挨拶・前置き）',
+            count: politeMatches.length,
+            tokens: pTok,
+            samples: politeMatches.slice(0, 4).map(function (s) { return s.trim(); })
+          });
+          trimmed = trimmed.replace(politeRegex, '');
+        }
+
+        /* Rule 2: AI-slop throat-clearing & weak phrasing */
+        var slopRegex = /(ここで重要なのは[、,]?\s*|〜?することができます|包括的な|多面的な|画期的な|It is important to note that\s+|in order to\s+|comprehensive,?\s*|robust\s+|leverage\s+|utilize\s+|delve into\s+)/gi;
+        var slopMatches = text.match(slopRegex) || [];
+        if (slopMatches.length > 0) {
+          var sTok = slopMatches.reduce(function (acc, m) { return acc + analyzePrompt(m).globalTokens; }, 0);
+          findings.push({
+            title: isEn ? 'AI-slop & verbose throat-clearing' : 'AI定型文・回りくどい前置き表現',
+            count: slopMatches.length,
+            tokens: sTok,
+            samples: slopMatches.slice(0, 4).map(function (s) { return s.trim(); })
+          });
+          trimmed = trimmed
+            .replace(/ここで重要なのは[、,]?\s*/g, '')
+            .replace(/することができます/g, 'できます')
+            .replace(/It is important to note that\s+/gi, '')
+            .replace(/\bin order to\s+/gi, 'to ')
+            .replace(/\bcomprehensive,?\s*/gi, '')
+            .replace(/\brobust\s+/gi, '');
+        }
+
+        /* Rule 3: Duplicate / near-duplicate instruction lines */
+        var rawLines = trimmed.split(/\r?\n/);
+        var seen = {};
+        var dupLines = [];
+        var dedupedLines = [];
+        for (var i = 0; i < rawLines.length; i++) {
+          var line = rawLines[i];
+          var norm = line.replace(/^[\s\-*•・\d.)]+/, '').trim().toLowerCase();
+          if (norm.length >= 14) {
+            if (seen[norm]) {
+              dupLines.push(line.trim());
+              continue;
+            }
+            seen[norm] = true;
+          }
+          dedupedLines.push(line);
+        }
+        if (dupLines.length > 0) {
+          var dTok = dupLines.reduce(function (acc, m) { return acc + analyzePrompt(m).globalTokens; }, 0);
+          findings.push({
+            title: isEn ? 'Repeated instruction lines' : '重複している指示文・ルール行',
+            count: dupLines.length,
+            tokens: dTok,
+            samples: dupLines.slice(0, 3)
+          });
+          trimmed = dedupedLines.join('\n');
+        }
+
+        /* Rule 4: Redundant blank lines / trailing spaces / markdown divider spam */
+        var wsSpam = (text.match(/\n{3,}|[ \t]{2,}\n|^[-=]{5,}$/gm) || []);
+        if (wsSpam.length > 0) {
+          trimmed = trimmed
+            .replace(/[ \t]+$/gm, '')
+            .replace(/^[-=]{5,}$/gm, '')
+            .replace(/\n{3,}/g, '\n\n');
+          var wTok = Math.max(1, Math.round(wsSpam.join('').length * 0.25));
+          findings.push({
+            title: isEn ? 'Excess blank lines / divider spam' : '過剰な空行・区切り線・末尾スペース',
+            count: wsSpam.length,
+            tokens: wTok,
+            samples: [isEn ? 'Multiple blank lines / trailing spaces' : '連続空行・装飾区切り線']
+          });
+        }
+
+        /* Rule 5: Verbose JSON prose warning */
+        var jsonProseRegex = /(各フィールドには詳細な説明文を含める必要があり[、,]?|JSON以外の前置きや後書きは一切出力しないでください|Return only valid JSON without any markdown formatting or preamble)/gi;
+        var jsonMatches = text.match(jsonProseRegex) || [];
+        if (jsonMatches.length > 0) {
+          var jTok = jsonMatches.reduce(function (acc, m) { return acc + analyzePrompt(m).globalTokens; }, 0);
+          findings.push({
+            title: isEn ? 'Verbose JSON format prose (use API response_format / Structured Outputs)' : 'JSON形式の長文指定（API側のStructured Outputs/JSON Modeで短縮可）',
+            count: jsonMatches.length,
+            tokens: Math.max(1, Math.round(jTok * 0.7)),
+            samples: jsonMatches.slice(0, 2).map(function (s) { return s.trim(); })
+          });
+          trimmed = trimmed.replace(/各フィールドには詳細な説明文を含める必要があり[、,]?/g, '');
+        }
+
+        trimmed = trimmed.replace(/\n{3,}/g, '\n\n').trim();
+        var origTok = analyzePrompt(text).globalTokens;
+        var newTok = analyzePrompt(trimmed).globalTokens;
+        var realTrimmed = Math.max(0, origTok - newTok);
+        var sumFindingTok = findings.reduce(function (acc, f) { return acc + f.tokens; }, 0);
+        var effectiveTrim = Math.max(realTrimmed, Math.min(origTok, sumFindingTok));
+
+        return {
+          findings: findings,
+          trimTokens: effectiveTrim,
+          trimmedText: trimmed,
+          origTokens: origTok,
+          newTokens: newTok
+        };
+      }
+
+      function computeModelRow(model, analysis) {
+        var monthlyReqs = state.reqPerDay * 30;
+        var freeReqs = model.freeReqs || 0;
+        var billableReqs = Math.max(0, monthlyReqs - freeReqs);
+        var inTok = model.tokenizer === 'jp' ? analysis.jpOptTokens : analysis.globalTokens;
+
+        var effInRate = model.inRate;
+        var effCacheRate = model.cacheRate;
+        var effOutRate = model.outRate;
+        var longCtxTriggered = false;
+
+        if (model.longCtxThreshold && inTok > model.longCtxThreshold) {
+          effInRate = model.longInRate;
+          effCacheRate = model.longCacheRate;
+          effOutRate = model.longOutRate;
+          longCtxTriggered = true;
+        }
+
+        var cacheFrac = Math.min(1, Math.max(0, state.cachePct / 100));
+        var totalOutTok = Math.round(state.outTokens * state.reasonMult);
+
+        var inPerReqNative = ((inTok * (1 - cacheFrac) * effInRate) + (inTok * cacheFrac * effCacheRate)) / 1000000;
+        var outPerReqNative = (totalOutTok * effOutRate) / 1000000;
+
+        var monthlyInNative = inPerReqNative * billableReqs;
+        var monthlyOutNative = outPerReqNative * billableReqs;
+        var monthlyNative = monthlyInNative + monthlyOutNative;
+
+        var fx = Math.max(1, state.fxRate || 154);
+        var monthlyUsd, monthlyJpy, inUsd, outUsd;
+
+        if (model.currency === 'JPY') {
+          monthlyJpy = monthlyNative;
+          monthlyUsd = monthlyNative / fx;
+          inUsd = monthlyInNative / fx;
+          outUsd = monthlyOutNative / fx;
+        } else {
+          monthlyUsd = monthlyNative;
+          monthlyJpy = monthlyNative * fx;
+          inUsd = monthlyInNative;
+          outUsd = monthlyOutNative;
+        }
+
+        var per1kUsd = monthlyReqs > 0 ? (monthlyUsd / monthlyReqs) * 1000 : 0;
+        var per1kJpy = monthlyReqs > 0 ? (monthlyJpy / monthlyReqs) * 1000 : 0;
+
+        return {
+          model: model,
+          inTok: inTok,
+          effInRate: effInRate,
+          effOutRate: effOutRate,
+          longCtxTriggered: longCtxTriggered,
+          monthlyReqs: monthlyReqs,
+          billableReqs: billableReqs,
+          isFullyFree: freeReqs > 0 && billableReqs === 0,
+          monthlyUsd: monthlyUsd,
+          monthlyJpy: monthlyJpy,
+          inShare: monthlyUsd > 0 ? (inUsd / monthlyUsd) : 0,
+          outShare: monthlyUsd > 0 ? (outUsd / monthlyUsd) : 0,
+          per1kUsd: per1kUsd,
+          per1kJpy: per1kJpy
+        };
+      }
+
+      function fmtMoney(usd, jpy, compact) {
+        if (state.currency === 'JPY') {
+          if (jpy === 0) return '¥0';
+          if (jpy < 1) return '¥' + jpy.toFixed(2);
+          if (jpy < 100 && !compact) return '¥' + jpy.toFixed(1);
+          return '¥' + Math.round(jpy).toLocaleString('en-US');
+        } else {
+          if (usd === 0) return '$0.00';
+          if (usd < 0.01) return '$' + usd.toFixed(4);
+          if (usd < 100) return '$' + usd.toFixed(2);
+          return '$' + usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+      }
+
+      function fmtRatePair(row) {
+        if (row.model.currency === 'JPY') {
+          return '¥' + row.effInRate + ' / ¥' + row.effOutRate;
+        }
+        return '$' + row.effInRate.toFixed(2) + ' / $' + row.effOutRate.toFixed(2);
+      }
+
+      function getAllModels() {
+        var list = BASE_MODELS.slice();
+        list.push({
+          id: 'custom-model',
+          name: (state.custom.name || 'Custom API').trim() || 'Custom API',
+          provider: 'Custom',
+          tier: 'custom',
+          tokenizer: state.custom.tokenizer === 'jp' ? 'jp' : 'global',
+          currency: 'USD',
+          inRate: Math.max(0, Number(state.custom.inRate) || 0),
+          cacheRate: Math.max(0, Number(state.custom.cacheRate) || 0),
+          outRate: Math.max(0, Number(state.custom.outRate) || 0),
+          noteJa: 'カスタム単価',
+          noteEn: 'Custom override'
+        });
+        return list;
+      }
+
+      function renderAll() {
+        var lang = getLang();
+        var dict = DICT[lang];
+        var analysis = analyzePrompt(state.prompt);
+
+        /* 1. Update Prompt & Token Analyzer */
+        els.metaChars.textContent = analysis.chars.toLocaleString('en-US') + ' chars';
+        els.metaBytes.textContent = window.KitWorksTools.formatBytes(analysis.bytes);
+        els.metaLines.textContent = analysis.lines + (lang === 'en' ? ' lines' : ' 行');
+        els.metaJpPct.textContent = 'JP ' + analysis.jpPct + '%';
+
+        els.tokGlobalVal.textContent = analysis.globalTokens.toLocaleString('en-US');
+        var gPerChar = analysis.chars > 0 ? (analysis.globalTokens / analysis.chars).toFixed(2) : '0.00';
+        els.tokGlobalSub.textContent = gPerChar + ' tok/char · Claude/GPT';
+
+        els.tokJpVal.textContent = analysis.jpOptTokens.toLocaleString('en-US');
+        var jPerChar = analysis.chars > 0 ? (analysis.jpOptTokens / analysis.chars).toFixed(2) : '0.00';
+        els.tokJpSub.textContent = jPerChar + ' tok/char · llm-jp';
+
+        els.tokRatioBadge.textContent = analysis.chars > 0 ? (analysis.ratio.toFixed(2) + '×') : '1.00×';
+        els.tokRatioBadge.classList.toggle('is-neutral', analysis.ratio < 1.15);
+
+        var denom = Math.max(1, analysis.chars);
+        els.segKanji.style.width = ((analysis.kanji / denom) * 100).toFixed(1) + '%';
+        els.segKana.style.width = ((analysis.kana / denom) * 100).toFixed(1) + '%';
+        els.segAscii.style.width = ((analysis.ascii / denom) * 100).toFixed(1) + '%';
+        els.segCode.style.width = ((analysis.code / denom) * 100).toFixed(1) + '%';
+        els.segOther.style.width = ((analysis.other / denom) * 100).toFixed(1) + '%';
+
+        els.cntKanji.textContent = analysis.kanji;
+        els.cntKana.textContent = analysis.kana;
+        els.cntAscii.textContent = analysis.ascii;
+        els.cntCode.textContent = analysis.code;
+        els.cntOther.textContent = analysis.other;
+
+        /* 2. Workload readout labels */
+        var monthlyReqs = state.reqPerDay * 30;
+        els.monthlyReqLabel.textContent = monthlyReqs.toLocaleString('en-US') + ' req/mo';
+        els.valReqDay.textContent = state.reqPerDay.toLocaleString('en-US') + (lang === 'en' ? ' / day' : ' / 日');
+        els.valOutTok.textContent = state.outTokens.toLocaleString('en-US') + ' tok';
+        els.valCache.textContent = state.cachePct + '%';
+        els.valReason.textContent = state.reasonMult.toFixed(1) + '×' + (state.reasonMult <= 1 ? ' (OFF)' : '');
+        els.valMaxTok.textContent = state.maxTokens.toLocaleString('en-US') + ' tok';
+
+        /* 3. Feature 3: HTTP 200 Silent Failure & Reasoning Trap Monitor */
+        var visibleTok = state.outTokens;
+        var totalComp = Math.round(visibleTok * state.reasonMult);
+        var reasonTok = Math.max(0, totalComp - visibleTok);
+        var utilPct = Math.round((totalComp / Math.max(1, state.maxTokens)) * 100);
+        var safeRec = Math.max(256, Math.ceil((totalComp * 1.35) / 128) * 128);
+        var overflow = totalComp - state.maxTokens;
+
+        var trapState = 'safe';
+        if (overflow > 0) trapState = 'danger';
+        else if (utilPct > 80) trapState = 'tight';
+
+        els.trapCard.setAttribute('data-state', trapState);
+        if (trapState === 'danger') {
+          els.trapBadge.textContent = 'TRAP · HTTP 200';
+          els.trapTitle.textContent = dict.trapDangerTitle;
+          els.trapDesc.textContent = dict.trapDangerDesc.replace('{over}', overflow.toLocaleString('en-US'));
+          els.btnApplySafeMax.style.display = 'inline-block';
+          els.btnApplySafeMax.setAttribute('data-safe-val', String(safeRec));
+          els.btnApplySafeMax.textContent = (lang === 'en' ? 'Set max_tokens = ' : '安全値に設定 (') + safeRec.toLocaleString('en-US') + (lang === 'en' ? '' : ')');
+        } else if (trapState === 'tight') {
+          els.trapBadge.textContent = 'TIGHT · ' + utilPct + '%';
+          els.trapTitle.textContent = dict.trapTightTitle;
+          els.trapDesc.textContent = dict.trapTightDesc;
+          els.btnApplySafeMax.style.display = 'inline-block';
+          els.btnApplySafeMax.setAttribute('data-safe-val', String(safeRec));
+          els.btnApplySafeMax.textContent = (lang === 'en' ? 'Bump to ' : '余裕値にする (') + safeRec.toLocaleString('en-US') + (lang === 'en' ? '' : ')');
+        } else {
+          els.trapBadge.textContent = 'SAFE · ' + utilPct + '%';
+          els.trapTitle.textContent = dict.trapSafeTitle;
+          els.trapDesc.textContent = dict.trapSafeDesc;
+          els.btnApplySafeMax.style.display = 'none';
+        }
+
+        /* Visual budget bar scaling: if overflowing, scale track to totalComp so the max_tokens vertical line sits inside! */
+        var scaleMax = Math.max(state.maxTokens, totalComp, 1);
+        els.barReason.style.width = ((reasonTok / scaleMax) * 100).toFixed(1) + '%';
+        els.barVisible.style.width = ((visibleTok / scaleMax) * 100).toFixed(1) + '%';
+        els.barLimitLine.style.left = Math.min(99.5, (state.maxTokens / scaleMax) * 100).toFixed(1) + '%';
+
+        els.statBudgetBreakdown.textContent =
+          (lang === 'en' ? 'Thinking: ' : '思考: ') + reasonTok.toLocaleString('en-US') +
+          (lang === 'en' ? ' + Output: ' : ' + 出力: ') + visibleTok.toLocaleString('en-US') +
+          ' = ' + totalComp.toLocaleString('en-US') + ' / ' + state.maxTokens.toLocaleString('en-US') + ' tok (' + utilPct + '%)';
+        els.statSafeRec.textContent =
+          (lang === 'en' ? 'Recommended max_tokens: ≥ ' : '推奨 max_tokens: ') + safeRec.toLocaleString('en-US') + (lang === 'en' ? '' : ' 以上');
+
+        /* 4. Compute all model rows */
+        var allRows = getAllModels().map(function (m) { return computeModelRow(m, analysis); });
+
+        /* Verdict KPIs */
+        var sortedByCost = allRows.slice().sort(function (a, b) { return a.monthlyUsd - b.monthlyUsd; });
+        var cheapest = sortedByCost[0];
+        els.vCheapestCost.textContent = fmtMoney(cheapest.monthlyUsd, cheapest.monthlyJpy, false);
+        els.vCheapestModel.textContent = cheapest.model.name + (cheapest.isFullyFree ? (lang === 'en' ? ' (Free ≤3k/mo)' : '（無料枠内）') : '');
+
+        var midRows = sortedByCost.filter(function (r) { return r.model.tier === 'mid' || r.model.tier === 'flagship'; });
+        var bestMid = midRows[0] || cheapest;
+        els.vMidCost.textContent = fmtMoney(bestMid.monthlyUsd, bestMid.monthlyJpy, false);
+        els.vMidModel.textContent = bestMid.model.name;
+
+        /* Reasoning tax on Claude Sonnet 5.5 ($10/1M out) */
+        var reasonTaxUsd = (reasonTok * 10.0 / 1000000) * monthlyReqs;
+        var reasonTaxJpy = reasonTaxUsd * Math.max(1, state.fxRate || 154);
+        els.vReasonTaxVal.textContent = state.reasonMult <= 1 ? (state.currency === 'JPY' ? '¥0' : '$0.00') : ('+' + fmtMoney(reasonTaxUsd, reasonTaxJpy, false));
+        els.vReasonTaxSub.textContent = state.reasonMult <= 1
+          ? (lang === 'en' ? 'Multiplier 1.0× (OFF)' : '倍率 1.0×（OFF）')
+          : ('+' + reasonTok.toLocaleString('en-US') + (lang === 'en' ? ' hidden tok/req' : ' 思考tok/req'));
+
+        /* 5. Filter & Sort table */
+        var visibleRows = allRows.filter(function (r) {
+          if (state.providerFilter === 'all') return true;
+          return r.model.provider === state.providerFilter;
+        });
+
+        visibleRows.sort(function (a, b) {
+          var dir = state.sortAsc ? 1 : -1;
+          if (state.sortKey === 'name') return a.model.name.localeCompare(b.model.name) * dir;
+          if (state.sortKey === 'inTok') return (a.inTok - b.inTok) * dir;
+          if (state.sortKey === 'inRate') {
+            var ra = a.model.currency === 'JPY' ? a.effInRate / (state.fxRate || 154) : a.effInRate;
+            var rb = b.model.currency === 'JPY' ? b.effInRate / (state.fxRate || 154) : b.effInRate;
+            return (ra - rb) * dir;
+          }
+          return (a.monthlyUsd - b.monthlyUsd) * dir;
+        });
+
+        var maxCostUsd = visibleRows.reduce(function (mx, r) { return Math.max(mx, r.monthlyUsd); }, 0.00001);
+        var minCostUsd = visibleRows.reduce(function (mn, r) { return Math.min(mn, r.monthlyUsd); }, Infinity);
+
+        /* Update sort header indicators */
+        document.querySelectorAll('.sort-btn').forEach(function (btn) {
+          var key = btn.getAttribute('data-sort');
+          var baseKey = btn.getAttribute('data-i18n');
+          var baseText = dict[baseKey] || btn.textContent;
+          if (key === state.sortKey) {
+            btn.textContent = baseText + (state.sortAsc ? ' ▲' : ' ▼');
+          } else {
+            btn.textContent = baseText;
+          }
+        });
+
+        /* Render rows */
+        var frag = document.createDocumentFragment();
+        visibleRows.forEach(function (row) {
+          var tr = document.createElement('tr');
+          if (row.monthlyUsd === minCostUsd && visibleRows.length > 1) {
+            tr.className = 'is-cheapest';
+          }
+
+          var totalPct = row.monthlyUsd > 0 ? Math.max(3, (row.monthlyUsd / maxCostUsd) * 100) : 0;
+
+          var tdModel = document.createElement('td');
+          var nameSpan = document.createElement('span');
+          nameSpan.className = 'model-name';
+          nameSpan.textContent = row.model.name;
+          tdModel.appendChild(nameSpan);
+
+          var metaLine = document.createElement('div');
+          metaLine.className = 'model-meta-line';
+
+          var provTxt = document.createElement('span');
+          provTxt.className = 'model-provider-txt';
+          provTxt.textContent = row.model.provider;
+          metaLine.appendChild(provTxt);
+
+          if (row.isFullyFree) {
+            var fTag = document.createElement('span');
+            fTag.className = 'm-tag is-free';
+            fTag.textContent = lang === 'en' ? 'FREE ≤3k/mo' : '無料枠内(≤3k/月)';
+            metaLine.appendChild(fTag);
+          } else if (row.model.freeReqs) {
+            var fTag2 = document.createElement('span');
+            fTag2.className = 'm-tag is-jp';
+            fTag2.textContent = lang === 'en' ? '3k req/mo free' : '3,000 req無料控除';
+            metaLine.appendChild(fTag2);
+          }
+
+          if (row.model.tokenizer === 'jp') {
+            var jTag = document.createElement('span');
+            jTag.className = 'm-tag is-jp';
+            jTag.textContent = 'JP-Opt';
+            metaLine.appendChild(jTag);
+          }
+
+          if (row.longCtxTriggered) {
+            var lTag = document.createElement('span');
+            lTag.className = 'm-tag is-warn';
+            lTag.textContent = '>100K (5×)';
+            metaLine.appendChild(lTag);
+          } else if (row.model.warnTagJa) {
+            var wTag = document.createElement('span');
+            wTag.className = 'm-tag is-warn';
+            wTag.textContent = lang === 'en' ? row.model.warnTagEn : row.model.warnTagJa;
+            metaLine.appendChild(wTag);
+          } else if (row.model.noteJa && !row.model.freeReqs) {
+            var nTxt = document.createElement('span');
+            nTxt.textContent = '· ' + (lang === 'en' ? row.model.noteEn : row.model.noteJa);
+            metaLine.appendChild(nTxt);
+          }
+
+          tdModel.appendChild(metaLine);
+
+          /* Mobile-only compact spec + inline cost bar so Monthly Cost stays pinned right */
+          var mobSpec = document.createElement('div');
+          mobSpec.className = 'mobile-row-spec';
+          mobSpec.textContent = row.inTok.toLocaleString('en-US') + ' tok · ' + fmtRatePair(row);
+          tdModel.appendChild(mobSpec);
+
+          var mobTrack = document.createElement('div');
+          mobTrack.className = 'cost-bar-track mobile-inline-bar';
+          var mIn = document.createElement('div');
+          mIn.className = 'cost-bar-in';
+          mIn.style.width = (totalPct * row.inShare).toFixed(1) + '%';
+          var mOut = document.createElement('div');
+          mOut.className = 'cost-bar-out';
+          mOut.style.width = (totalPct * row.outShare).toFixed(1) + '%';
+          mobTrack.appendChild(mIn);
+          mobTrack.appendChild(mOut);
+          tdModel.appendChild(mobTrack);
+
+          tr.appendChild(tdModel);
+
+          var tdTok = document.createElement('td');
+          tdTok.className = 'is-num col-hide-sm';
+          tdTok.textContent = row.inTok.toLocaleString('en-US');
+          tr.appendChild(tdTok);
+
+          var tdRate = document.createElement('td');
+          tdRate.className = 'is-num col-hide-sm';
+          tdRate.textContent = fmtRatePair(row);
+          tr.appendChild(tdRate);
+
+          var tdBar = document.createElement('td');
+          tdBar.className = 'cost-bar-cell';
+          var track = document.createElement('div');
+          track.className = 'cost-bar-track';
+          var inBar = document.createElement('div');
+          inBar.className = 'cost-bar-in';
+          inBar.style.width = (totalPct * row.inShare).toFixed(1) + '%';
+          var outBar = document.createElement('div');
+          outBar.className = 'cost-bar-out';
+          outBar.style.width = (totalPct * row.outShare).toFixed(1) + '%';
+          track.appendChild(inBar);
+          track.appendChild(outBar);
+          tdBar.appendChild(track);
+
+          var barMeta = document.createElement('div');
+          barMeta.className = 'cost-bar-meta';
+          if (row.monthlyUsd === 0) {
+            barMeta.textContent = lang === 'en' ? 'Covered by free quota' : '無料枠でカバー';
+          } else {
+            barMeta.textContent = 'In ' + Math.round(row.inShare * 100) + '% · Out ' + Math.round(row.outShare * 100) + '%';
+          }
+          tdBar.appendChild(barMeta);
+          tr.appendChild(tdBar);
+
+          var tdCost = document.createElement('td');
+          tdCost.className = 'is-num';
+          var mainCost = document.createElement('span');
+          mainCost.className = 'cost-main' + (row.monthlyUsd === 0 ? ' is-free' : '');
+          mainCost.textContent = fmtMoney(row.monthlyUsd, row.monthlyJpy, false);
+          var subCost = document.createElement('span');
+          subCost.className = 'cost-sub';
+          subCost.textContent = fmtMoney(row.per1kUsd, row.per1kJpy, false) + ' / 1k req';
+          tdCost.appendChild(mainCost);
+          tdCost.appendChild(subCost);
+          tr.appendChild(tdCost);
+
+          frag.appendChild(tr);
+        });
+
+        els.costTbody.innerHTML = '';
+        els.costTbody.appendChild(frag);
+
+        /* 6. Feature 4: Bloat & AI-Slop Inspector */
+        var bloat = inspectBloat(state.prompt);
+        state.lastTrimmedText = bloat.trimmedText;
+
+        /* Savings evaluated on Claude Sonnet 5.5 ($2.00/1M in, $0.10/1M cache) */
+        var cFrac = Math.min(1, Math.max(0, state.cachePct / 100));
+        var effSonnetIn = 2.0 * (1 - cFrac) + 0.10 * cFrac;
+        var saveUsd = (bloat.trimTokens * effSonnetIn / 1000000) * monthlyReqs;
+        var saveJpy = saveUsd * Math.max(1, state.fxRate || 154);
+
+        els.bloatSavingsVal.textContent =
+          '-' + bloat.trimTokens.toLocaleString('en-US') + ' tok/req · ' +
+          fmtMoney(saveUsd, saveJpy, false) + '/mo';
+
+        els.bloatList.innerHTML = '';
+        if (bloat.findings.length === 0) {
+          els.bloatClean.style.display = 'block';
+          els.btnApplyTrim.disabled = true;
+          els.btnApplyTrim.style.opacity = '0.5';
+        } else {
+          els.bloatClean.style.display = 'none';
+          els.btnApplyTrim.disabled = false;
+          els.btnApplyTrim.style.opacity = '1';
+          bloat.findings.forEach(function (f) {
+            var li = document.createElement('li');
+            li.className = 'bloat-item';
+            var hd = document.createElement('div');
+            hd.className = 'bloat-item-head';
+            var titleSp = document.createElement('span');
+            titleSp.textContent = f.title + ' (' + f.count + ')';
+            var tokSp = document.createElement('span');
+            tokSp.className = 'bloat-tok-tag';
+            tokSp.textContent = '-' + f.tokens + ' tok';
+            hd.appendChild(titleSp);
+            hd.appendChild(tokSp);
+            li.appendChild(hd);
+
+            var sm = document.createElement('div');
+            sm.className = 'bloat-matches';
+            sm.textContent = f.samples.map(function (s) { return '「' + s.slice(0, 60) + (s.length > 60 ? '…' : '') + '」'; }).join('  ');
+            li.appendChild(sm);
+            els.bloatList.appendChild(li);
+          });
+        }
+
+        els.trimPreviewBox.classList.toggle('is-open', state.trimOpen);
+        els.btnToggleTrim.textContent = state.trimOpen ? dict.btnHideTrim : dict.btnPreviewTrim;
+        if (state.trimOpen) {
+          els.trimPreviewMeta.textContent =
+            (lang === 'en' ? 'Trimmed: ' : '軽量化後: ') +
+            bloat.origTokens + ' → ' + bloat.newTokens + ' tok (-' + Math.max(0, bloat.origTokens - bloat.newTokens) + ' tok)';
+          els.trimPreviewCode.textContent = bloat.trimmedText || '(empty)';
+        }
+      }
+
+      /* Build Markdown summary table for clipboard */
+      function buildMarkdownSummary() {
+        var analysis = analyzePrompt(state.prompt);
+        var rows = getAllModels().map(function (m) { return computeModelRow(m, analysis); })
+          .sort(function (a, b) { return a.monthlyUsd - b.monthlyUsd; });
+        var lines = [
+          '### LLM API Cost Estimate (' + (state.reqPerDay * 30).toLocaleString('en-US') + ' req/mo, Cache ' + state.cachePct + '%, Reasoning ' + state.reasonMult + '×)',
+          '',
+          '| Model | Input tok | Rate (In/Out) | Monthly (' + state.currency + ') | Per 1k req |',
+          '| :--- | ---: | ---: | ---: | ---: |'
+        ];
+        rows.forEach(function (r) {
+          lines.push('| ' + r.model.name + ' | ' + r.inTok + ' | ' + fmtRatePair(r) + ' | ' + fmtMoney(r.monthlyUsd, r.monthlyJpy, false) + ' | ' + fmtMoney(r.per1kUsd, r.per1kJpy, false) + ' |');
+        });
+        lines.push('', '_Generated locally with KitWorks Lab LLM Cost & Reasoning-Trap Simulator (Nov 2026 rates)._');
+        return lines.join('\n');
+      }
+
+      /* Event wiring */
+      els.promptInput.value = state.prompt;
+      els.promptInput.addEventListener('input', function () {
+        state.prompt = els.promptInput.value;
+        document.querySelectorAll('.preset-btn').forEach(function (b) { b.classList.remove('is-active'); });
+        renderAll();
+      });
+
+      els.btnClearPrompt.addEventListener('click', function () {
+        state.prompt = '';
+        els.promptInput.value = '';
+        document.querySelectorAll('.preset-btn').forEach(function (b) { b.classList.remove('is-active'); });
+        renderAll();
+      });
+
+      document.querySelectorAll('.preset-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var key = btn.getAttribute('data-preset');
+          if (!SAMPLES[key]) return;
+          state.prompt = SAMPLES[key];
+          els.promptInput.value = state.prompt;
+          document.querySelectorAll('.preset-btn').forEach(function (b) {
+            b.classList.toggle('is-active', b === btn);
+          });
+          renderAll();
+        });
+      });
+
+      function bindRangeNumber(rng, inp, stateKey, minV, maxV, isFloat, onExtra) {
+        rng.addEventListener('input', function () {
+          var v = isFloat ? parseFloat(rng.value) : parseInt(rng.value, 10);
+          if (isNaN(v)) v = minV;
+          state[stateKey] = v;
+          inp.value = v;
+          if (onExtra) onExtra(v);
+          renderAll();
+        });
+        inp.addEventListener('input', function () {
+          var v = isFloat ? parseFloat(inp.value) : parseInt(inp.value, 10);
+          if (isNaN(v)) return;
+          v = Math.max(minV, Math.min(maxV, v));
+          state[stateKey] = v;
+          rng.value = Math.min(parseFloat(rng.max), Math.max(parseFloat(rng.min), v));
+          if (onExtra) onExtra(v);
+          renderAll();
+        });
+      }
+
+      function syncReqChips(val) {
+        document.querySelectorAll('[data-req]').forEach(function (b) {
+          b.classList.toggle('is-active', parseInt(b.getAttribute('data-req'), 10) === val);
+        });
+      }
+
+      function syncReasonChips(val) {
+        document.querySelectorAll('[data-reason]').forEach(function (b) {
+          b.classList.toggle('is-active', parseFloat(b.getAttribute('data-reason')) === val);
+        });
+      }
+
+      bindRangeNumber(els.rngReqDay, els.inpReqDay, 'reqPerDay', 1, 500000, false, syncReqChips);
+      bindRangeNumber(els.rngOutTok, els.inpOutTok, 'outTokens', 1, 65536, false);
+      bindRangeNumber(els.rngCache, els.inpCache, 'cachePct', 0, 100, false);
+      bindRangeNumber(els.rngReason, els.inpReason, 'reasonMult', 1, 16, true, syncReasonChips);
+      bindRangeNumber(els.rngMaxTok, els.inpMaxTok, 'maxTokens', 64, 65536, false);
+
+      document.querySelectorAll('[data-req]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var v = parseInt(btn.getAttribute('data-req'), 10);
+          state.reqPerDay = v;
+          els.inpReqDay.value = v;
+          els.rngReqDay.value = Math.min(5000, v);
+          syncReqChips(v);
+          renderAll();
+        });
+      });
+
+      document.querySelectorAll('[data-reason]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var v = parseFloat(btn.getAttribute('data-reason'));
+          state.reasonMult = v;
+          els.inpReason.value = v;
+          els.rngReason.value = Math.min(8, v);
+          syncReasonChips(v);
+          renderAll();
+        });
+      });
+
+      els.btnApplySafeMax.addEventListener('click', function () {
+        var safeVal = parseInt(els.btnApplySafeMax.getAttribute('data-safe-val'), 10) || 2048;
+        state.maxTokens = safeVal;
+        els.inpMaxTok.value = safeVal;
+        els.rngMaxTok.value = Math.min(8192, safeVal);
+        renderAll();
+      });
+
+      document.querySelectorAll('[data-currency]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          state.currency = btn.getAttribute('data-currency');
+          document.querySelectorAll('[data-currency]').forEach(function (b) {
+            b.classList.toggle('is-active', b === btn);
+          });
+          renderAll();
+        });
+      });
+
+      els.inpFx.addEventListener('input', function () {
+        var v = parseFloat(els.inpFx.value);
+        if (!isNaN(v) && v >= 50 && v <= 500) {
+          state.fxRate = v;
+          renderAll();
+        }
+      });
+
+      document.querySelectorAll('[data-provider]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          state.providerFilter = btn.getAttribute('data-provider');
+          document.querySelectorAll('[data-provider]').forEach(function (b) {
+            b.classList.toggle('is-active', b === btn);
+          });
+          renderAll();
+        });
+      });
+
+      document.querySelectorAll('.sort-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var key = btn.getAttribute('data-sort');
+          if (state.sortKey === key) {
+            state.sortAsc = !state.sortAsc;
+          } else {
+            state.sortKey = key;
+            state.sortAsc = true;
+          }
+          renderAll();
+        });
+      });
+
+      /* Custom rate live inputs */
+      ['custName', 'custIn', 'custCache', 'custOut', 'custTok'].forEach(function (id) {
+        els[id].addEventListener('input', function () {
+          state.custom.name = els.custName.value;
+          state.custom.inRate = parseFloat(els.custIn.value) || 0;
+          state.custom.cacheRate = parseFloat(els.custCache.value) || 0;
+          state.custom.outRate = parseFloat(els.custOut.value) || 0;
+          state.custom.tokenizer = els.custTok.value;
+          renderAll();
+        });
+        els[id].addEventListener('change', function () {
+          state.custom.tokenizer = els.custTok.value;
+          renderAll();
+        });
+      });
+
+      /* Copy Markdown table */
+      els.btnCopyMd.addEventListener('click', function () {
+        var md = buildMarkdownSummary();
+        window.KitWorksTools.copyText(md).then(function () {
+          var dict = DICT[getLang()];
+          els.copyMdFeedback.textContent = '✓ ' + dict.copiedMd;
+          setTimeout(function () { els.copyMdFeedback.textContent = ''; }, 2400);
+        });
+      });
+
+      /* Bloat inspector actions */
+      els.btnToggleTrim.addEventListener('click', function () {
+        state.trimOpen = !state.trimOpen;
+        renderAll();
+      });
+
+      els.btnApplyTrim.addEventListener('click', function () {
+        if (!state.lastTrimmedText) return;
+        state.prompt = state.lastTrimmedText;
+        els.promptInput.value = state.prompt;
+        renderAll();
+      });
+
+      els.btnCopyTrim.addEventListener('click', function () {
+        window.KitWorksTools.copyText(state.lastTrimmedText || '').then(function () {
+          var orig = els.btnCopyTrim.textContent;
+          els.btnCopyTrim.textContent = '✓';
+          setTimeout(function () { els.btnCopyTrim.textContent = orig; }, 1600);
+        });
+      });
+
+      window.addEventListener('kitworks:langchange', function () {
+        renderAll();
+      });
+
+      window.KitWorksTools.initI18n(DICT);
+      renderAll();
+    })();
+  </script>
+</body>
+</html>
