@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KitWorks Lab｜OBSカスタムドック配信ツール＆ライブデモ</title>
+  <meta name="description" content="OBSのカスタムブラウザドックから手元で操作できる、完全ローカル動作の配信オーバーレイ（TokiDock・GoalDock）。ブラウザ上でそのまま動作を試せます。">
+  <meta property="og:title" content="KitWorks Lab — OBS Custom Dock Overlays & Live Demos">
+  <meta property="og:description" content="Try TokiDock and GoalDock live in your browser. 100% local HTML overlays controlled from OBS Studio's Custom Browser Dock.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="assets/avatar-600.png">
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand-link" href="#top">
+        <img class="brand-avatar" src="assets/avatar-600.png" alt="KitWorks Lab" width="36" height="36">
+        <span class="brand-name">KitWorks Lab</span>
+      </a>
+
+      <div class="header-right">
+        <nav class="site-nav" aria-label="Primary">
+          <a href="#tokidock-demo" data-i18n="navToki">TokiDock</a>
+          <a href="#goaldock-demo" data-i18n="navGoal">GoalDock</a>
+          <a href="#compare" data-i18n="navCompare">Lite / Pro 比較</a>
+          <a href="#guides" data-i18n="navGuides">解説・書籍</a>
+        </nav>
+
+        <div class="lang-toggle" role="group" aria-label="Language">
+          <button type="button" class="lang-btn is-active" data-lang-btn="ja" aria-pressed="true">JP</button>
+          <button type="button" class="lang-btn" data-lang-btn="en" aria-pressed="false">EN</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="top">
+    <!-- Hero -->
+    <section class="hero">
+      <div class="container hero-grid">
+        <div>
+          <h1 class="hero-title" data-i18n="heroTitle" data-i18n-multiline="true">OBSの操作ボタンを、<br>配信画面に映さない。</h1>
+          <p class="hero-lead" data-i18n="heroLead">タイマーの開始も、登録者カウントの+1も、OBSの「カスタムブラウザドック」から手元でワンクリック。外部サーバーやログイン不要、ローカルHTMLだけで動く配信ツールを作っています。</p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="#tokidock-demo" data-i18n="heroCtaDemo">ブラウザでデモを触る</a>
+            <a class="btn btn-secondary" href="https://kitworks.booth.pm/" target="_blank" rel="noopener noreferrer" data-i18n="heroCtaBooth">BOOTH ショップを見る</a>
+          </div>
+          <p class="hero-note" data-i18n="heroNote">商用・収益化配信OK / クレジット表記不要 / 無料お試し版（Lite）あり</p>
+        </div>
+
+        <aside class="arch-window" aria-label="OBS local sync overview">
+          <div class="window-bar">
+            <span class="window-dots" aria-hidden="true"><span></span><span></span><span></span></span>
+            <span class="window-bar-title" data-i18n="archTitle">OBSの中だけで完結する2ファイル構成</span>
+          </div>
+          <div class="arch-body">
+            <div class="arch-diagram">
+              <div class="arch-node">
+                <span class="arch-file" data-i18n="archDockFile">controller.html</span>
+                <p class="arch-role" data-i18n="archDockRole">OBS カスタムブラウザドック</p>
+                <p class="arch-desc" data-i18n="archDockDesc">手元の操作パネル。配信画面には一切映りません。</p>
+              </div>
+              <div class="arch-bridge" aria-hidden="true">
+                <span class="arch-arrow">→</span>
+                <span data-i18n="archBridge">ローカル同期</span>
+              </div>
+              <div class="arch-node arch-node-accent">
+                <span class="arch-file" data-i18n="archWidgetFile">widget.html</span>
+                <p class="arch-role" data-i18n="archWidgetRole">OBS ブラウザソース（透過）</p>
+                <p class="arch-desc" data-i18n="archWidgetDesc">配信画面に載せる表示用オーバーレイ。変更が即座に反映されます。</p>
+              </div>
+            </div>
+            <p class="arch-foot" data-i18n="archFoot">ネット接続や外部サービス連携なし。ZIPを解凍してOBSに入れるだけです。</p>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- Live Demo 1: TokiDock -->
+    <section id="tokidock-demo" class="section">
+      <div class="container">
+        <div class="section-head">
+          <div class="section-head-copy">
+            <h2 class="section-title" data-i18n="tokiHeading">TokiDock — タイマー＆ライブ時計</h2>
+            <p class="section-desc" data-i18n="tokiDesc">作業配信・勉強配信向けのポモドーロタイマーと、雑談・同時視聴向けの時計＆カウントダウンを1つにまとめました。下のドックを触ると、右のOBS配信プレビューがリアルタイムに動きます。</p>
+          </div>
+          <div class="section-actions">
+            <a class="btn btn-secondary btn-sm" href="https://kitworks.booth.pm/items/9206837" target="_blank" rel="noopener noreferrer" data-i18n="tokiLiteBtn">Lite 無料版（¥0）</a>
+            <a class="btn btn-primary btn-sm" href="https://kitworks.booth.pm/items/9206701" target="_blank" rel="noopener noreferrer" data-i18n="tokiProBtn">Pro 版（¥500）</a>
+          </div>
+        </div>
+
+        <div id="tokidock-workbench" class="workbench">
+          <!-- Dock Controller -->
+          <div class="dock-panel">
+            <div class="window-bar">
+              <span class="window-dots" aria-hidden="true"><span></span><span></span><span></span></span>
+              <span class="window-bar-title" data-i18n="dockWindowLabel">OBS カスタムブラウザドック — controller.html</span>
+            </div>
+            <div class="dock-body">
+              <div class="dock-group">
+                <span class="dock-label" data-i18n="tokiModeLabel">モード</span>
+                <div class="segmented mode-grid-2">
+                  <button type="button" class="dock-btn is-active" data-toki-mode="pomodoro" aria-pressed="true">
+                    <span data-i18n="tokiModePomodoro">ポモドーロ</span>
+                    <span class="edition-mini is-lite" data-i18n="liteTag">Lite</span>
+                  </button>
+                  <button type="button" class="dock-btn" data-toki-mode="waiting" aria-pressed="false">
+                    <span data-i18n="tokiModeWaiting">待機カウント</span>
+                    <span class="edition-mini is-pro" data-i18n="proTag">Pro</span>
+                  </button>
+                  <button type="button" class="dock-btn" data-toki-mode="clock" aria-pressed="false">
+                    <span data-i18n="tokiModeClock">ライブ時計</span>
+                    <span class="edition-mini is-lite" data-i18n="liteTag">Lite</span>
+                  </button>
+                  <button type="button" class="dock-btn" data-toki-mode="watchparty" aria-pressed="false">
+                    <span data-i18n="tokiModeWatch">同時視聴</span>
+                    <span class="edition-mini is-pro" data-i18n="proTag">Pro</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="dock-group">
+                <span class="dock-label" data-i18n="tokiPresetLabel">プリセット / 時間</span>
+                <div class="segmented">
+                  <button type="button" class="dock-btn" data-toki-preset="25-5" data-i18n="tokiPreset25">25/5 作業</button>
+                  <button type="button" class="dock-btn" data-toki-preset="50-10" data-i18n="tokiPreset50">50/10 集中</button>
+                  <button type="button" class="dock-btn" data-toki-preset="15-3" data-i18n="tokiPreset15">15分</button>
+                  <button type="button" class="dock-btn" data-toki-preset="wait-5" data-i18n="tokiPreset5">5分 待機</button>
+                </div>
+                <div class="dock-row">
+                  <label class="dock-label" for="toki-min-input" data-i18n="tokiCustomMin">分数</label>
+                  <input id="toki-min-input" class="dock-input dock-input-sm" type="number" min="1" max="180" value="25">
+                  <button id="toki-apply-min" type="button" class="dock-btn" data-i18n="tokiApplyMin">反映</button>
+                </div>
+              </div>
+
+              <div class="dock-group">
+                <div class="segmented">
+                  <button id="toki-btn-start" type="button" class="dock-btn dock-btn-primary" data-i18n="tokiStart">スタート</button>
+                  <button id="toki-btn-reset" type="button" class="dock-btn" data-i18n="tokiReset">リセット</button>
+                  <button id="toki-btn-phase" type="button" class="dock-btn" data-i18n="tokiNextPhase">作業/休憩を切替</button>
+                </div>
+              </div>
+
+              <div class="dock-group">
+                <label class="dock-label" for="toki-label-input" data-i18n="tokiLabelField">画面ラベル</label>
+                <input id="toki-label-input" class="dock-input" type="text" maxlength="40" placeholder="作業セッション / FOCUS SESSION">
+              </div>
+
+              <div class="dock-group">
+                <span class="dock-label" data-i18n="tokiLayoutLabel">レイアウト</span>
+                <div class="segmented">
+                  <button type="button" class="dock-btn is-active" data-toki-layout="standard" aria-pressed="true" data-i18n="tokiLayoutStandard">標準（横）</button>
+                  <button type="button" class="dock-btn" data-toki-layout="compact" aria-pressed="false" data-i18n="tokiLayoutCompact">コンパクト</button>
+                  <button type="button" class="dock-btn" data-toki-layout="vertical" aria-pressed="false" data-i18n="tokiLayoutVertical">縦型配信</button>
+                </div>
+              </div>
+
+              <div class="dock-group">
+                <span class="dock-label" data-i18n="tokiThemeLabel">テーマ（全12種から抜粋）</span>
+                <div id="toki-theme-grid" class="theme-grid"></div>
+              </div>
+
+              <p class="dock-hint" data-i18n="tokiHint">「待機カウント」で残り0秒になると「まもなく開始します！」に自動切替。「同時視聴」は10秒カウントダウン後に経過時間カウントアップへ移ります。</p>
+            </div>
+          </div>
+
+          <!-- OBS Overlay Preview -->
+          <div class="preview-panel">
+            <div class="window-bar">
+              <span class="window-dots" aria-hidden="true"><span></span><span></span><span></span></span>
+              <span class="window-bar-title" data-i18n="previewWindowLabel">OBS 配信画面プレビュー — widget.html</span>
+              <div class="preview-bar-right">
+                <span id="toki-sync-badge" class="sync-badge" data-i18n="syncIdle">ローカル同期中</span>
+              </div>
+            </div>
+            <div id="toki-canvas" class="preview-stage" data-bg="dark">
+              <div class="stage-toolbar">
+                <span class="stage-tag">OBS Browser Source · 1920×1080 Canvas</span>
+                <div class="bg-switch" role="group" aria-label="Preview backdrop">
+                  <button type="button" class="is-active" data-toki-bg="dark" aria-pressed="true" data-i18n="bgDarkLabel">暗い配信背景</button>
+                  <button type="button" data-toki-bg="light" aria-pressed="false" data-i18n="bgLightLabel">明るい作業背景</button>
+                </div>
+              </div>
+
+              <div class="stage-center">
+                <div id="toki-widget" class="toki-widget" data-layout="standard" aria-live="polite">
+                  <div class="toki-widget-top">
+                    <span id="toki-overlay-badge" class="toki-badge">作業セッション</span>
+                    <div id="toki-overlay-dots" class="toki-dots" aria-hidden="true"></div>
+                  </div>
+                  <div id="toki-overlay-time" class="toki-time">25:00</div>
+                  <div id="toki-overlay-sub" class="toki-sub">セッション 1 / 4 · 25m / 5m</div>
+                  <div id="toki-overlay-progress-wrap" class="toki-progress-track">
+                    <div id="toki-overlay-progress-fill" class="toki-progress-fill"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="stage-footer-meta">
+                <span>Transparent PNG-alpha HTML source</span>
+                <span>Zero controls visible on stream</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Live Demo 2: GoalDock -->
+    <section id="goaldock-demo" class="section section-alt">
+      <div class="container">
+        <div class="section-head">
+          <div class="section-head-copy">
+            <h2 class="section-title" data-i18n="goalHeading">GoalDock — 目標ゲージ・耐久カウンター・お題ルーレット</h2>
+            <p class="section-desc" data-i18n="goalDesc">配信中にテキストソースを開いて手打ちする手間を省くためのツールです。目標ゲージの増減、耐久配信の勝敗カウント、雑談のお題抽選をドックからワンクリックで回せます。</p>
+          </div>
+          <div class="section-actions">
+            <a class="btn btn-secondary btn-sm" href="https://kitworks.booth.pm/items/9207744" target="_blank" rel="noopener noreferrer" data-i18n="goalLiteBtn">Lite 無料版（¥0）</a>
+            <a class="btn btn-primary btn-sm" href="https://kitworks.booth.pm/items/9207731" target="_blank" rel="noopener noreferrer" data-i18n="goalProBtn">Pro 版（¥500）</a>
+          </div>
+        </div>
+
+        <div id="goaldock-workbench" class="workbench">
+          <!-- Dock Controller -->
+          <div class="dock-panel">
+            <div class="window-bar">
+              <span class="window-dots" aria-hidden="true"><span></span><span></span><span></span></span>
+              <span class="window-bar-title" data-i18n="dockWindowLabel">OBS カスタムブラウザドック — controller.html</span>
+            </div>
+            <div class="dock-body">
+              <div class="dock-group">
+                <span class="dock-label" data-i18n="goalModeLabel">モード</span>
+                <div class="segmented">
+                  <button type="button" class="dock-btn is-active" data-goal-mode="goal" aria-pressed="true">
+                    <span data-i18n="goalModeGoal">目標ゲージ</span>
+                    <span class="edition-mini is-lite" data-i18n="liteTag">Lite</span>
+                  </button>
+                  <button type="button" class="dock-btn" data-goal-mode="counter" aria-pressed="false">
+                    <span data-i18n="goalModeCounter">耐久カウンター</span>
+                    <span class="edition-mini is-pro" data-i18n="proTag">Pro</span>
+                  </button>
+                  <button type="button" class="dock-btn" data-goal-mode="roulette" aria-pressed="false">
+                    <span data-i18n="goalModeRoulette">お題ルーレット</span>
+                    <span class="edition-mini is-pro" data-i18n="proTag">Pro</span>
+                  </button>
+                </div>
+              </div>
+
+              <div id="goal-edit-fields" class="dock-group">
+                <div class="dock-fields-grid">
+                  <div>
+                    <label class="dock-label" for="goal-title-input" data-i18n="goalTitleField">タイトル</label>
+                    <input id="goal-title-input" class="dock-input" type="text" maxlength="48" value="チャンネル登録者 1,000人チャレンジ">
+                  </div>
+                  <div>
+                    <label class="dock-label" for="goal-target-input" data-i18n="goalTargetField">目標値</label>
+                    <input id="goal-target-input" class="dock-input" type="number" min="1" max="9999999" value="1000">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Goal Bar Controls -->
+              <div id="goal-controls-goal" class="dock-group">
+                <div class="segmented">
+                  <button type="button" class="dock-btn" data-goal-preset="sub" data-i18n="goalPresetSub">登録者</button>
+                  <button type="button" class="dock-btn" data-goal-preset="like" data-i18n="goalPresetLike">高評価</button>
+                  <button type="button" class="dock-btn" data-goal-preset="super" data-i18n="goalPresetSuper">スパチャ</button>
+                </div>
+                <span class="dock-label" data-i18n="goalQuickLabel">手元カウント操作</span>
+                <div class="segmented">
+                  <button type="button" class="dock-btn" data-goal-delta="-1">-1</button>
+                  <button type="button" class="dock-btn dock-btn-primary" data-goal-delta="1">+1</button>
+                  <button type="button" class="dock-btn dock-btn-primary" data-goal-delta="5">+5</button>
+                  <button type="button" class="dock-btn" data-goal-delta="10">+10</button>
+                  <button type="button" class="dock-btn" data-goal-delta="reset" data-i18n="tokiReset">リセット</button>
+                  <button type="button" class="dock-btn dock-btn-accent-soft" data-goal-delta="max" data-i18n="goalTest100">100%演出を試す</button>
+                </div>
+              </div>
+
+              <!-- Counter Controls -->
+              <div id="goal-controls-counter" class="dock-group" hidden>
+                <span class="dock-label" data-i18n="goalQuickLabel">手元カウント操作</span>
+                <div class="segmented">
+                  <button type="button" class="dock-btn" data-counter-delta="-1">-1</button>
+                  <button type="button" class="dock-btn dock-btn-primary" data-counter-delta="1">+1</button>
+                  <button type="button" class="dock-btn dock-btn-primary" data-counter-delta="5">+5</button>
+                  <button id="goal-btn-undo" type="button" class="dock-btn" data-counter-delta="undo" data-i18n="goalUndo">直前に戻す</button>
+                  <button type="button" class="dock-btn" data-counter-delta="reset" data-i18n="tokiReset">リセット</button>
+                </div>
+              </div>
+
+              <!-- Roulette Controls -->
+              <div id="goal-controls-roulette" class="dock-group" hidden>
+                <div class="segmented">
+                  <button id="goal-btn-spin" type="button" class="dock-btn dock-btn-primary" data-i18n="goalSpin">ルーレットを回す</button>
+                </div>
+              </div>
+
+              <div class="dock-group">
+                <span class="dock-label" data-i18n="goalDensityLabel">サイズ</span>
+                <div class="segmented">
+                  <button type="button" class="dock-btn is-active" data-goal-density="standard" aria-pressed="true" data-i18n="goalDensityStandard">標準</button>
+                  <button type="button" class="dock-btn" data-goal-density="compact" aria-pressed="false" data-i18n="goalDensityCompact">コンパクト</button>
+                </div>
+              </div>
+
+              <div class="dock-group">
+                <span class="dock-label" data-i18n="goalThemeLabel">テーマ（全8種）</span>
+                <div id="goal-theme-grid" class="theme-grid"></div>
+              </div>
+
+              <p class="dock-hint" data-i18n="goalHint">URLに ?mode=goal や ?mode=counter を付ければ、OBS上で目標ゲージと耐久カウンターを同時に並べて出せます。</p>
+            </div>
+          </div>
+
+          <!-- OBS Overlay Preview -->
+          <div class="preview-panel">
+            <div class="window-bar">
+              <span class="window-dots" aria-hidden="true"><span></span><span></span><span></span></span>
+              <span class="window-bar-title" data-i18n="previewWindowLabel">OBS 配信画面プレビュー — widget.html</span>
+              <div class="preview-bar-right">
+                <span id="goal-sync-badge" class="sync-badge" data-i18n="syncIdle">ローカル同期中</span>
+              </div>
+            </div>
+            <div id="goal-canvas" class="preview-stage" data-bg="dark">
+              <div class="stage-toolbar">
+                <span class="stage-tag">OBS Browser Source · ?mode=goal / counter / roulette</span>
+                <div class="bg-switch" role="group" aria-label="Preview backdrop">
+                  <button type="button" class="is-active" data-goal-bg="dark" aria-pressed="true" data-i18n="bgDarkLabel">暗い配信背景</button>
+                  <button type="button" data-goal-bg="light" aria-pressed="false" data-i18n="bgLightLabel">明るい作業背景</button>
+                </div>
+              </div>
+
+              <div class="stage-center">
+                <div id="goal-widget" class="goal-widget" data-density="standard" aria-live="polite">
+                  <!-- Goal View -->
+                  <div id="goal-view-goal">
+                    <div class="goal-top">
+                      <span id="goal-overlay-title" class="goal-title">チャンネル登録者 1,000人チャレンジ</span>
+                      <span id="goal-overlay-percent" class="goal-pct">84%</span>
+                    </div>
+                    <div class="goal-track">
+                      <div id="goal-overlay-bar" class="goal-fill" style="width: 84%;"></div>
+                    </div>
+                    <div class="goal-bottom">
+                      <span id="goal-overlay-numbers" class="goal-numbers">840人 / 1,000人</span>
+                      <span id="goal-overlay-meta" class="goal-meta">あと 160人</span>
+                    </div>
+                  </div>
+
+                  <!-- Counter View -->
+                  <div id="goal-view-counter" hidden>
+                    <div id="counter-overlay-title" class="goal-title">100勝耐久チャレンジ</div>
+                    <div id="counter-overlay-value" class="counter-value">42勝</div>
+                    <div class="goal-track">
+                      <div id="counter-overlay-bar" class="goal-fill" style="width: 42%;"></div>
+                    </div>
+                    <div id="counter-overlay-sub" class="goal-meta">目標 100勝 (42%)</div>
+                  </div>
+
+                  <!-- Roulette View -->
+                  <div id="goal-view-roulette" hidden>
+                    <div id="roulette-overlay-label" class="roulette-label">TOPIC ROULETTE</div>
+                    <div id="roulette-overlay-topic" class="roulette-box">ドックの「ルーレットを回す」で抽選</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="stage-footer-meta">
+                <span>BroadcastChannel + localStorage sync</span>
+                <span>Web Audio subtle FX included</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Lite vs Pro Comparison -->
+    <section id="compare" class="section">
+      <div class="container">
+        <div class="section-head-copy">
+          <h2 class="section-title" data-i18n="compareHeading">Lite（無料）と Pro（¥500）の違い</h2>
+          <p class="section-desc" data-i18n="compareLead">どちらも買い切りで、収益化配信でもそのまま使えます。まずは無料の Lite 版で自分の OBS に入るか確認してから、必要な方だけ Pro 版を選んでください。</p>
+        </div>
+
+        <div class="compare-grid">
+          <!-- TokiDock Table -->
+          <article class="compare-card">
+            <div class="compare-card-head">
+              <h3 data-i18n="tokiCompareTitle">TokiDock 比較</h3>
+              <span class="guide-badge" style="margin:0;">v1.0</span>
+            </div>
+            <table class="compare-table">
+              <thead>
+                <tr>
+                  <th scope="col" data-i18n="colFeature">機能・収録内容</th>
+                  <th scope="col" data-i18n="colLite">Lite（無料 / ¥0）</th>
+                  <th scope="col" data-i18n="colPro">Pro（¥500 / 約$5）</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td data-i18n="tokiRow1Label">ポモドーロタイマー（自動切替・進捗ドット）</td>
+                  <td class="check-yes" data-i18n="yes">対応</td>
+                  <td class="check-yes" data-i18n="yes">対応</td>
+                </tr>
+                <tr>
+                  <td data-i18n="tokiRow2Label">ライブ時計（24h/12h・秒表示・日付）</td>
+                  <td class="check-yes" data-i18n="yes">対応</td>
+                  <td class="check-yes" data-i18n="yes">対応</td>
+                </tr>
+                <tr>
+                  <td data-i18n="tokiRow3Label">待機カウントダウン（0秒で開始表示へ切替）</td>
+                  <td class="check-no" data-i18n="no">—</td>
+                  <td class="check-yes" data-i18n="yes">対応</td>
+                </tr>
+                <tr>
+                  <td data-i18n="tokiRow4Label">同時視聴タイマー（10秒前カウント→経過時間）</td>
+                  <td class="check-no" data-i18n="no">—</td>
+                  <td class="check-yes" data-i18n="yes">対応</td>
+                </tr>
+                <tr>
+                  <td data-i18n="tokiRow5Label">デザインテーマ数</td>
+                  <td data-i18n="tokiRow5Lite">1種（Minimal Glass）</td>
+                  <td data-i18n="tokiRow5Pro">全12種（カスタム色つき）</td>
+                </tr>
+                <tr>
+                  <td data-i18n="tokiRow6Label">レイアウト（標準 / コンパクト / 縦型）</td>
+                  <td class="check-yes" data-i18n="yes">対応</td>
+                  <td class="check-yes" data-i18n="yes">対応</td>
+                </tr>
+                <tr>
+                  <td data-i18n="tokiRow7Label">OBSドック操作・ローカル完結・商用利用</td>
+                  <td class="check-yes" data-i18n="yes">対応</td>
+                  <td class="check-yes" data-i18n="yes">対応</td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="compare-card-foot">
+              <a class="btn btn-secondary btn-sm" href="https://kitworks.booth.pm/items/9206837" target="_blank" rel="noopener noreferrer" data-i18n="ctaBoothLite">BOOTHで無料DL</a>
+              <a class="btn btn-primary btn-sm" href="https://kitworks.booth.pm/items/9206701" target="_blank" rel="noopener noreferrer" data-i18n="ctaBoothPro">BOOTHで見る（¥500）</a>
+            </div>
+          </article>
+
+          <!-- GoalDock Table -->
+          <article class="compare-card">
+            <div class="compare-card-head">
+              <h3 data-i18n="goalCompareTitle">GoalDock 比較</h3>
+              <span class="guide-badge" style="margin:0;">v1.0</span>
+            </div>
+            <table class="compare-table">
+              <thead>
+                <tr>
+                  <th scope="col" data-i18n="colFeature">機能・収録内容</th>
+                  <th scope="col" data-i18n="colLite">Lite（無料 / ¥0）</th>
+                  <th scope="col" data-i18n="colPro">Pro（¥500 / 約$5）</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td data-i18n="goalRow1Label">目標ゲージ（現在値・目標値・%・残り数・100%演出）</td>
+                  <td class="check-yes" data-i18n="yes">対応</td>
+                  <td class="check-yes" data-i18n="yes">対応</td>
+                </tr>
+                <tr>
+                  <td data-i18n="goalRow2Label">耐久カウンター（+1/-1/+5/+10・直前に戻す）</td>
+                  <td class="check-no" data-i18n="no">—</td>
+                  <td class="check-yes" data-i18n="yes">対応</td>
+                </tr>
+                <tr>
+                  <td data-i18n="goalRow3Label">雑談・企画お題ルーレット（重複除外つき）</td>
+                  <td class="check-no" data-i18n="no">—</td>
+                  <td class="check-yes" data-i18n="yes">対応</td>
+                </tr>
+                <tr>
+                  <td data-i18n="goalRow4Label">デザインテーマ数</td>
+                  <td data-i18n="goalRow4Lite">2種（Obsidian / Paper Ink）</td>
+                  <td data-i18n="goalRow4Pro">全8種（カスタム色つき）</td>
+                </tr>
+                <tr>
+                  <td data-i18n="goalRow5Label">URLパラメータによる複数モード同時表示</td>
+                  <td class="check-no" data-i18n="no">—</td>
+                  <td class="check-yes" data-i18n="yes">対応</td>
+                </tr>
+                <tr>
+                  <td data-i18n="goalRow6Label">標準 / コンパクト切替・効果音ON/OFF</td>
+                  <td class="check-yes" data-i18n="yes">対応</td>
+                  <td class="check-yes" data-i18n="yes">対応</td>
+                </tr>
+                <tr>
+                  <td data-i18n="tokiRow7Label">OBSドック操作・ローカル完結・商用利用</td>
+                  <td class="check-yes" data-i18n="yes">対応</td>
+                  <td class="check-yes" data-i18n="yes">対応</td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="compare-card-foot">
+              <a class="btn btn-secondary btn-sm" href="https://kitworks.booth.pm/items/9207744" target="_blank" rel="noopener noreferrer" data-i18n="ctaBoothLite">BOOTHで無料DL</a>
+              <a class="btn btn-primary btn-sm" href="https://kitworks.booth.pm/items/9207731" target="_blank" rel="noopener noreferrer" data-i18n="ctaBoothPro">BOOTHで見る（¥500）</a>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3-Step Setup -->
+    <section id="setup" class="section section-alt">
+      <div class="container">
+        <div class="section-head-copy">
+          <h2 class="section-title" data-i18n="setupHeading">導入は3ステップ、約2分</h2>
+          <p class="section-desc" data-i18n="setupLead">HTMLやCSSを書き換える必要はありません。OBS Studio 28以降ならそのまま動きます。</p>
+        </div>
+
+        <ol class="steps-list">
+          <li class="step-item">
+            <div class="step-num">STEP 01</div>
+            <h3 class="step-title" data-i18n="step1Title">ZIPを解凍する</h3>
+            <p class="step-desc" data-i18n="step1Desc">BOOTHから落としたZIPを、PCの分かりやすいフォルダに解凍します。</p>
+          </li>
+          <li class="step-item">
+            <div class="step-num">STEP 02</div>
+            <h3 class="step-title" data-i18n="step2Title">widget.html をブラウザソースに追加</h3>
+            <p class="step-desc" data-i18n="step2Desc">OBSのソース追加 →「ブラウザ」→「ローカルファイル」にチェックを入れ、widget.html を選びます。</p>
+          </li>
+          <li class="step-item">
+            <div class="step-num">STEP 03</div>
+            <h3 class="step-title" data-i18n="step3Title">controller.html をカスタムドックに登録</h3>
+            <p class="step-desc" data-i18n="step3Desc">OBS上部の「ドック」→「カスタムブラウザドック」に controller.html のパスを貼るだけ。これで手元操作が繋がります。</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- Guides, Book & Channels -->
+    <section id="guides" class="section">
+      <div class="container">
+        <div class="section-head-copy">
+          <h2 class="section-title" data-i18n="guidesHeading">仕組みの解説記事・技術書・公式チャンネル</h2>
+          <p class="section-desc" data-i18n="guidesLead">OBSカスタムドックの作り方や、長時間見ても目が疲れにくい配信画面の組み方、ローカルツールの設計ノウハウも公開しています。</p>
+        </div>
+
+        <div class="guides-grid">
+          <a class="guide-card" href="https://zenn.dev/kitworks/books/388f2b2ed4c788" target="_blank" rel="noopener noreferrer">
+            <div>
+              <span class="guide-badge" data-i18n="zennBadge">Zenn 技術書 / ¥600（第1章無料）</span>
+              <h3 class="guide-title" data-i18n="zennTitle">ゼロ依存 Node.js でつくる実用ローカル自動化＆ダッシュボード設計実践ガイド</h3>
+              <p class="guide-desc" data-i18n="zennDesc">外部SaaSやフレームワークに頼らず、自分のPC上で長く動き続ける自動化ツールとローカルWeb UIを組み立てるための実践メモです。</p>
+            </div>
+            <span class="guide-link-label" data-i18n="readLink">ページを開く →</span>
+          </a>
+
+          <a class="guide-card" href="https://note.com/kitworks_lab/n/n856d89ce868d" target="_blank" rel="noopener noreferrer">
+            <div>
+              <span class="guide-badge" data-i18n="note1Badge">note 無料記事</span>
+              <h3 class="guide-title" data-i18n="note1Title">OBSの「カスタムブラウザドック」で配信画面を手元から操作する仕組みと作り方</h3>
+              <p class="guide-desc" data-i18n="note1Desc">なぜボタンを別HTMLに分けるのか、BroadcastChannel と localStorage でOBS内を同期させる最小コードまで書いています。</p>
+            </div>
+            <span class="guide-link-label" data-i18n="readLink">ページを開く →</span>
+          </a>
+
+          <a class="guide-card" href="https://note.com/kitworks_lab/n/nbbd0ca584d95" target="_blank" rel="noopener noreferrer">
+            <div>
+              <span class="guide-badge" data-i18n="note2Badge">note 解説記事 / ¥300</span>
+              <h3 class="guide-title" data-i18n="note2Title">長時間見ても疲れない作業配信OBSレイアウト設計｜座標プリセット＆コピペ用カスタムCSS集</h3>
+              <p class="guide-desc" data-i18n="note2Desc">2時間つけっぱなしでも邪魔にならない余白の数値、コントラスト比の決め方、スマホ視聴時にUIと被らない配置の基準をまとめました。</p>
+            </div>
+            <span class="guide-link-label" data-i18n="readLink">ページを開く →</span>
+          </a>
+        </div>
+
+        <div class="channels-strip">
+          <h3 class="channels-heading" data-i18n="channelsTitle">公式リンク</h3>
+          <div class="channels-grid">
+            <a class="channel-link" href="https://kitworks.booth.pm/" target="_blank" rel="noopener noreferrer">
+              <span class="channel-name">BOOTH — kitworks.booth.pm</span>
+              <span class="channel-desc" data-i18n="chBoothDesc">TokiDock / GoalDock の無料版・Pro版を配布中</span>
+            </a>
+            <a class="channel-link" href="https://www.youtube.com/channel/UC_r4xzn2zs3gjbU3rXn3lpA" target="_blank" rel="noopener noreferrer">
+              <span class="channel-name">YouTube — KitWorks Lab</span>
+              <span class="channel-desc" data-i18n="chYoutubeDesc">OBSツールの実演ショート動画・機能紹介</span>
+            </a>
+            <a class="channel-link" href="https://x.com/kitworks_lab" target="_blank" rel="noopener noreferrer">
+              <span class="channel-name">X — @kitworks_lab</span>
+              <span class="channel-desc" data-i18n="chXDesc">アップデート情報・制作ログ</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <img class="brand-avatar" src="assets/avatar-600.png" alt="KitWorks Lab" width="32" height="32">
+        <p class="footer-note" data-i18n="footerNote">KitWorks Lab — 個人制作のOBS配信ツール・ローカル自動化工房。収益化配信での商用利用OK、クレジット表記は任意です。</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/i18n.js"></script>
+  <script src="js/demos.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
