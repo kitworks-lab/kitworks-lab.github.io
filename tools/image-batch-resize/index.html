@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ローカル画像一括リサイズ＆WebP変換ツール｜KitWorks Lab 無料Webツール</title>
+  <meta name="description" content="画像をサーバーへ一切アップロードせず、ブラウザ内のHTML5 Canvasだけで一括リサイズ＆WebP/JPEG/PNG変換。YouTube(1280×720)・BOOTH(1000×1000)・note(1280×670)・X(1600×900)・ココナラ(1220×1016)・512×512の1クリックプリセットとZIP一括保存に対応。">
+  <link rel="canonical" href="https://kitworks-lab.github.io/tools/image-batch-resize/">
+  <meta property="og:title" content="100% Local Browser Image Resizer & Format Converter — KitWorks Lab">
+  <meta property="og:description" content="Zero-upload HTML5 Canvas batch image resizer & WebP/PNG/JPEG converter with exact creator presets (YouTube, BOOTH, note, X, Coconala, 512x512) and ZIP export.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="../../assets/avatar-600.png">
+  <link rel="icon" type="image/svg+xml" href="../../assets/favicon.svg">
+  <link rel="icon" type="image/png" href="../../assets/favicon.png">
+  <link rel="stylesheet" href="../../css/styles.css">
+  <link rel="stylesheet" href="../tools.css">
+  <style>
+    .resize-layout {
+      display: grid;
+      grid-template-columns: 360px minmax(0, 1fr);
+      gap: 24px;
+      align-items: start;
+    }
+
+    .preset-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .preset-btn {
+      text-align: left;
+      padding: 9px 10px;
+      border: 1.5px solid var(--rule);
+      border-radius: var(--radius-sm);
+      background: var(--paper);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      transition: border-color 0.14s ease, background-color 0.14s ease;
+    }
+
+    .preset-btn:hover {
+      border-color: var(--ink);
+    }
+
+    .preset-btn.is-active {
+      border-color: var(--ink);
+      background: var(--paper-card);
+      box-shadow: var(--shadow-ink-sm);
+    }
+
+    .preset-name {
+      font-size: 12.5px;
+      font-weight: 800;
+      color: var(--ink);
+    }
+
+    .preset-dim {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .dim-inputs {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 8px;
+      align-items: end;
+    }
+
+    .dim-x {
+      padding-bottom: 9px;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      color: var(--ink-muted);
+    }
+
+    .pad-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 10px;
+      border: 1px solid var(--rule);
+      border-radius: var(--radius-sm);
+      background: var(--paper);
+    }
+
+    .pad-color-input {
+      width: 34px;
+      height: 26px;
+      border: 1.5px solid var(--rule-strong);
+      border-radius: 4px;
+      padding: 0;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    /* Right Queue Panel */
+    .queue-summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 16px;
+      background: var(--paper-muted);
+      border-bottom: 1px solid var(--rule);
+      flex-wrap: wrap;
+      font-size: 13px;
+    }
+
+    .summary-stats {
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .summary-delta {
+      color: var(--sage);
+      margin-left: 6px;
+    }
+
+    .queue-list {
+      display: grid;
+      gap: 0;
+    }
+
+    .queue-empty {
+      padding: 40px 20px;
+      text-align: center;
+      color: var(--ink-muted);
+    }
+
+    .queue-empty p {
+      margin: 0 0 14px;
+      font-size: 14px;
+    }
+
+    .queue-item {
+      display: grid;
+      grid-template-columns: 88px minmax(0, 1fr) auto;
+      gap: 14px;
+      align-items: center;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--rule);
+      background: var(--paper-card);
+    }
+
+    .queue-item:last-child {
+      border-bottom: 0;
+    }
+
+    .queue-thumb {
+      width: 88px;
+      height: 60px;
+      border-radius: 5px;
+      border: 1px solid var(--rule);
+      object-fit: contain;
+      background: repeating-conic-gradient(#e7e2d9 0% 25%, #f7f3eb 0% 50%) 50% / 12px 12px;
+    }
+
+    .queue-name {
+      margin: 0 0 4px;
+      font-size: 13.5px;
+      font-weight: 800;
+      word-break: break-all;
+    }
+
+    .queue-meta {
+      margin: 0;
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      color: var(--ink-muted);
+      line-height: 1.5;
+    }
+
+    .delta-pill {
+      display: inline-block;
+      margin-left: 6px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .delta-pill.is-smaller {
+      background: var(--sage-tint);
+      color: var(--sage);
+    }
+
+    .delta-pill.is-larger {
+      background: var(--accent-tint);
+      color: var(--accent);
+    }
+
+    .queue-item-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .icon-rm-btn {
+      border: 1px solid var(--rule);
+      background: transparent;
+      color: var(--ink-muted);
+      width: 30px;
+      height: 30px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .icon-rm-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    @media (max-width: 1020px) {
+      .resize-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .queue-item {
+        grid-template-columns: 64px minmax(0, 1fr);
+      }
+
+      .queue-thumb {
+        width: 64px;
+        height: 48px;
+      }
+
+      .queue-item-actions {
+        grid-column: 1 / -1;
+        justify-content: flex-end;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand-link" href="../../">
+        <img class="brand-avatar" src="../../assets/avatar-600.png" alt="KitWorks Lab" width="36" height="36">
+        <span class="brand-name">KitWorks Lab</span>
+      </a>
+      <div class="header-right">
+        <nav class="site-nav" aria-label="Primary">
+          <a href="../" data-i18n="navTools">無料ツール一覧</a>
+          <a href="../yt-thumb-preview/" data-i18n="navYt">サムネ確認</a>
+          <a href="../obs-chat-css/" data-i18n="navChat">OBSチャットCSS</a>
+          <a href="./" class="is-current" data-i18n="navResize">画像リサイズ</a>
+          <a href="../../" data-i18n="navObs">OBS製品デモ</a>
+        </nav>
+        <div class="lang-toggle" role="group" aria-label="Language">
+          <button type="button" class="lang-btn is-active" data-lang-btn="ja" aria-pressed="true">JP</button>
+          <button type="button" class="lang-btn" data-lang-btn="en" aria-pressed="false">EN</button>
+        </div>
+      </div>
+    </div>
+    <nav class="mobile-tool-nav" aria-label="Tools navigation">
+      <a href="../" data-i18n="navTools">無料ツール一覧</a>
+      <a href="../yt-thumb-preview/" data-i18n="navYt">サムネ確認</a>
+      <a href="../obs-chat-css/" data-i18n="navChat">OBSチャットCSS</a>
+      <a href="./" class="is-current" data-i18n="navResize">画像リサイズ</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="tool-hero">
+      <div class="container">
+        <div class="breadcrumb">
+          <a href="../../">KitWorks Lab</a>
+          <span class="breadcrumb-sep">/</span>
+          <a href="../" data-i18n="navTools">無料ツール一覧</a>
+          <span class="breadcrumb-sep">/</span>
+          <span data-i18n="crumbCurrent">ローカル画像リサイズ＆形式変換</span>
+        </div>
+        <div class="tool-hero-row">
+          <div>
+            <h1 class="tool-hero-title" data-i18n="title">ローカル画像一括リサイズ＆形式変換</h1>
+            <p class="tool-hero-lead" data-i18n="lead">YouTube・BOOTH・note・X・ココナラの推奨サイズに、ブラウザの中だけでまとめてリサイズ＆WebP/JPEG/PNG変換できます。画像は外部サーバーに一切送らないので、公開前のサムネや商品画像もそのまま放り込めます。</p>
+          </div>
+          <div class="local-stamp">
+            <span class="local-stamp-dot" aria-hidden="true"></span>
+            <span data-i18n="localStamp">完全ローカル処理 / アップロードなし</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="tool-section">
+      <div class="container">
+        <div class="resize-layout">
+          <!-- Left Settings -->
+          <aside class="tool-panel" aria-label="Resize settings">
+            <div class="tool-panel-head">
+              <h2 class="tool-panel-title" data-i18n="ctrlHeading">書き出し設定</h2>
+              <button type="button" class="btn btn-secondary btn-sm" id="btnLoadSamples" data-i18n="btnDemo">サンプル3枚で試す</button>
+            </div>
+            <div class="tool-panel-body ctrl-grid">
+              <div>
+                <span class="ctrl-label" data-i18n="labelPresets">クリエイター向け1クリックプリセット</span>
+                <div class="preset-grid" role="group" aria-label="Size presets">
+                  <button type="button" class="preset-btn is-active" data-preset="1280x720" data-w="1280" data-h="720">
+                    <span class="preset-name" data-i18n="preYt">YouTube サムネ</span>
+                    <span class="preset-dim">1280 × 720</span>
+                  </button>
+                  <button type="button" class="preset-btn" data-preset="1000x1000" data-w="1000" data-h="1000">
+                    <span class="preset-name" data-i18n="preBooth">BOOTH 商品画像</span>
+                    <span class="preset-dim">1000 × 1000</span>
+                  </button>
+                  <button type="button" class="preset-btn" data-preset="1280x670" data-w="1280" data-h="670">
+                    <span class="preset-name" data-i18n="preNote">note 見出し画像</span>
+                    <span class="preset-dim">1280 × 670</span>
+                  </button>
+                  <button type="button" class="preset-btn" data-preset="1600x900" data-w="1600" data-h="900">
+                    <span class="preset-name" data-i18n="preX">X (Twitter) 投稿</span>
+                    <span class="preset-dim">1600 × 900</span>
+                  </button>
+                  <button type="button" class="preset-btn" data-preset="1220x1016" data-w="1220" data-h="1016">
+                    <span class="preset-name" data-i18n="preCoconala">ココナラ 出品画像</span>
+                    <span class="preset-dim">1220 × 1016</span>
+                  </button>
+                  <button type="button" class="preset-btn" data-preset="512x512" data-w="512" data-h="512">
+                    <span class="preset-name" data-i18n="preIcon">正方形アイコン</span>
+                    <span class="preset-dim">512 × 512</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="dim-inputs">
+                <div>
+                  <label class="ctrl-label" for="inputW" data-i18n="labelW">幅 (px)</label>
+                  <input type="number" class="text-input" id="inputW" min="16" max="8000" value="1280">
+                </div>
+                <span class="dim-x">×</span>
+                <div>
+                  <label class="ctrl-label" for="inputH" data-i18n="labelH">高さ (px)</label>
+                  <input type="number" class="text-input" id="inputH" min="16" max="8000" value="720">
+                </div>
+              </div>
+
+              <div>
+                <span class="ctrl-label" data-i18n="labelFit">リサイズ方法</span>
+                <div class="seg-group" role="group" aria-label="Fit mode">
+                  <button type="button" class="seg-btn is-active" data-fit="cover" data-i18n="fitCover">中央トリミング</button>
+                  <button type="button" class="seg-btn" data-fit="contain" data-i18n="fitContain">余白で収める</button>
+                  <button type="button" class="seg-btn" data-fit="max" data-i18n="fitMax">比率そのまま縮小</button>
+                </div>
+              </div>
+
+              <div>
+                <span class="ctrl-label" data-i18n="labelFormat">出力形式</span>
+                <div class="seg-group" role="group" aria-label="Output format">
+                  <button type="button" class="seg-btn is-active" data-fmt="image/webp">WebP</button>
+                  <button type="button" class="seg-btn" data-fmt="image/jpeg">JPEG</button>
+                  <button type="button" class="seg-btn" data-fmt="image/png">PNG</button>
+                </div>
+              </div>
+
+              <div>
+                <label class="ctrl-label" for="rngQuality">
+                  <span data-i18n="labelQuality">画質（圧縮率）</span>
+                  <span class="ctrl-value" id="valQuality">86%</span>
+                </label>
+                <input class="range-input" type="range" id="rngQuality" min="10" max="100" value="86">
+                <p id="pngNote" style="margin:4px 0 0; font-size:11.5px; color:var(--ink-muted);" hidden data-i18n="pngNote">PNGは可逆圧縮のため画質スライダーは適用されません。</p>
+              </div>
+
+              <div class="pad-row" id="padRow">
+                <label for="padColor" style="font-size:12.5px; font-weight:700; color:var(--ink-soft);" data-i18n="labelPadColor">背景 / 透過塗りつぶし色</label>
+                <input type="color" id="padColor" class="pad-color-input" value="#f7f3eb">
+              </div>
+            </div>
+          </aside>
+
+          <!-- Right Dropzone & Conversion Queue -->
+          <div style="display:grid; gap:18px;">
+            <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Drop or select images">
+              <p class="dropzone-title" data-i18n="dropTitle">画像を複数まとめてドロップ / クリックして選択</p>
+              <p class="dropzone-sub" data-i18n="dropSub">PNG・JPEG・WebP・GIF・BMP対応 / 処理はすべて端末内で完結します</p>
+              <input type="file" id="fileInput" accept="image/*" multiple hidden>
+            </div>
+
+            <div class="tool-panel">
+              <div class="tool-panel-head">
+                <h2 class="tool-panel-title" data-i18n="queueHeading">変換キュー（変換前後の容量比較）</h2>
+                <div class="ctrl-row">
+                  <button type="button" class="btn btn-secondary btn-sm" id="btnClearAll" disabled data-i18n="btnClear">すべてクリア</button>
+                  <button type="button" class="btn btn-primary btn-sm" id="btnDownloadZip" disabled data-i18n="btnZip">ZIPで一括保存</button>
+                </div>
+              </div>
+              <div class="queue-summary" id="queueSummary">
+                <span class="summary-stats" id="summaryStats" data-i18n="summaryEmpty">まだ画像が読み込まれていません</span>
+                <span class="inline-feedback" id="actionStatus" aria-live="polite"></span>
+              </div>
+              <div class="queue-list" id="queueList">
+                <div class="queue-empty" id="queueEmpty">
+                  <p data-i18n="emptyText">上の枠に画像をドロップするか、すぐ下のボタンでサンプル画像3枚を読み込んで動作を試せます。</p>
+                  <button type="button" class="btn btn-secondary btn-sm" id="btnEmptySample" data-i18n="btnDemo">サンプル3枚で試す</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="promo-strip">
+          <div class="promo-strip-copy">
+            <h2 class="promo-strip-title" data-i18n="promoTitle">1280×720に書き出したサムネ、そのまま実寸チェックできます</h2>
+            <p class="promo-strip-desc" data-i18n="promoDesc">書き出したYouTubeサムネイルは隣のチェッカーで168pxサイドバー表示や時間バッジ被りを確認できます。KitWorks LabのOBS配信ツールもBOOTH・Gumroadで配布中です。</p>
+          </div>
+          <div class="promo-strip-actions">
+            <a class="btn btn-secondary btn-sm" href="../yt-thumb-preview/" data-i18n="promoYt">YouTubeサムネ確認へ</a>
+            <a class="btn btn-primary btn-sm" href="https://kitworks.booth.pm/" target="_blank" rel="noopener noreferrer" data-i18n="promoStore" data-i18n-href="storeHome">BOOTH ショップを見る</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <img class="brand-avatar" src="../../assets/avatar-600.png" alt="KitWorks Lab" width="32" height="32">
+        <p class="footer-note" data-i18n="footerNote">KitWorks Lab — 個人制作のOBS配信ツール・無料Webツール工房。すべての処理はブラウザ内ローカルで完結します。</p>
+      </div>
+      <nav class="footer-links" aria-label="Footer links">
+        <a href="../" data-i18n="navTools">無料ツール一覧</a>
+        <a href="../../" data-i18n="navObs">OBS製品デモ</a>
+        <a href="https://kitworks.booth.pm/" target="_blank" rel="noopener noreferrer">BOOTH</a>
+        <a href="https://earnbot7.gumroad.com/" target="_blank" rel="noopener noreferrer">Gumroad (EN)</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script src="../tools-common.js"></script>
+  <script>
+    (function () {
+      'use strict';
+
+      var DICT = {
+        ja: {
+          pageTitle: 'ローカル画像一括リサイズ＆WebP変換ツール｜KitWorks Lab 無料Webツール',
+          pageDesc: 'サーバー送信なし、ブラウザ内だけで画像を一括リサイズ＆WebP/JPEG/PNG変換。YouTube・BOOTH・note・X・ココナラ・アイコン用の1クリックプリセットとZIP保存対応。',
+          navTools: '無料ツール一覧',
+          navYt: 'サムネ確認',
+          navChat: 'OBSチャットCSS',
+          navResize: '画像リサイズ',
+          navObs: 'OBS製品デモ',
+          crumbCurrent: 'ローカル画像リサイズ＆形式変換',
+          title: 'ローカル画像一括リサイズ＆形式変換',
+          lead: 'YouTube・BOOTH・note・X・ココナラの推奨サイズに、ブラウザの中だけでまとめてリサイズ＆WebP/JPEG/PNG変換できます。画像は外部サーバーに一切送らないので、公開前のサムネや商品画像もそのまま放り込めます。',
+          localStamp: '完全ローカル処理 / アップロードなし',
+          ctrlHeading: '書き出し設定',
+          btnDemo: 'サンプル3枚で試す',
+          labelPresets: 'クリエイター向け1クリックプリセット',
+          preYt: 'YouTube サムネ',
+          preBooth: 'BOOTH 商品画像',
+          preNote: 'note 見出し画像',
+          preX: 'X (Twitter) 投稿',
+          preCoconala: 'ココナラ 出品画像',
+          preIcon: '正方形アイコン',
+          labelW: '幅 (px)',
+          labelH: '高さ (px)',
+          labelFit: 'リサイズ方法',
+          fitCover: '中央トリミング',
+          fitContain: '余白で収める',
+          fitMax: '比率そのまま縮小',
+          labelFormat: '出力形式',
+          labelQuality: '画質（圧縮率）',
+          pngNote: 'PNGは可逆圧縮のため画質スライダーは適用されません。',
+          labelPadColor: '背景 / 透過塗りつぶし色',
+          dropTitle: '画像を複数まとめてドロップ / クリックして選択',
+          dropSub: 'PNG・JPEG・WebP・GIF・BMP対応 / 処理はすべて端末内で完結します',
+          queueHeading: '変換キュー（変換前後の容量比較）',
+          btnClear: 'すべてクリア',
+          btnZip: 'ZIPで一括保存',
+          summaryEmpty: 'まだ画像が読み込まれていません',
+          emptyText: '上の枠に画像をドロップするか、すぐ下のボタンでサンプル画像3枚を読み込んで動作を試せます。',
+          btnDownloadOne: '保存',
+          zipDone: 'ZIPを書き出しました',
+          promoTitle: '1280×720に書き出したサムネ、そのまま実寸チェックできます',
+          promoDesc: '書き出したYouTubeサムネイルは隣のチェッカーで168pxサイドバー表示や時間バッジ被りを確認できます。KitWorks LabのOBS配信ツールもBOOTH・Gumroadで配布中です。',
+          promoYt: 'YouTubeサムネ確認へ',
+          promoStore: 'BOOTH ショップを見る',
+          footerNote: 'KitWorks Lab — 個人制作のOBS配信ツール・無料Webツール工房。すべての処理はブラウザ内ローカルで完結します。',
+          links: { storeHome: 'https://kitworks.booth.pm/' }
+        },
+        en: {
+          pageTitle: '100% Local Browser Image Resizer & Format Converter — KitWorks Lab',
+          pageDesc: 'Zero-upload batch image resizer and WebP/JPEG/PNG converter in HTML5 Canvas. Exact 1-click presets for YouTube, BOOTH, note, X, Coconala, and 512x512 icons with ZIP export.',
+          navTools: 'Free Tools',
+          navYt: 'Thumb Preview',
+          navChat: 'OBS Chat CSS',
+          navResize: 'Image Resizer',
+          navObs: 'OBS Overlays',
+          crumbCurrent: 'Local Image Resizer & Converter',
+          title: 'Local Browser Image Resizer & Format Converter',
+          lead: 'Batch resize and convert images to WebP, JPEG, or PNG directly inside your browser using HTML5 Canvas. Nothing is ever uploaded, so unpublished thumbnails and product graphics stay on your machine.',
+          localStamp: '100% Local · Zero Upload',
+          ctrlHeading: 'Export Settings',
+          btnDemo: 'Load 3 Demo Images',
+          labelPresets: '1-Click Creator Presets',
+          preYt: 'YouTube Thumb',
+          preBooth: 'BOOTH Product',
+          preNote: 'note Header',
+          preX: 'X / Twitter Post',
+          preCoconala: 'Coconala Cover',
+          preIcon: 'Square Icon',
+          labelW: 'Width (px)',
+          labelH: 'Height (px)',
+          labelFit: 'Fit Mode',
+          fitCover: 'Cover (Crop)',
+          fitContain: 'Contain (Pad)',
+          fitMax: 'Keep Aspect',
+          labelFormat: 'Output Format',
+          labelQuality: 'Quality',
+          pngNote: 'PNG is lossless; quality slider only affects WebP and JPEG.',
+          labelPadColor: 'Padding / Matte Color',
+          dropTitle: 'Drop multiple images here or click to browse',
+          dropSub: 'Supports PNG, JPEG, WebP, GIF, BMP · 100% client-side',
+          queueHeading: 'Conversion Queue (Before vs After Size)',
+          btnClear: 'Clear All',
+          btnZip: 'Download All (.zip)',
+          summaryEmpty: 'No images loaded yet',
+          emptyText: 'Drop files above, or load 3 generated demo images below to try batch conversion immediately.',
+          btnDownloadOne: 'Save',
+          zipDone: 'Exported ZIP archive',
+          promoTitle: 'Exported a 1280×720 thumbnail? Check it at real YouTube sizes',
+          promoDesc: 'Verify 168px sidebar readability and 12:34 badge overlap in our Thumbnail Checker, or explore KitWorks Lab’s local OBS overlays.',
+          promoYt: 'Open Thumbnail Checker',
+          promoStore: 'Visit Gumroad Store',
+          footerNote: 'KitWorks Lab — Indie OBS overlays & zero-upload creator utilities. Everything runs locally in your browser.',
+          links: { storeHome: 'https://earnbot7.gumroad.com/' }
+        }
+      };
+
+      var state = {
+        width: 1280,
+        height: 720,
+        fit: 'cover',
+        format: 'image/webp',
+        quality: 0.86,
+        padColor: '#f7f3eb',
+        items: [], // { id, name, origBytes, origW, origH, img, outBlob, outUrl, outName, outW, outH }
+        nextId: 1
+      };
+
+      var els = {
+        inputW: document.getElementById('inputW'),
+        inputH: document.getElementById('inputH'),
+        rngQuality: document.getElementById('rngQuality'),
+        valQuality: document.getElementById('valQuality'),
+        pngNote: document.getElementById('pngNote'),
+        padColor: document.getElementById('padColor'),
+        dropzone: document.getElementById('dropzone'),
+        fileInput: document.getElementById('fileInput'),
+        queueList: document.getElementById('queueList'),
+        queueEmpty: document.getElementById('queueEmpty'),
+        summaryStats: document.getElementById('summaryStats'),
+        actionStatus: document.getElementById('actionStatus'),
+        btnClearAll: document.getElementById('btnClearAll'),
+        btnDownloadZip: document.getElementById('btnDownloadZip'),
+        btnLoadSamples: document.getElementById('btnLoadSamples'),
+        btnEmptySample: document.getElementById('btnEmptySample')
+      };
+
+      function getExt(mime) {
+        if (mime === 'image/webp') return 'webp';
+        if (mime === 'image/jpeg') return 'jpg';
+        return 'png';
+      }
+
+      function stripExt(name) {
+        return name.replace(/\.[^.]+$/, '');
+      }
+
+      function convertOne(item) {
+        return new Promise(function (resolve) {
+          var targetW = Math.max(16, Math.min(8000, Number(state.width) || 1280));
+          var targetH = Math.max(16, Math.min(8000, Number(state.height) || 720));
+          var img = item.img;
+          var srcW = img.naturalWidth;
+          var srcH = img.naturalHeight;
+
+          var outW = targetW;
+          var outH = targetH;
+          if (state.fit === 'max') {
+            var ratio = Math.min(targetW / srcW, targetH / srcH, 1);
+            outW = Math.max(1, Math.round(srcW * ratio));
+            outH = Math.max(1, Math.round(srcH * ratio));
+          }
+
+          var canvas = document.createElement('canvas');
+          canvas.width = outW;
+          canvas.height = outH;
+          var ctx = canvas.getContext('2d');
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+
+          if (state.format === 'image/jpeg' || state.fit === 'contain') {
+            ctx.fillStyle = state.padColor;
+            ctx.fillRect(0, 0, outW, outH);
+          }
+
+          if (state.fit === 'cover') {
+            var scale = Math.max(outW / srcW, outH / srcH);
+            var drawW = srcW * scale;
+            var drawH = srcH * scale;
+            var dx = (outW - drawW) / 2;
+            var dy = (outH - drawH) / 2;
+            ctx.drawImage(img, dx, dy, drawW, drawH);
+          } else if (state.fit === 'contain') {
+            var scaleC = Math.min(outW / srcW, outH / srcH);
+            var drawWC = srcW * scaleC;
+            var drawHC = srcH * scaleC;
+            var dxC = (outW - drawWC) / 2;
+            var dyC = (outH - drawHC) / 2;
+            ctx.drawImage(img, dxC, dyC, drawWC, drawHC);
+          } else {
+            ctx.drawImage(img, 0, 0, outW, outH);
+          }
+
+          var q = state.format === 'image/png' ? undefined : state.quality;
+          canvas.toBlob(function (blob) {
+            if (!blob) { resolve(); return; }
+            if (item.outUrl) URL.revokeObjectURL(item.outUrl);
+            item.outBlob = blob;
+            item.outUrl = URL.createObjectURL(blob);
+            item.outW = outW;
+            item.outH = outH;
+            item.outName = stripExt(item.name) + '_' + outW + 'x' + outH + '.' + getExt(state.format);
+            resolve();
+          }, state.format, q);
+        });
+      }
+
+      function reconvertAll() {
+        if (state.items.length === 0) {
+          renderQueue();
+          return Promise.resolve();
+        }
+        return Promise.all(state.items.map(convertOne)).then(renderQueue);
+      }
+
+      function renderQueue() {
+        var fmtBytes = window.KitWorksTools.formatBytes;
+        var dict = DICT[window.KitWorksLang === 'en' ? 'en' : 'ja'];
+
+        els.btnClearAll.disabled = state.items.length === 0;
+        els.btnDownloadZip.disabled = state.items.length === 0;
+
+        if (state.items.length === 0) {
+          els.queueList.innerHTML = '';
+          els.queueList.appendChild(els.queueEmpty);
+          els.queueEmpty.hidden = false;
+          els.summaryStats.textContent = dict.summaryEmpty;
+          return;
+        }
+
+        els.queueEmpty.hidden = true;
+        els.queueList.innerHTML = '';
+
+        var totalOrig = 0;
+        var totalOut = 0;
+
+        state.items.forEach(function (item) {
+          totalOrig += item.origBytes;
+          totalOut += item.outBlob ? item.outBlob.size : 0;
+
+          var row = document.createElement('div');
+          row.className = 'queue-item';
+
+          var thumb = document.createElement('img');
+          thumb.className = 'queue-thumb';
+          thumb.src = item.outUrl || '';
+          thumb.alt = item.outName;
+
+          var info = document.createElement('div');
+          var title = document.createElement('p');
+          title.className = 'queue-name';
+          title.textContent = item.outName;
+
+          var meta = document.createElement('p');
+          meta.className = 'queue-meta';
+          var outBytes = item.outBlob ? item.outBlob.size : 0;
+          var pct = item.origBytes > 0 ? Math.round(((outBytes - item.origBytes) / item.origBytes) * 100) : 0;
+          var pctText = (pct > 0 ? '+' : '') + pct + '%';
+
+          meta.appendChild(document.createTextNode(
+            item.origW + '×' + item.origH + ' (' + fmtBytes(item.origBytes) + ')  →  ' +
+            item.outW + '×' + item.outH + ' (' + fmtBytes(outBytes) + ')'
+          ));
+
+          var pill = document.createElement('span');
+          pill.className = 'delta-pill ' + (pct <= 0 ? 'is-smaller' : 'is-larger');
+          pill.textContent = pctText;
+          meta.appendChild(pill);
+
+          info.appendChild(title);
+          info.appendChild(meta);
+
+          var actions = document.createElement('div');
+          actions.className = 'queue-item-actions';
+
+          var dlBtn = document.createElement('a');
+          dlBtn.className = 'btn btn-secondary btn-sm';
+          dlBtn.href = item.outUrl;
+          dlBtn.download = item.outName;
+          dlBtn.textContent = dict.btnDownloadOne;
+
+          var rmBtn = document.createElement('button');
+          rmBtn.type = 'button';
+          rmBtn.className = 'icon-rm-btn';
+          rmBtn.setAttribute('aria-label', 'Remove ' + item.name);
+          rmBtn.textContent = '×';
+          rmBtn.addEventListener('click', function () {
+            if (item.outUrl) URL.revokeObjectURL(item.outUrl);
+            state.items = state.items.filter(function (x) { return x.id !== item.id; });
+            renderQueue();
+          });
+
+          actions.appendChild(dlBtn);
+          actions.appendChild(rmBtn);
+
+          row.appendChild(thumb);
+          row.appendChild(info);
+          row.appendChild(actions);
+          els.queueList.appendChild(row);
+        });
+
+        var totalPct = totalOrig > 0 ? Math.round(((totalOut - totalOrig) / totalOrig) * 100) : 0;
+        var countLabel = (window.KitWorksLang === 'en')
+          ? (state.items.length + (state.items.length === 1 ? ' image' : ' images'))
+          : (state.items.length + '枚');
+        els.summaryStats.innerHTML = '';
+        els.summaryStats.appendChild(document.createTextNode(
+          countLabel + ' · ' + fmtBytes(totalOrig) + ' → ' + fmtBytes(totalOut)
+        ));
+        var span = document.createElement('span');
+        span.className = 'summary-delta';
+        span.textContent = '(' + (totalPct > 0 ? '+' : '') + totalPct + '%)';
+        els.summaryStats.appendChild(span);
+      }
+
+      function addFiles(fileList) {
+        var files = Array.from(fileList || []).filter(function (f) { return f.type.indexOf('image/') === 0; });
+        if (files.length === 0) return;
+
+        var tasks = files.map(function (file) {
+          return new Promise(function (resolve) {
+            var url = URL.createObjectURL(file);
+            var img = new Image();
+            img.onload = function () {
+              URL.revokeObjectURL(url);
+              var item = {
+                id: state.nextId++,
+                name: file.name || ('image-' + state.nextId + '.png'),
+                origBytes: file.size,
+                origW: img.naturalWidth,
+                origH: img.naturalHeight,
+                img: img,
+                outBlob: null,
+                outUrl: null,
+                outName: '',
+                outW: 0,
+                outH: 0
+              };
+              state.items.push(item);
+              convertOne(item).then(resolve);
+            };
+            img.onerror = function () {
+              URL.revokeObjectURL(url);
+              resolve();
+            };
+            img.src = url;
+          });
+        });
+
+        Promise.all(tasks).then(renderQueue);
+      }
+
+      // Generate 3 realistic high-res sample PNGs locally so users can test immediately
+      function loadSampleImages() {
+        var specs = [
+          { name: 'stream-thumbnail-raw.png', w: 1920, h: 1080, bg: '#1e1b18', accent: '#c1522b', label: '1920 × 1080 RAW' },
+          { name: 'booth-cover-draft.png', w: 1600, h: 1600, bg: '#f7f3eb', accent: '#396851', label: '1600 × 1600 SQUARE' },
+          { name: 'note-header-photo.png', w: 2000, h: 1125, bg: '#2b2723', accent: '#c8963e', label: '2000 × 1125 BANNER' }
+        ];
+        var tasks = specs.map(function (sp) {
+          return new Promise(function (resolve) {
+            var c = document.createElement('canvas');
+            c.width = sp.w;
+            c.height = sp.h;
+            var ctx = c.getContext('2d');
+            ctx.fillStyle = sp.bg;
+            ctx.fillRect(0, 0, sp.w, sp.h);
+            ctx.fillStyle = sp.accent;
+            ctx.fillRect(0, 0, sp.w, Math.round(sp.h * 0.14));
+            ctx.fillStyle = sp.bg === '#f7f3eb' ? '#1e1b18' : '#f7f3eb';
+            ctx.font = '800 ' + Math.round(sp.w * 0.065) + 'px sans-serif';
+            ctx.fillText('KitWorks Sample', Math.round(sp.w * 0.08), Math.round(sp.h * 0.48));
+            ctx.font = '700 ' + Math.round(sp.w * 0.04) + 'px monospace';
+            ctx.fillText(sp.label, Math.round(sp.w * 0.08), Math.round(sp.h * 0.60));
+            // Add subtle noise blocks so PNG size is realistically compressible
+            for (var i = 0; i < 420; i++) {
+              ctx.fillStyle = 'rgba(200,150,62,' + ((i % 7) * 0.03) + ')';
+              ctx.fillRect((i * 73) % sp.w, (i * 131) % sp.h, 28, 14);
+            }
+            c.toBlob(function (blob) {
+              var file = new File([blob], sp.name, { type: 'image/png' });
+              resolve(file);
+            }, 'image/png');
+          });
+        });
+        Promise.all(tasks).then(addFiles);
+      }
+
+      // Zero-dependency Store-mode ZIP builder (CRC32 + local/central headers)
+      var CRC_TABLE = (function () {
+        var t = new Uint32Array(256);
+        for (var n = 0; n < 256; n++) {
+          var c = n;
+          for (var k = 0; k < 8; k++) {
+            c = (c & 1) ? (0xedb88320 ^ (c >>> 1)) : (c >>> 1);
+          }
+          t[n] = c >>> 0;
+        }
+        return t;
+      })();
+
+      function crc32(bytes) {
+        var c = 0xffffffff;
+        for (var i = 0; i < bytes.length; i++) {
+          c = CRC_TABLE[(c ^ bytes[i]) & 0xff] ^ (c >>> 8);
+        }
+        return (c ^ 0xffffffff) >>> 0;
+      }
+
+      function buildZipBlob(entries) {
+        var encoder = new TextEncoder();
+        var localParts = [];
+        var centralParts = [];
+        var offset = 0;
+
+        entries.forEach(function (entry) {
+          var nameBytes = encoder.encode(entry.name);
+          var data = entry.data;
+          var crc = crc32(data);
+
+          var lh = new ArrayBuffer(30 + nameBytes.length);
+          var lv = new DataView(lh);
+          lv.setUint32(0, 0x04034b50, true);
+          lv.setUint16(4, 20, true);
+          lv.setUint16(6, 0x0800, true);
+          lv.setUint16(8, 0, true);
+          lv.setUint16(10, 0, true);
+          lv.setUint16(12, 0, true);
+          lv.setUint32(14, crc, true);
+          lv.setUint32(18, data.length, true);
+          lv.setUint32(22, data.length, true);
+          lv.setUint16(26, nameBytes.length, true);
+          lv.setUint16(28, 0, true);
+          new Uint8Array(lh, 30).set(nameBytes);
+
+          localParts.push(new Uint8Array(lh), data);
+
+          var ch = new ArrayBuffer(46 + nameBytes.length);
+          var cv = new DataView(ch);
+          cv.setUint32(0, 0x02014b50, true);
+          cv.setUint16(4, 20, true);
+          cv.setUint16(6, 20, true);
+          cv.setUint16(8, 0x0800, true);
+          cv.setUint16(10, 0, true);
+          cv.setUint16(12, 0, true);
+          cv.setUint16(14, 0, true);
+          cv.setUint32(16, crc, true);
+          cv.setUint32(20, data.length, true);
+          cv.setUint32(24, data.length, true);
+          cv.setUint16(28, nameBytes.length, true);
+          cv.setUint16(30, 0, true);
+          cv.setUint16(32, 0, true);
+          cv.setUint16(34, 0, true);
+          cv.setUint16(36, 0, true);
+          cv.setUint32(38, 0, true);
+          cv.setUint32(42, offset, true);
+          new Uint8Array(ch, 46).set(nameBytes);
+
+          centralParts.push(new Uint8Array(ch));
+          offset += 30 + nameBytes.length + data.length;
+        });
+
+        var centralSize = centralParts.reduce(function (s, p) { return s + p.length; }, 0);
+        var eocd = new ArrayBuffer(22);
+        var ev = new DataView(eocd);
+        ev.setUint32(0, 0x06054b50, true);
+        ev.setUint16(4, 0, true);
+        ev.setUint16(6, 0, true);
+        ev.setUint16(8, entries.length, true);
+        ev.setUint16(10, entries.length, true);
+        ev.setUint32(12, centralSize, true);
+        ev.setUint32(16, offset, true);
+        ev.setUint16(20, 0, true);
+
+        return new Blob(localParts.concat(centralParts, [new Uint8Array(eocd)]), { type: 'application/zip' });
+      }
+
+      // Events
+      document.querySelectorAll('[data-preset]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          state.width = Number(btn.getAttribute('data-w'));
+          state.height = Number(btn.getAttribute('data-h'));
+          els.inputW.value = state.width;
+          els.inputH.value = state.height;
+          document.querySelectorAll('[data-preset]').forEach(function (b) { b.classList.toggle('is-active', b === btn); });
+          reconvertAll();
+        });
+      });
+
+      function onDimInput() {
+        state.width = Number(els.inputW.value) || 1280;
+        state.height = Number(els.inputH.value) || 720;
+        document.querySelectorAll('[data-preset]').forEach(function (b) {
+          var match = Number(b.getAttribute('data-w')) === state.width && Number(b.getAttribute('data-h')) === state.height;
+          b.classList.toggle('is-active', match);
+        });
+        reconvertAll();
+      }
+      els.inputW.addEventListener('change', onDimInput);
+      els.inputH.addEventListener('change', onDimInput);
+
+      document.querySelectorAll('[data-fit]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          state.fit = btn.getAttribute('data-fit');
+          document.querySelectorAll('[data-fit]').forEach(function (b) { b.classList.toggle('is-active', b === btn); });
+          reconvertAll();
+        });
+      });
+
+      document.querySelectorAll('[data-fmt]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          state.format = btn.getAttribute('data-fmt');
+          document.querySelectorAll('[data-fmt]').forEach(function (b) { b.classList.toggle('is-active', b === btn); });
+          var isPng = state.format === 'image/png';
+          els.rngQuality.disabled = isPng;
+          els.pngNote.hidden = !isPng;
+          reconvertAll();
+        });
+      });
+
+      els.rngQuality.addEventListener('input', function () {
+        els.valQuality.textContent = els.rngQuality.value + '%';
+        state.quality = Number(els.rngQuality.value) / 100;
+      });
+      els.rngQuality.addEventListener('change', reconvertAll);
+
+      els.padColor.addEventListener('input', function () {
+        state.padColor = els.padColor.value;
+        reconvertAll();
+      });
+
+      els.dropzone.addEventListener('click', function () { els.fileInput.click(); });
+      els.dropzone.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          els.fileInput.click();
+        }
+      });
+      els.fileInput.addEventListener('change', function (e) {
+        addFiles(e.target.files);
+        els.fileInput.value = '';
+      });
+
+      ['dragenter', 'dragover'].forEach(function (ev) {
+        els.dropzone.addEventListener(ev, function (e) {
+          e.preventDefault();
+          els.dropzone.classList.add('is-dragover');
+        });
+      });
+      ['dragleave', 'drop'].forEach(function (ev) {
+        els.dropzone.addEventListener(ev, function (e) {
+          e.preventDefault();
+          els.dropzone.classList.remove('is-dragover');
+        });
+      });
+      els.dropzone.addEventListener('drop', function (e) {
+        addFiles(e.dataTransfer && e.dataTransfer.files);
+      });
+
+      els.btnLoadSamples.addEventListener('click', loadSampleImages);
+      els.btnEmptySample.addEventListener('click', loadSampleImages);
+
+      els.btnClearAll.addEventListener('click', function () {
+        state.items.forEach(function (it) { if (it.outUrl) URL.revokeObjectURL(it.outUrl); });
+        state.items = [];
+        renderQueue();
+      });
+
+      els.btnDownloadZip.addEventListener('click', function () {
+        if (state.items.length === 0) return;
+        var seen = {};
+        Promise.all(state.items.map(function (it) {
+          return it.outBlob.arrayBuffer().then(function (buf) {
+            var name = it.outName;
+            if (seen[name]) {
+              seen[name] += 1;
+              name = name.replace(/(\.[^.]+)$/, '_' + seen[name] + '$1');
+            } else {
+              seen[name] = 1;
+            }
+            return { name: name, data: new Uint8Array(buf) };
+          });
+        })).then(function (entries) {
+          var zipBlob = buildZipBlob(entries);
+          var url = URL.createObjectURL(zipBlob);
+          var a = document.createElement('a');
+          a.href = url;
+          a.download = 'kitworks-resized-' + state.width + 'x' + state.height + '.zip';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
+
+          var dict = DICT[window.KitWorksLang === 'en' ? 'en' : 'ja'];
+          els.actionStatus.textContent = '✓ ' + dict.zipDone;
+          setTimeout(function () { els.actionStatus.textContent = ''; }, 2500);
+        });
+      });
+
+      window.addEventListener('kitworks:langchange', renderQueue);
+      window.KitWorksTools.initI18n(DICT);
+      renderQueue();
+    })();
+  </script>
+</body>
+</html>

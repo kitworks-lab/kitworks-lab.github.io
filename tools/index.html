@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>無料Webツール一覧｜KitWorks Lab（配信者・個人制作者向け）</title>
+  <meta name="description" content="ログイン不要・ブラウザ内完結で使えるクリエイター向け無料Webツール集。YouTubeサムネイル実寸チェッカー、OBSライブチャットCSSジェネレーター、ローカル画像一括リサイズ＆WebP変換を公開中。">
+  <link rel="canonical" href="https://kitworks-lab.github.io/tools/">
+  <meta property="og:title" content="KitWorks Lab — Free Browser-Local Creator Tools">
+  <meta property="og:description" content="Zero-login, 100% browser-local utilities for streamers and creators: YouTube Thumbnail Checker, OBS Live Chat CSS Generator, and Local Batch Image Resizer.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="../assets/avatar-600.png">
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+  <link rel="icon" type="image/png" href="../assets/favicon.png">
+  <link rel="stylesheet" href="../css/styles.css">
+  <link rel="stylesheet" href="tools.css">
+  <style>
+    /* Concrete miniature product previews inside each Hub card (no generic icon tiles) */
+    .mini-yt {
+      display: grid;
+      grid-template-columns: 1.35fr 0.85fr;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .mini-yt-card {
+      background: #141414;
+      border: 1.5px solid var(--ink);
+      border-radius: 6px;
+      padding: 6px;
+      color: #f1f1f1;
+    }
+
+    .mini-yt-screen {
+      position: relative;
+      aspect-ratio: 16 / 9;
+      background: linear-gradient(135deg, #2b2723 0%, #1e1b18 60%, #396851 100%);
+      border-radius: 4px;
+      padding: 7px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .mini-yt-headline {
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1.25;
+      color: #f7f3eb;
+    }
+
+    .mini-yt-headline em {
+      font-style: normal;
+      color: #e8b959;
+    }
+
+    .mini-yt-badge {
+      position: absolute;
+      right: 4px;
+      bottom: 4px;
+      background: rgba(0, 0, 0, 0.85);
+      color: #fff;
+      font-family: var(--font-mono);
+      font-size: 9px;
+      padding: 1px 4px;
+      border-radius: 2px;
+    }
+
+    .mini-yt-side {
+      display: grid;
+      gap: 6px;
+    }
+
+    .mini-yt-side-row {
+      display: grid;
+      grid-template-columns: 56px 1fr;
+      gap: 6px;
+      align-items: center;
+      background: var(--paper-card);
+      border: 1px solid var(--rule-strong);
+      border-radius: 5px;
+      padding: 4px;
+    }
+
+    .mini-yt-side-thumb {
+      aspect-ratio: 16 / 9;
+      background: #23201d;
+      border-radius: 3px;
+      position: relative;
+      filter: grayscale(100%);
+    }
+
+    .mini-yt-side-lines span {
+      display: block;
+      height: 5px;
+      border-radius: 2px;
+      background: var(--ink-muted);
+      margin-bottom: 3px;
+    }
+
+    .mini-yt-side-lines span:last-child {
+      width: 65%;
+      opacity: 0.5;
+      margin-bottom: 0;
+    }
+
+    .mini-chat {
+      display: grid;
+      gap: 7px;
+    }
+
+    .mini-chat-row {
+      padding: 6px 9px;
+      font-size: 11.5px;
+      line-height: 1.35;
+      border-radius: 5px;
+    }
+
+    .mini-chat-paper {
+      background: var(--paper-card);
+      border: 1.5px solid var(--ink);
+      box-shadow: 2px 2px 0 var(--ink);
+    }
+
+    .mini-chat-paper b {
+      color: var(--accent);
+      margin-right: 5px;
+    }
+
+    .mini-chat-bar {
+      background: #1e1b18;
+      color: #f3eee6;
+      border-left: 3px solid #d9a441;
+    }
+
+    .mini-chat-bar b {
+      color: #e8b959;
+      margin-right: 5px;
+    }
+
+    .mini-chat-term {
+      background: #171a18;
+      color: #d9dfd8;
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      border-left: 2px solid #72c79a;
+    }
+
+    .mini-chat-term b {
+      color: #72c79a;
+      margin-right: 5px;
+    }
+
+    .mini-resize {
+      display: grid;
+      gap: 8px;
+    }
+
+    .mini-resize-flow {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .mini-file-box {
+      background: var(--paper-card);
+      border: 1.5px solid var(--ink);
+      border-radius: 5px;
+      padding: 8px 9px;
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      line-height: 1.45;
+    }
+
+    .mini-file-box strong {
+      display: block;
+      font-size: 11.5px;
+      color: var(--ink);
+    }
+
+    .mini-file-box.is-out {
+      border-color: var(--sage);
+    }
+
+    .mini-file-box.is-out strong {
+      color: var(--sage);
+    }
+
+    .mini-presets-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--ink-soft);
+    }
+
+    .mini-presets-row span {
+      background: var(--paper-card);
+      border: 1px solid var(--rule);
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+
+    .hub-products-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+      margin-top: 18px;
+    }
+
+    .hub-product-card {
+      padding: 20px;
+      background: var(--paper-card);
+      border: 1.5px solid var(--rule-strong);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-ink-sm);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .hub-product-card h3 {
+      margin: 0 0 6px;
+      font-size: 17px;
+      font-weight: 800;
+    }
+
+    .hub-product-card p {
+      margin: 0;
+      font-size: 13.5px;
+      line-height: 1.65;
+      color: var(--ink-soft);
+    }
+
+    .hub-product-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    @media (max-width: 820px) {
+      .hub-products-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand-link" href="../">
+        <img class="brand-avatar" src="../assets/avatar-600.png" alt="KitWorks Lab" width="36" height="36">
+        <span class="brand-name">KitWorks Lab</span>
+      </a>
+      <div class="header-right">
+        <nav class="site-nav" aria-label="Primary">
+          <a href="./" class="is-current" data-i18n="navTools">無料ツール一覧</a>
+          <a href="./yt-thumb-preview/" data-i18n="navYt">サムネ確認</a>
+          <a href="./obs-chat-css/" data-i18n="navChat">OBSチャットCSS</a>
+          <a href="./image-batch-resize/" data-i18n="navResize">画像リサイズ</a>
+          <a href="../" data-i18n="navObs">OBS製品デモ</a>
+        </nav>
+        <div class="lang-toggle" role="group" aria-label="Language">
+          <button type="button" class="lang-btn is-active" data-lang-btn="ja" aria-pressed="true">JP</button>
+          <button type="button" class="lang-btn" data-lang-btn="en" aria-pressed="false">EN</button>
+        </div>
+      </div>
+    </div>
+    <nav class="mobile-tool-nav" aria-label="Tools navigation">
+      <a href="./" class="is-current" data-i18n="navTools">無料ツール一覧</a>
+      <a href="./yt-thumb-preview/" data-i18n="navYt">サムネ確認</a>
+      <a href="./obs-chat-css/" data-i18n="navChat">OBSチャットCSS</a>
+      <a href="./image-batch-resize/" data-i18n="navResize">画像リサイズ</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="tool-hero">
+      <div class="container">
+        <div class="breadcrumb">
+          <a href="../">KitWorks Lab</a>
+          <span class="breadcrumb-sep">/</span>
+          <span data-i18n="navTools">無料ツール一覧</span>
+        </div>
+        <div class="tool-hero-row">
+          <div>
+            <h1 class="tool-hero-title" data-i18n="title">配信者・個人制作者のための無料Webツール集</h1>
+            <p class="tool-hero-lead" data-i18n="lead">自分たちの配信や商品ページ制作で毎回ほしかった小道具を、アカウント登録なし・ブラウザ内ローカル動作の単体ツールとしてまとめました。画像も設定もサーバーには一切送りません。</p>
+          </div>
+          <div class="local-stamp">
+            <span class="local-stamp-dot" aria-hidden="true"></span>
+            <span data-i18n="localStamp">完全無料 / 登録不要 / ローカル処理</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3 Free Tools Grid -->
+    <section class="tool-section">
+      <div class="container">
+        <div class="hub-grid">
+          <!-- Tool 1 -->
+          <article class="hub-card">
+            <div class="hub-card-visual" aria-hidden="true">
+              <div class="mini-yt">
+                <div class="mini-yt-card">
+                  <div class="mini-yt-screen">
+                    <span class="mini-yt-headline">操作ボタン<br><em>映さない。</em></span>
+                    <span class="mini-yt-badge">12:34</span>
+                  </div>
+                </div>
+                <div class="mini-yt-side">
+                  <div class="mini-yt-side-row">
+                    <div class="mini-yt-side-thumb"><span class="mini-yt-badge" style="font-size:7px;">12:34</span></div>
+                    <div class="mini-yt-side-lines"><span></span><span></span></div>
+                  </div>
+                  <div class="mini-yt-side-row">
+                    <div class="mini-yt-side-thumb" style="background:#555;"></div>
+                    <div class="mini-yt-side-lines"><span></span><span></span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="hub-card-body">
+              <span class="hub-card-tag">01 / YOUTUBE</span>
+              <h2 class="hub-card-title" data-i18n="t1Title">YouTubeサムネイル実寸＆視認性チェッカー</h2>
+              <p class="hub-card-desc" data-i18n="t1Desc">ホーム・検索・スマホ・幅168pxの関連動画サイズを一覧表示。右下の再生時間バッジ被り、ライト/ダーク切替、白黒・色覚シミュレーションを即確認できます。</p>
+              <p class="hub-card-specs" data-i18n="t1Specs">サンプル画像内蔵・Ctrl+V貼り付け対応・16:9サイズ自動チェック</p>
+            </div>
+            <div class="hub-card-foot">
+              <a class="btn btn-primary btn-sm" href="./yt-thumb-preview/" data-i18n="openTool">ツールを開く →</a>
+            </div>
+          </article>
+
+          <!-- Tool 2 -->
+          <article class="hub-card">
+            <div class="hub-card-visual" aria-hidden="true">
+              <div class="mini-chat">
+                <div class="mini-chat-row mini-chat-paper"><b>haru</b>今日も作業お邪魔します〜</div>
+                <div class="mini-chat-row mini-chat-bar"><b>mika</b>右下のタイマー見やすい！</div>
+                <div class="mini-chat-row mini-chat-term"><b>[dev]</b>css opacity: 92% ok</div>
+              </div>
+            </div>
+            <div class="hub-card-body">
+              <span class="hub-card-tag">02 / OBS STUDIO</span>
+              <h2 class="hub-card-title" data-i18n="t2Title">OBSライブチャットCSSジェネレーター</h2>
+              <p class="hub-card-desc" data-i18n="t2Desc">YouTube Live・Twitchのブラウザソース用カスタムCSSを、動くチャットプレビューを見ながら作成。紙面風・放送バー・等幅ターミナル・角丸の4テーマから選べます。</p>
+              <p class="hub-card-specs" data-i18n="t2Specs">透過率・影・バッジ非表示・自動フェードアウト・1クリックコピー</p>
+            </div>
+            <div class="hub-card-foot">
+              <a class="btn btn-primary btn-sm" href="./obs-chat-css/" data-i18n="openTool">ツールを開く →</a>
+            </div>
+          </article>
+
+          <!-- Tool 3 -->
+          <article class="hub-card">
+            <div class="hub-card-visual" aria-hidden="true">
+              <div class="mini-resize">
+                <div class="mini-resize-flow">
+                  <div class="mini-file-box">
+                    <strong>RAW .PNG</strong>
+                    1920×1080<br>1.8 MB
+                  </div>
+                  <span style="font-family:var(--font-mono); font-weight:800; color:var(--accent);">→</span>
+                  <div class="mini-file-box is-out">
+                    <strong>WebP -86%</strong>
+                    1280×720<br>240 KB
+                  </div>
+                </div>
+                <div class="mini-presets-row">
+                  <span>YT 1280×720</span>
+                  <span>BOOTH 1000²</span>
+                  <span>note 1280×670</span>
+                  <span>ZIP一括</span>
+                </div>
+              </div>
+            </div>
+            <div class="hub-card-body">
+              <span class="hub-card-tag">03 / IMAGE UTILITY</span>
+              <h2 class="hub-card-title" data-i18n="t3Title">ローカル画像一括リサイズ＆形式変換</h2>
+              <p class="hub-card-desc" data-i18n="t3Desc">YouTube・BOOTH・note・X・ココナラ・アイコン用の1クリックプリセットで複数画像をまとめて変換。変換前後の容量比較つき、ZIPで1回ダウンロードできます。</p>
+              <p class="hub-card-specs" data-i18n="t3Specs">WebP / JPEG / PNG対応・画質調整・トリミング/余白切替・サンプル3枚内蔵</p>
+            </div>
+            <div class="hub-card-foot">
+              <a class="btn btn-primary btn-sm" href="./image-batch-resize/" data-i18n="openTool">ツールを開く →</a>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Subtle KitWorks Lab Products + Gear PR Section -->
+    <section class="section section-alt">
+      <div class="container">
+        <div class="section-head">
+          <div class="section-head-copy">
+            <h2 class="section-title" data-i18n="obsHeading">OBSで使える配信オーバーレイも作っています</h2>
+            <p class="section-desc" data-i18n="obsDesc">同じ「外部サーバーなし・ローカルHTML完結」の方針で、OBSカスタムブラウザドックから手元操作できる配信ツールを BOOTH と Gumroad で配布しています。</p>
+          </div>
+          <div class="section-actions">
+            <a class="btn btn-secondary btn-sm" href="../" data-i18n="obsDemoBtn">ブラウザでライブデモを触る</a>
+            <a class="btn btn-primary btn-sm" href="https://kitworks.booth.pm/" target="_blank" rel="noopener noreferrer" data-i18n="boothBtn">BOOTH ショップ</a>
+            <a class="btn btn-secondary btn-sm" href="https://earnbot7.gumroad.com/" target="_blank" rel="noopener noreferrer">Gumroad (EN)</a>
+          </div>
+        </div>
+
+        <div class="hub-products-grid">
+          <div class="hub-product-card">
+            <div>
+              <h3 data-i18n="tokiTitle">TokiDock — 作業タイマー＆ライブ時計</h3>
+              <p data-i18n="tokiDesc">ポモドーロタイマー、配信待機カウントダウン、同時視聴タイマーをOBSのドックから1クリック操作。無料Lite版と12テーマ入りPro版があります。</p>
+            </div>
+            <div class="hub-product-actions">
+              <a class="btn btn-secondary btn-sm" href="../#tokidock-demo" data-i18n="tryDemo">ライブデモ</a>
+              <a class="btn btn-primary btn-sm" href="https://kitworks.booth.pm/items/9206837" target="_blank" rel="noopener noreferrer" data-i18n="tokiLink" data-i18n-href="tokiLite">無料Lite版を見る</a>
+            </div>
+          </div>
+
+          <div class="hub-product-card">
+            <div>
+              <h3 data-i18n="goalTitle">GoalDock — 目標プログレスバー＆お題ルーレット</h3>
+              <p data-i18n="goalDesc">登録者・同時視聴の目標バー、達成カウンター、雑談お題ルーレットをローカルHTMLで同期。配信画面に操作ボタンを映さず更新できます。</p>
+            </div>
+            <div class="hub-product-actions">
+              <a class="btn btn-secondary btn-sm" href="../#goaldock-demo" data-i18n="tryDemo">ライブデモ</a>
+              <a class="btn btn-primary btn-sm" href="https://kitworks.booth.pm/items/9206880" target="_blank" rel="noopener noreferrer" data-i18n="goalLink" data-i18n-href="goalLite">無料Lite版を見る</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Verified Amazon Associates Gear PR Box -->
+        <div class="gear-pr-box">
+          <div class="gear-pr-head">
+            <h3 class="gear-pr-title"><span class="pr-mark">PR</span><span data-i18n="gearHeading">配信・制作まわりで相性のよい定番機材</span></h3>
+            <p class="gear-pr-disclosure" data-i18n="gearDisclosure">Amazonのアソシエイトとして、KitWorks Labは適格販売により収入を得ています。</p>
+          </div>
+          <div class="gear-pr-grid">
+            <a class="gear-pr-item" href="https://www.amazon.co.jp/s?k=Elgato+Stream+Deck+MK.2&tag=kitworkslab-22" target="_blank" rel="noopener noreferrer sponsored">
+              <span class="gear-pr-name">Elgato Stream Deck MK.2（15キー）</span>
+              <span class="gear-pr-desc" data-i18n="gearDeck">OBSのシーン切替やマイクミュートを物理ボタン化。カスタムドックと併用すると配信中の操作ミスが減ります。</span>
+              <span class="gear-pr-cta" data-i18n="gearCta">Amazonで詳細を見る →</span>
+            </a>
+            <a class="gear-pr-item" href="https://www.amazon.co.jp/s?k=Shure+MV7%2B&tag=kitworkslab-22" target="_blank" rel="noopener noreferrer sponsored">
+              <span class="gear-pr-name">Shure MV7+ ポッドキャストマイクロホン</span>
+              <span class="gear-pr-desc" data-i18n="gearMic">USB-C / XLR両対応のダイナミックマイク。キーボードの打鍵音や生活音を拾いにくいので作業配信向きです。</span>
+              <span class="gear-pr-cta" data-i18n="gearCta">Amazonで詳細を見る →</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <img class="brand-avatar" src="../assets/avatar-600.png" alt="KitWorks Lab" width="32" height="32">
+        <p class="footer-note" data-i18n="footerNote">KitWorks Lab — 個人制作のOBS配信ツール・無料Webツール工房。すべてのツールはブラウザ内ローカルで完結します。</p>
+      </div>
+      <nav class="footer-links" aria-label="Official channels">
+        <a href="../" data-i18n="navObs">OBS製品デモ</a>
+        <a href="https://kitworks.booth.pm/" target="_blank" rel="noopener noreferrer">BOOTH</a>
+        <a href="https://earnbot7.gumroad.com/" target="_blank" rel="noopener noreferrer">Gumroad (EN)</a>
+        <a href="https://zenn.dev/kitworks" target="_blank" rel="noopener noreferrer">Zenn</a>
+        <a href="https://note.com/kitworks_lab" target="_blank" rel="noopener noreferrer">note</a>
+        <a href="https://github.com/kitworks-lab" target="_blank" rel="noopener noreferrer">GitHub</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script src="tools-common.js"></script>
+  <script>
+    (function () {
+      'use strict';
+
+      var DICT = {
+        ja: {
+          pageTitle: '無料Webツール一覧｜KitWorks Lab（配信者・個人制作者向け）',
+          pageDesc: 'ログイン不要・ブラウザ内完結で使えるクリエイター向け無料Webツール集。YouTubeサムネイル実寸チェッカー、OBSライブチャットCSSジェネレーター、ローカル画像一括リサイズ＆WebP変換を公開中。',
+          navTools: '無料ツール一覧',
+          navYt: 'サムネ確認',
+          navChat: 'OBSチャットCSS',
+          navResize: '画像リサイズ',
+          navObs: 'OBS製品デモ',
+          title: '配信者・個人制作者のための無料Webツール集',
+          lead: '自分たちの配信や商品ページ制作で毎回ほしかった小道具を、アカウント登録なし・ブラウザ内ローカル動作の単体ツールとしてまとめました。画像も設定もサーバーには一切送りません。',
+          localStamp: '完全無料 / 登録不要 / ローカル処理',
+          t1Title: 'YouTubeサムネイル実寸＆視認性チェッカー',
+          t1Desc: 'ホーム・検索・スマホ・幅168pxの関連動画サイズを一覧表示。右下の再生時間バッジ被り、ライト/ダーク切替、白黒・色覚シミュレーションを即確認できます。',
+          t1Specs: 'サンプル画像内蔵・Ctrl+V貼り付け対応・16:9サイズ自動チェック',
+          t2Title: 'OBSライブチャットCSSジェネレーター',
+          t2Desc: 'YouTube Live・Twitchのブラウザソース用カスタムCSSを、動くチャットプレビューを見ながら作成。紙面風・放送バー・等幅ターミナル・角丸の4テーマから選べます。',
+          t2Specs: '透過率・影・バッジ非表示・自動フェードアウト・1クリックコピー',
+          t3Title: 'ローカル画像一括リサイズ＆形式変換',
+          t3Desc: 'YouTube・BOOTH・note・X・ココナラ・アイコン用の1クリックプリセットで複数画像をまとめて変換。変換前後の容量比較つき、ZIPで1回ダウンロードできます。',
+          t3Specs: 'WebP / JPEG / PNG対応・画質調整・トリミング/余白切替・サンプル3枚内蔵',
+          openTool: 'ツールを開く →',
+          obsHeading: 'OBSで使える配信オーバーレイも作っています',
+          obsDesc: '同じ「外部サーバーなし・ローカルHTML完結」の方針で、OBSカスタムブラウザドックから手元操作できる配信ツールを BOOTH と Gumroad で配布しています。',
+          obsDemoBtn: 'ブラウザでライブデモを触る',
+          boothBtn: 'BOOTH ショップ',
+          tokiTitle: 'TokiDock — 作業タイマー＆ライブ時計',
+          tokiDesc: 'ポモドーロタイマー、配信待機カウントダウン、同時視聴タイマーをOBSのドックから1クリック操作。無料Lite版と12テーマ入りPro版があります。',
+          goalTitle: 'GoalDock — 目標プログレスバー＆お題ルーレット',
+          goalDesc: '登録者・同時視聴の目標バー、達成カウンター、雑談お題ルーレットをローカルHTMLで同期。配信画面に操作ボタンを映さず更新できます。',
+          tryDemo: 'ライブデモ',
+          tokiLink: '無料Lite版を見る',
+          goalLink: '無料Lite版を見る',
+          gearHeading: '配信・制作まわりで相性のよい定番機材',
+          gearDisclosure: 'Amazonのアソシエイトとして、KitWorks Labは適格販売により収入を得ています。',
+          gearDeck: 'OBSのシーン切替やマイクミュートを物理ボタン化。カスタムドックと併用すると配信中の操作ミスが減ります。',
+          gearMic: 'USB-C / XLR両対応のダイナミックマイク。キーボードの打鍵音や生活音を拾いにくいので作業配信向きです。',
+          gearCta: 'Amazonで詳細を見る →',
+          footerNote: 'KitWorks Lab — 個人制作のOBS配信ツール・無料Webツール工房。すべてのツールはブラウザ内ローカルで完結します。',
+          links: {
+            tokiLite: 'https://kitworks.booth.pm/items/9206837',
+            goalLite: 'https://kitworks.booth.pm/items/9206880'
+          }
+        },
+        en: {
+          pageTitle: 'Free Creator Web Tools — KitWorks Lab (100% Browser-Local)',
+          pageDesc: 'Zero-login, client-side web utilities for streamers and indie creators: YouTube Thumbnail Real-Size Checker, OBS Live Chat CSS Generator, and Local Batch Image Resizer.',
+          navTools: 'Free Tools',
+          navYt: 'Thumb Preview',
+          navChat: 'OBS Chat CSS',
+          navResize: 'Image Resizer',
+          navObs: 'OBS Overlays',
+          title: 'Free Browser-Local Web Tools for Creators & Streamers',
+          lead: 'Small practical utilities we wanted every time we prepped a stream or product listing. Zero accounts, zero uploads—everything runs locally in your browser.',
+          localStamp: 'Free · No Login · 100% Local',
+          t1Title: 'YouTube Thumbnail Real-Size & Legibility Checker',
+          t1Desc: 'Inspect your thumbnail at real Desktop Home, Search, Mobile, and 168px Sidebar sizes at once. Check 12:34 timestamp overlap, Light/Dark mode, and grayscale/colorblind contrast.',
+          t1Specs: 'Built-in demo canvas · Ctrl+V paste · 16:9 aspect ratio readout',
+          t2Title: 'OBS Live Chat CSS Generator',
+          t2Desc: 'Build custom OBS Browser Source CSS for YouTube Live and Twitch against a live animated chat preview. Includes 4 clean themes: Editorial Paper, Broadcast, Terminal, and Soft Pop.',
+          t2Specs: 'Opacity, shadow, hide badges/timestamps, auto fade-out & 1-click copy',
+          t3Title: 'Local Browser Image Resizer & Format Converter',
+          t3Desc: 'Batch resize and convert images to WebP, JPEG, or PNG with 1-click creator presets (YouTube, BOOTH, note, X, Coconala, 512×512). Shows before/after file size and exports a ZIP.',
+          t3Specs: 'HTML5 Canvas · Cover / Contain / Aspect modes · 3 built-in demo files',
+          openTool: 'Open Tool →',
+          obsHeading: 'Local HTML Overlays for OBS Studio',
+          obsDesc: 'Built with the same zero-server philosophy: control timers, goals, and topic roulettes from OBS Custom Browser Docks without showing buttons on stream.',
+          obsDemoBtn: 'Try Live Demos',
+          boothBtn: 'BOOTH Store (JP)',
+          tokiTitle: 'TokiDock — Pomodoro, Clock & Watch-Party Timer',
+          tokiDesc: 'Run study timers, stream-starting countdowns, and watch-along clocks from your OBS dock. Free Lite and Pro editions available.',
+          goalTitle: 'GoalDock — Progress Bar, Counter & Topic Roulette',
+          goalDesc: 'Update subscriber bars, session counters, and talking-point wheels locally inside OBS with one click.',
+          tryDemo: 'Live Demo',
+          tokiLink: 'Get Free Lite ($0+)',
+          goalLink: 'Get Free Lite ($0+)',
+          gearHeading: 'Desk & Stream Gear Notes (Amazon.co.jp)',
+          gearDisclosure: 'As an Amazon Associate, KitWorks Lab earns from qualifying purchases.',
+          gearDeck: 'Physical LCD keys for OBS scene switching, mute, and timers—pairs smoothly with Custom Browser Docks.',
+          gearMic: 'Hybrid USB-C / XLR dynamic mic that keeps keyboard noise and room echo out of desk streams.',
+          gearCta: 'View on Amazon.co.jp →',
+          footerNote: 'KitWorks Lab — Indie OBS overlays & zero-upload creator utilities. Everything runs locally in your browser.',
+          links: {
+            tokiLite: 'https://earnbot7.gumroad.com/',
+            goalLite: 'https://earnbot7.gumroad.com/'
+          }
+        }
+      };
+
+      window.KitWorksTools.initI18n(DICT);
+    })();
+  </script>
+</body>
+</html>

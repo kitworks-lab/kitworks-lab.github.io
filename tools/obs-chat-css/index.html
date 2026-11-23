@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OBSライブチャットCSSジェネレーター｜KitWorks Lab 無料Webツール</title>
+  <meta name="description" content="YouTube Live・TwitchのOBSブラウザソース用チャットCSSを画面を見ながら作れる無料ジェネレーター。4テーマ（紙面風・放送バー・ターミナル・ソフト吹き出し）、透過率・影・バッジ非表示・自動フェードアウト対応。コピペだけで即反映。">
+  <link rel="canonical" href="https://kitworks-lab.github.io/tools/obs-chat-css/">
+  <meta property="og:title" content="OBS Live Chat CSS Generator — KitWorks Lab">
+  <meta property="og:description" content="Visual OBS Browser Source custom CSS builder for YouTube Live & Twitch chat. 4 clean themes, live animated chat preview, fade-out & badge toggles, 1-click copy.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="../../assets/avatar-600.png">
+  <link rel="icon" type="image/svg+xml" href="../../assets/favicon.svg">
+  <link rel="icon" type="image/png" href="../../assets/favicon.png">
+  <link rel="stylesheet" href="../../css/styles.css">
+  <link rel="stylesheet" href="../tools.css">
+  <style>
+    .chat-workbench {
+      display: grid;
+      grid-template-columns: 360px minmax(0, 1fr);
+      gap: 24px;
+      align-items: start;
+    }
+
+    .theme-cards {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .theme-pick {
+      text-align: left;
+      padding: 10px 11px;
+      border: 1.5px solid var(--rule);
+      border-radius: var(--radius-sm);
+      background: var(--paper);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      transition: border-color 0.14s ease, background-color 0.14s ease;
+    }
+
+    .theme-pick:hover {
+      border-color: var(--ink);
+    }
+
+    .theme-pick.is-active {
+      border-color: var(--ink);
+      background: var(--paper-card);
+      box-shadow: var(--shadow-ink-sm);
+    }
+
+    .theme-pick-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      font-size: 12.5px;
+      font-weight: 800;
+      color: var(--ink);
+    }
+
+    .theme-swatches {
+      display: inline-flex;
+      gap: 3px;
+    }
+
+    .theme-swatches i {
+      width: 9px;
+      height: 9px;
+      border-radius: 2px;
+      border: 1px solid rgba(0, 0, 0, 0.25);
+      display: block;
+    }
+
+    .theme-pick-sub {
+      font-size: 11px;
+      color: var(--ink-muted);
+      line-height: 1.35;
+    }
+
+    .toggles-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px 10px;
+    }
+
+    /* Live OBS Stage */
+    .obs-preview-wrap {
+      display: grid;
+      gap: 20px;
+    }
+
+    .obs-stage {
+      position: relative;
+      height: 410px;
+      overflow: hidden;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      transition: background 0.18s ease;
+    }
+
+    .obs-stage[data-bg="dark"] {
+      background:
+        radial-gradient(circle at 20% 20%, rgba(193, 82, 43, 0.18), transparent 45%),
+        linear-gradient(155deg, #17191c 0%, #23282e 55%, #121518 100%);
+    }
+
+    .obs-stage[data-bg="light"] {
+      background:
+        linear-gradient(145deg, #e7dfd0 0%, #f4efe6 55%, #ded5c3 100%);
+    }
+
+    .obs-stage[data-bg="checker"] {
+      background-color: #d8d4cc;
+      background-image:
+        linear-gradient(45deg, #c2bdb4 25%, transparent 25%),
+        linear-gradient(-45deg, #c2bdb4 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #c2bdb4 75%),
+        linear-gradient(-45deg, transparent 75%, #c2bdb4 75%);
+      background-size: 20px 20px;
+      background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+    }
+
+    .obs-stage-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 14px;
+      background: var(--dock-surface);
+      color: var(--dock-text);
+      border-bottom: 1px solid var(--dock-border);
+      flex-wrap: wrap;
+    }
+
+    .stage-mini-btn {
+      border: 1px solid var(--dock-border);
+      background: var(--dock-panel);
+      color: var(--dock-text);
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .stage-mini-btn:hover {
+      border-color: #8c8277;
+    }
+
+    .stage-mini-btn.is-active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fffaf5;
+    }
+
+    /* Mock Chat Feed inside Stage */
+    #mockChatFeed {
+      width: 100%;
+      max-width: 500px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #mockChatFeed.align-right {
+      margin-left: auto;
+    }
+
+    .mock-msg {
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+      animation: chatPopIn 0.24s ease-out both;
+      word-break: break-word;
+    }
+
+    @keyframes chatPopIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .mock-avatar {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: grid;
+      place-items: center;
+      font-size: 12px;
+      font-weight: 800;
+      color: #fff;
+      margin-top: 2px;
+    }
+
+    .mock-content {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .mock-meta {
+      display: inline-flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-right: 6px;
+      vertical-align: baseline;
+    }
+
+    .mock-time {
+      font-family: var(--font-mono);
+      font-size: 0.78em;
+      opacity: 0.68;
+    }
+
+    .mock-badge {
+      display: inline-block;
+      font-size: 0.72em;
+      font-weight: 800;
+      padding: 1px 5px;
+      border-radius: 3px;
+      line-height: 1.3;
+    }
+
+    .mock-badge.is-mod {
+      background: #2f6bd8;
+      color: #fff;
+    }
+
+    .mock-badge.is-member {
+      background: #2f855a;
+      color: #fff;
+    }
+
+    .mock-author {
+      font-weight: 800;
+      font-size: 0.9em;
+    }
+
+    .mock-text {
+      line-height: 1.45;
+    }
+
+    .mock-super-amount {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 0.8em;
+      font-weight: 800;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: #c8963e;
+      color: #1e1b18;
+      margin-right: 6px;
+    }
+
+    .css-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    /* Setup Steps */
+    .obs-steps {
+      list-style: none;
+      padding: 0;
+      margin: 26px 0 0;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .obs-step {
+      padding-top: 14px;
+      border-top: 2px solid var(--rule-strong);
+    }
+
+    .obs-step-n {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+
+    .obs-step h3 {
+      margin: 0 0 5px;
+      font-size: 14.5px;
+      font-weight: 800;
+    }
+
+    .obs-step p {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--ink-soft);
+    }
+
+    @media (max-width: 1020px) {
+      .chat-workbench {
+        grid-template-columns: 1fr;
+      }
+
+      .obs-steps {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 720px) {
+      .obs-stage {
+        height: 330px;
+        padding: 12px;
+      }
+
+      .toggles-grid,
+      .obs-steps {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+  <style id="livePreviewCss"></style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand-link" href="../../">
+        <img class="brand-avatar" src="../../assets/avatar-600.png" alt="KitWorks Lab" width="36" height="36">
+        <span class="brand-name">KitWorks Lab</span>
+      </a>
+      <div class="header-right">
+        <nav class="site-nav" aria-label="Primary">
+          <a href="../" data-i18n="navTools">無料ツール一覧</a>
+          <a href="../yt-thumb-preview/" data-i18n="navYt">サムネ確認</a>
+          <a href="./" class="is-current" data-i18n="navChat">OBSチャットCSS</a>
+          <a href="../image-batch-resize/" data-i18n="navResize">画像リサイズ</a>
+          <a href="../../" data-i18n="navObs">OBS製品デモ</a>
+        </nav>
+        <div class="lang-toggle" role="group" aria-label="Language">
+          <button type="button" class="lang-btn is-active" data-lang-btn="ja" aria-pressed="true">JP</button>
+          <button type="button" class="lang-btn" data-lang-btn="en" aria-pressed="false">EN</button>
+        </div>
+      </div>
+    </div>
+    <nav class="mobile-tool-nav" aria-label="Tools navigation">
+      <a href="../" data-i18n="navTools">無料ツール一覧</a>
+      <a href="../yt-thumb-preview/" data-i18n="navYt">サムネ確認</a>
+      <a href="./" class="is-current" data-i18n="navChat">OBSチャットCSS</a>
+      <a href="../image-batch-resize/" data-i18n="navResize">画像リサイズ</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="tool-hero">
+      <div class="container">
+        <div class="breadcrumb">
+          <a href="../../">KitWorks Lab</a>
+          <span class="breadcrumb-sep">/</span>
+          <a href="../" data-i18n="navTools">無料ツール一覧</a>
+          <span class="breadcrumb-sep">/</span>
+          <span data-i18n="crumbCurrent">OBSライブチャットCSSジェネレーター</span>
+        </div>
+        <div class="tool-hero-row">
+          <div>
+            <h1 class="tool-hero-title" data-i18n="title">OBSライブチャットCSSジェネレーター</h1>
+            <p class="tool-hero-lead" data-i18n="lead">YouTube Live や Twitch のコメント欄を、OBSの「カスタムCSS」に貼るだけで読みやすく整えるジェネレーターです。文字サイズ・透過率・影・自動フェードアウトをプレビューで調整して、そのまま1クリックコピーできます。</p>
+          </div>
+          <div class="local-stamp">
+            <span class="local-stamp-dot" aria-hidden="true"></span>
+            <span data-i18n="localStamp">登録不要 / CSSをコピペするだけ</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="tool-section">
+      <div class="container">
+        <div class="chat-workbench">
+          <!-- Left Controls -->
+          <aside class="tool-panel" aria-label="Chat CSS controls">
+            <div class="tool-panel-head">
+              <h2 class="tool-panel-title" data-i18n="ctrlHeading">デザイン設定</h2>
+              <button type="button" class="btn btn-secondary btn-sm" id="btnReset" data-i18n="btnReset">初期値に戻す</button>
+            </div>
+            <div class="tool-panel-body ctrl-grid">
+              <div>
+                <span class="ctrl-label" data-i18n="labelPlatform">出力先プラットフォーム</span>
+                <div class="seg-group" role="group" aria-label="Target platform">
+                  <button type="button" class="seg-btn is-active" data-platform="youtube">YouTube Live</button>
+                  <button type="button" class="seg-btn" data-platform="twitch">Twitch / 汎用</button>
+                </div>
+              </div>
+
+              <div>
+                <span class="ctrl-label" data-i18n="labelTheme">ベーステーマ（4種）</span>
+                <div class="theme-cards" role="group" aria-label="Chat theme">
+                  <button type="button" class="theme-pick is-active" data-theme="editorial">
+                    <span class="theme-pick-top">
+                      <span>Editorial Paper</span>
+                      <span class="theme-swatches"><i style="background:#f7f3eb"></i><i style="background:#1e1b18"></i><i style="background:#c1522b"></i></span>
+                    </span>
+                    <span class="theme-pick-sub" data-i18n="thEditorialDesc">紙面カード＋黒枠・影</span>
+                  </button>
+                  <button type="button" class="theme-pick" data-theme="broadcast">
+                    <span class="theme-pick-top">
+                      <span>Clean Broadcast</span>
+                      <span class="theme-swatches"><i style="background:#1a1816"></i><i style="background:#d9a441"></i><i style="background:#f6f4ef"></i></span>
+                    </span>
+                    <span class="theme-pick-sub" data-i18n="thBroadcastDesc">ゲーム画面向け高視認バー</span>
+                  </button>
+                  <button type="button" class="theme-pick" data-theme="terminal">
+                    <span class="theme-pick-top">
+                      <span>Compact Terminal</span>
+                      <span class="theme-swatches"><i style="background:#171a18"></i><i style="background:#62b588"></i><i style="background:#d9dfd8"></i></span>
+                    </span>
+                    <span class="theme-pick-sub" data-i18n="thTerminalDesc">作業・開発配信向け等幅</span>
+                  </button>
+                  <button type="button" class="theme-pick" data-theme="softpop">
+                    <span class="theme-pick-top">
+                      <span>Soft Pop</span>
+                      <span class="theme-swatches"><i style="background:#fffdf8"></i><i style="background:#396851"></i><i style="background:#e8b959"></i></span>
+                    </span>
+                    <span class="theme-pick-sub" data-i18n="thSoftDesc">雑談・勉強枠向け角丸吹き出し</span>
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label class="ctrl-label" for="selFont" data-i18n="labelFont">フォント系統</label>
+                <select class="select-input" id="selFont">
+                  <option value="sans" data-i18n="fontSans">ゴシック（標準・読みやすい）</option>
+                  <option value="rounded" data-i18n="fontRounded">丸ゴシック系（やわらかい）</option>
+                  <option value="serif" data-i18n="fontSerif">明朝系（落ち着いた紙面風）</option>
+                  <option value="mono" data-i18n="fontMono">等幅（開発・ログ風）</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="ctrl-label" for="rngSize">
+                  <span data-i18n="labelSize">文字サイズ</span>
+                  <span class="ctrl-value" id="valSize">18px</span>
+                </label>
+                <input class="range-input" type="range" id="rngSize" min="13" max="28" value="18">
+              </div>
+
+              <div>
+                <label class="ctrl-label" for="rngOpacity">
+                  <span data-i18n="labelOpacity">背景の不透明度</span>
+                  <span class="ctrl-value" id="valOpacity">92%</span>
+                </label>
+                <input class="range-input" type="range" id="rngOpacity" min="0" max="100" value="92">
+              </div>
+
+              <div>
+                <label class="ctrl-label" for="rngGap">
+                  <span data-i18n="labelGap">コメント間隔</span>
+                  <span class="ctrl-value" id="valGap">10px</span>
+                </label>
+                <input class="range-input" type="range" id="rngGap" min="4" max="24" value="10">
+              </div>
+
+              <div>
+                <span class="ctrl-label" data-i18n="labelOptions">表示オプション</span>
+                <div class="toggles-grid">
+                  <label class="check-toggle">
+                    <input type="checkbox" id="chkShadow" checked>
+                    <span data-i18n="optShadow">文字の影（読みやすく）</span>
+                  </label>
+                  <label class="check-toggle">
+                    <input type="checkbox" id="chkHideAvatar">
+                    <span data-i18n="optHideAvatar">アイコン非表示</span>
+                  </label>
+                  <label class="check-toggle">
+                    <input type="checkbox" id="chkHideBadges">
+                    <span data-i18n="optHideBadges">バッジ非表示</span>
+                  </label>
+                  <label class="check-toggle">
+                    <input type="checkbox" id="chkHideTime" checked>
+                    <span data-i18n="optHideTime">時刻を非表示</span>
+                  </label>
+                  <label class="check-toggle">
+                    <input type="checkbox" id="chkFadeOut">
+                    <span data-i18n="optFadeOut">自動フェードアウト</span>
+                  </label>
+                  <label class="check-toggle">
+                    <input type="checkbox" id="chkAlignRight">
+                    <span data-i18n="optAlignRight">右寄せ配置</span>
+                  </label>
+                </div>
+              </div>
+
+              <div id="fadeSecWrap" hidden>
+                <label class="ctrl-label" for="rngFadeSec">
+                  <span data-i18n="labelFadeSec">消えるまでの秒数</span>
+                  <span class="ctrl-value" id="valFadeSec">25s</span>
+                </label>
+                <input class="range-input" type="range" id="rngFadeSec" min="8" max="60" value="25">
+              </div>
+            </div>
+          </aside>
+
+          <!-- Right Preview & Generated CSS -->
+          <div class="obs-preview-wrap">
+            <!-- Live Preview Window -->
+            <div class="tool-panel">
+              <div class="window-bar">
+                <span class="window-dots" aria-hidden="true"><span></span><span></span><span></span></span>
+                <span class="window-bar-title" id="previewBarTitle">OBS Live Chat Preview · Editorial Paper</span>
+              </div>
+              <div class="obs-stage-controls">
+                <div class="ctrl-row">
+                  <button type="button" class="stage-mini-btn is-active" data-stage-bg="dark" data-i18n="bgDark">暗い画面</button>
+                  <button type="button" class="stage-mini-btn" data-stage-bg="light" data-i18n="bgLight">明るい背景</button>
+                  <button type="button" class="stage-mini-btn" data-stage-bg="checker" data-i18n="bgChecker">透過確認</button>
+                </div>
+                <div class="ctrl-row">
+                  <button type="button" class="stage-mini-btn" id="btnAddMsg" data-i18n="btnAddMsg">+ コメント追加</button>
+                  <button type="button" class="stage-mini-btn" id="btnAddSuper" data-i18n="btnAddSuper">+ スパチャ例</button>
+                  <button type="button" class="stage-mini-btn" id="btnPause" data-i18n="btnPause">一時停止</button>
+                </div>
+              </div>
+              <div class="obs-stage" id="obsStage" data-bg="dark">
+                <div id="mockChatFeed" aria-live="polite"></div>
+              </div>
+            </div>
+
+            <!-- CSS Output Window -->
+            <div class="tool-panel">
+              <div class="tool-panel-head">
+                <h2 class="tool-panel-title" data-i18n="cssHeading">OBS「カスタムCSS」貼り付け用コード</h2>
+                <div class="css-actions">
+                  <span class="inline-feedback" id="copyStatus" aria-live="polite"></span>
+                  <button type="button" class="btn btn-secondary btn-sm" id="btnDownloadCss" data-i18n="btnDownload">.css 保存</button>
+                  <button type="button" class="btn btn-primary btn-sm" id="btnCopyCss" data-i18n="btnCopy">CSSをコピー</button>
+                </div>
+              </div>
+              <pre class="code-output" id="cssOutput" tabindex="0"></pre>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4-Step OBS Setup Guide -->
+        <ol class="obs-steps">
+          <li class="obs-step">
+            <div class="obs-step-n">STEP 01</div>
+            <h3 data-i18n="step1Title">チャットのポップアウトURLを取得</h3>
+            <p data-i18n="step1Desc">YouTube Studioの配信管理画面でチャット右上のメニューから「チャットをポップアウト」を開き、URLをコピーします。</p>
+          </li>
+          <li class="obs-step">
+            <div class="obs-step-n">STEP 02</div>
+            <h3 data-i18n="step2Title">OBSでブラウザソースを追加</h3>
+            <p data-i18n="step2Desc">ソースの「＋」→「ブラウザ」を選び、URL欄に貼ります。幅は420〜520、高さは600〜800あたりが扱いやすいです。</p>
+          </li>
+          <li class="obs-step">
+            <div class="obs-step-n">STEP 03</div>
+            <h3 data-i18n="step3Title">カスタムCSS欄に全置き換え</h3>
+            <p data-i18n="step3Desc">「カスタムCSS」にもともと入っている数行を消して、このツールでコピーしたCSSをそのまま貼り付けます。</p>
+          </li>
+          <li class="obs-step">
+            <div class="obs-step-n">STEP 04</div>
+            <h3 data-i18n="step4Title">OKを押してキャッシュ再読込</h3>
+            <p data-i18n="step4Desc">反映が遅いときはプロパティ下部の「現在のページのキャッシュを再読み込み」を1回押すと切り替わります。</p>
+          </li>
+        </ol>
+
+        <!-- Subtle KitWorks Lab OBS Product Link -->
+        <div class="promo-strip">
+          <div class="promo-strip-copy">
+            <h2 class="promo-strip-title" data-i18n="promoTitle">チャットと並べて使える、手元操作のタイマー＆目標バー</h2>
+            <p class="promo-strip-desc" data-i18n="promoDesc">TokiDock（作業タイマー・時計）と GoalDock（登録者目標バー・お題ルーレット）は、OBSカスタムブラウザドックから配信画面にボタンを映さず操作できます。無料Lite版あり。</p>
+          </div>
+          <div class="promo-strip-actions">
+            <a class="btn btn-secondary btn-sm" href="../../" data-i18n="promoDemo">ライブデモを触る</a>
+            <a class="btn btn-primary btn-sm" href="https://kitworks.booth.pm/" target="_blank" rel="noopener noreferrer" data-i18n="promoStore" data-i18n-href="storeHome">BOOTH ショップを見る</a>
+          </div>
+        </div>
+
+        <!-- Compact Amazon Associates PR Strip (verified URLs from gear-catalog.json) -->
+        <div class="gear-pr-box">
+          <div class="gear-pr-head">
+            <h2 class="gear-pr-title"><span class="pr-mark">PR</span><span data-i18n="gearHeading">OBS運用が楽になる定番機材メモ</span></h2>
+            <p class="gear-pr-disclosure" data-i18n="gearDisclosure">Amazonのアソシエイトとして、KitWorks Labは適格販売により収入を得ています。</p>
+          </div>
+          <div class="gear-pr-grid">
+            <a class="gear-pr-item" href="https://www.amazon.co.jp/s?k=Elgato+Stream+Deck+MK.2&tag=kitworkslab-22" target="_blank" rel="noopener noreferrer sponsored">
+              <span class="gear-pr-name">Elgato Stream Deck MK.2（15キー）</span>
+              <span class="gear-pr-desc" data-i18n="gearDeckDesc">シーン切替・マイクミュート・タイマー操作を物理ボタンにまとめると、チャットを読みながらでも誤操作が減ります。</span>
+              <span class="gear-pr-cta" data-i18n="gearCta">Amazonで詳細を見る →</span>
+            </a>
+            <a class="gear-pr-item" href="https://www.amazon.co.jp/s?k=Shure+MV7%2B&tag=kitworkslab-22" target="_blank" rel="noopener noreferrer sponsored">
+              <span class="gear-pr-name">Shure MV7+ ポッドキャストマイクロホン</span>
+              <span class="gear-pr-desc" data-i18n="gearMicDesc">USB-C直挿しでもXLRでも使えるダイナミックマイク。キーボードの打鍵音や部屋鳴りを抑えたい作業配信向き。</span>
+              <span class="gear-pr-cta" data-i18n="gearCta">Amazonで詳細を見る →</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <img class="brand-avatar" src="../../assets/avatar-600.png" alt="KitWorks Lab" width="32" height="32">
+        <p class="footer-note" data-i18n="footerNote">KitWorks Lab — 個人制作のOBS配信ツール・無料Webツール工房。すべての処理はブラウザ内ローカルで完結します。</p>
+      </div>
+      <nav class="footer-links" aria-label="Footer links">
+        <a href="../" data-i18n="navTools">無料ツール一覧</a>
+        <a href="../../" data-i18n="navObs">OBS製品デモ</a>
+        <a href="https://kitworks.booth.pm/" target="_blank" rel="noopener noreferrer">BOOTH</a>
+        <a href="https://earnbot7.gumroad.com/" target="_blank" rel="noopener noreferrer">Gumroad (EN)</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script src="../tools-common.js"></script>
+  <script>
+    (function () {
+      'use strict';
+
+      var DICT = {
+        ja: {
+          pageTitle: 'OBSライブチャットCSSジェネレーター｜KitWorks Lab 無料Webツール',
+          pageDesc: 'YouTube Live・TwitchのOBSブラウザソース用チャットCSSをリアルタイムに作成。4テーマ、透過率、影、バッジ非表示、自動フェードアウト対応。',
+          navTools: '無料ツール一覧',
+          navYt: 'サムネ確認',
+          navChat: 'OBSチャットCSS',
+          navResize: '画像リサイズ',
+          navObs: 'OBS製品デモ',
+          crumbCurrent: 'OBSライブチャットCSSジェネレーター',
+          title: 'OBSライブチャットCSSジェネレーター',
+          lead: 'YouTube Live や Twitch のコメント欄を、OBSの「カスタムCSS」に貼るだけで読みやすく整えるジェネレーターです。文字サイズ・透過率・影・自動フェードアウトをプレビューで調整して、そのまま1クリックコピーできます。',
+          localStamp: '登録不要 / CSSをコピペするだけ',
+          ctrlHeading: 'デザイン設定',
+          btnReset: '初期値に戻す',
+          labelPlatform: '出力先プラットフォーム',
+          labelTheme: 'ベーステーマ（4種）',
+          thEditorialDesc: '紙面カード＋黒枠・影',
+          thBroadcastDesc: 'ゲーム画面向け高視認バー',
+          thTerminalDesc: '作業・開発配信向け等幅',
+          thSoftDesc: '雑談・勉強枠向け角丸吹き出し',
+          labelFont: 'フォント系統',
+          fontSans: 'ゴシック（標準・読みやすい）',
+          fontRounded: '丸ゴシック系（やわらかい）',
+          fontSerif: '明朝系（落ち着いた紙面風）',
+          fontMono: '等幅（開発・ログ風）',
+          labelSize: '文字サイズ',
+          labelOpacity: '背景の不透明度',
+          labelGap: 'コメント間隔',
+          labelOptions: '表示オプション',
+          optShadow: '文字の影（読みやすく）',
+          optHideAvatar: 'アイコン非表示',
+          optHideBadges: 'バッジ非表示',
+          optHideTime: '時刻を非表示',
+          optFadeOut: '自動フェードアウト',
+          optAlignRight: '右寄せ配置',
+          labelFadeSec: '消えるまでの秒数',
+          bgDark: '暗い画面',
+          bgLight: '明るい背景',
+          bgChecker: '透過確認',
+          btnAddMsg: '+ コメント追加',
+          btnAddSuper: '+ スパチャ例',
+          btnPause: '一時停止',
+          btnResume: '再開',
+          cssHeading: 'OBS「カスタムCSS」貼り付け用コード',
+          btnDownload: '.css 保存',
+          btnCopy: 'CSSをコピー',
+          copied: 'コピーしました',
+          step1Title: 'チャットのポップアウトURLを取得',
+          step1Desc: 'YouTube Studioの配信管理画面でチャット右上のメニューから「チャットをポップアウト」を開き、URLをコピーします。',
+          step2Title: 'OBSでブラウザソースを追加',
+          step2Desc: 'ソースの「＋」→「ブラウザ」を選び、URL欄に貼ります。幅は420〜520、高さは600〜800あたりが扱いやすいです。',
+          step3Title: 'カスタムCSS欄に全置き換え',
+          step3Desc: '「カスタムCSS」にもともと入っている数行を消して、このツールでコピーしたCSSをそのまま貼り付けます。',
+          step4Title: 'OKを押してキャッシュ再読込',
+          step4Desc: '反映が遅いときはプロパティ下部の「現在のページのキャッシュを再読み込み」を1回押すと切り替わります。',
+          promoTitle: 'チャットと並べて使える、手元操作のタイマー＆目標バー',
+          promoDesc: 'TokiDock（作業タイマー・時計）と GoalDock（登録者目標バー・お題ルーレット）は、OBSカスタムブラウザドックから配信画面にボタンを映さず操作できます。無料Lite版あり。',
+          promoDemo: 'ライブデモを触る',
+          promoStore: 'BOOTH ショップを見る',
+          gearHeading: 'OBS運用が楽になる定番機材メモ',
+          gearDisclosure: 'Amazonのアソシエイトとして、KitWorks Labは適格販売により収入を得ています。',
+          gearDeckDesc: 'シーン切替・マイクミュート・タイマー操作を物理ボタンにまとめると、チャットを読みながらでも誤操作が減ります。',
+          gearMicDesc: 'USB-C直挿しでもXLRでも使えるダイナミックマイク。キーボードの打鍵音や部屋鳴りを抑えたい作業配信向き。',
+          gearCta: 'Amazonで詳細を見る →',
+          footerNote: 'KitWorks Lab — 個人制作のOBS配信ツール・無料Webツール工房。すべての処理はブラウザ内ローカルで完結します。',
+          links: { storeHome: 'https://kitworks.booth.pm/' }
+        },
+        en: {
+          pageTitle: 'OBS Live Chat CSS Generator — KitWorks Lab Free Tools',
+          pageDesc: 'Visual custom CSS builder for YouTube Live & Twitch OBS Browser Source chat overlays. 4 clean themes, opacity, text shadow, hide badges/timestamps, fade-out & 1-click copy.',
+          navTools: 'Free Tools',
+          navYt: 'Thumb Preview',
+          navChat: 'OBS Chat CSS',
+          navResize: 'Image Resizer',
+          navObs: 'OBS Overlays',
+          crumbCurrent: 'OBS Live Chat CSS Generator',
+          title: 'OBS Live Chat CSS Generator',
+          lead: 'Style YouTube Live or Twitch chat directly inside OBS Studio’s Browser Source Custom CSS box. Tweak font size, opacity, drop shadow, and auto fade-out against a live mock feed, then copy in one click.',
+          localStamp: 'No Login · Copy & Paste CSS',
+          ctrlHeading: 'Style Controls',
+          btnReset: 'Reset',
+          labelPlatform: 'Target Selectors',
+          labelTheme: 'Base Theme (4 presets)',
+          thEditorialDesc: 'Warm paper card + ink border',
+          thBroadcastDesc: 'High-contrast broadcast bar',
+          thTerminalDesc: 'Compact monospace dev log',
+          thSoftDesc: 'Rounded soft bubbles for study',
+          labelFont: 'Font Family',
+          fontSans: 'Sans-Serif (clean default)',
+          fontRounded: 'Rounded Sans (friendly)',
+          fontSerif: 'Editorial Serif (paper look)',
+          fontMono: 'Monospace (coding stream)',
+          labelSize: 'Font Size',
+          labelOpacity: 'Background Opacity',
+          labelGap: 'Message Spacing',
+          labelOptions: 'Visibility & Layout',
+          optShadow: 'Text drop shadow',
+          optHideAvatar: 'Hide avatars',
+          optHideBadges: 'Hide badges',
+          optHideTime: 'Hide timestamps',
+          optFadeOut: 'Auto fade-out',
+          optAlignRight: 'Align right',
+          labelFadeSec: 'Fade-out after',
+          bgDark: 'Dark Scene',
+          bgLight: 'Light Desk',
+          bgChecker: 'Transparency',
+          btnAddMsg: '+ Test Message',
+          btnAddSuper: '+ SuperChat',
+          btnPause: 'Pause',
+          btnResume: 'Resume',
+          cssHeading: 'Generated OBS Custom CSS',
+          btnDownload: 'Save .css',
+          btnCopy: 'Copy CSS',
+          copied: 'Copied to clipboard!',
+          step1Title: 'Grab your popout chat URL',
+          step1Desc: 'In YouTube Studio live control room, open the chat menu → Popout chat and copy the window URL.',
+          step2Title: 'Add a Browser Source in OBS',
+          step2Desc: 'Click + → Browser, paste the URL, and set a clean box size like Width 460 × Height 700.',
+          step3Title: 'Replace the Custom CSS field',
+          step3Desc: 'Clear OBS’s default 2 lines in the Custom CSS box and paste the generated CSS from above.',
+          step4Title: 'Click OK & refresh cache',
+          step4Desc: 'If styles do not appear immediately, click "Refresh cache of current page" at the bottom of Browser Source properties.',
+          promoTitle: 'Pair your chat with local OBS timer & goal overlays',
+          promoDesc: 'TokiDock (Pomodoro & clock) and GoalDock (subscriber bar & roulette) run locally from OBS Custom Browser Docks—no buttons ever appear on stream.',
+          promoDemo: 'Try Live Demos',
+          promoStore: 'Visit Gumroad Store',
+          gearHeading: 'Stream Desk Gear Notes (Japan Amazon)',
+          gearDisclosure: 'As an Amazon Associate, KitWorks Lab earns from qualifying purchases.',
+          gearDeckDesc: 'Map scene switching, mic mute, and timer hotkeys to physical keys so you never alt-tab mid-chat.',
+          gearMicDesc: 'USB-C / XLR dynamic mic that rejects keyboard clatter and room echo during desk or coworking streams.',
+          gearCta: 'View on Amazon.co.jp →',
+          footerNote: 'KitWorks Lab — Indie OBS overlays & zero-upload creator utilities. Everything runs locally in your browser.',
+          links: { storeHome: 'https://earnbot7.gumroad.com/' }
+        }
+      };
+
+      var THEMES = {
+        editorial: {
+          label: 'Editorial Paper',
+          bgRgb: [247, 243, 235],
+          textColor: '#1e1b18',
+          authorColor: '#c1522b',
+          memberColor: '#396851',
+          border: '1.5px solid #1e1b18',
+          borderLeft: '1.5px solid #1e1b18',
+          radius: '7px',
+          boxShadow: '3px 3px 0 rgba(30, 27, 24, 0.92)',
+          padding: '8px 12px',
+          shadowCss: '0 1px 0 rgba(255, 255, 255, 0.45)'
+        },
+        broadcast: {
+          label: 'Clean Broadcast',
+          bgRgb: [22, 20, 18],
+          textColor: '#f6f3ee',
+          authorColor: '#e8b959',
+          memberColor: '#7fd1a4',
+          border: '1px solid rgba(255, 255, 255, 0.12)',
+          borderLeft: '4px solid #d9a441',
+          radius: '4px',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.28)',
+          padding: '8px 13px',
+          shadowCss: '0 1px 3px rgba(0, 0, 0, 0.85)'
+        },
+        terminal: {
+          label: 'Compact Terminal',
+          bgRgb: [20, 24, 21],
+          textColor: '#e4ebe5',
+          authorColor: '#72c79a',
+          memberColor: '#e8b959',
+          border: '1px solid rgba(114, 199, 154, 0.28)',
+          borderLeft: '2px solid #72c79a',
+          radius: '2px',
+          boxShadow: 'none',
+          padding: '5px 10px',
+          shadowCss: '0 1px 2px rgba(0, 0, 0, 0.9)'
+        },
+        softpop: {
+          label: 'Soft Pop',
+          bgRgb: [255, 253, 248],
+          textColor: '#2a2622',
+          authorColor: '#396851',
+          memberColor: '#c1522b',
+          border: '1.5px solid #d8cebe',
+          borderLeft: '1.5px solid #d8cebe',
+          radius: '14px',
+          boxShadow: '0 3px 10px rgba(30, 27, 24, 0.10)',
+          padding: '9px 14px',
+          shadowCss: '0 1px 0 rgba(255, 255, 255, 0.65)'
+        }
+      };
+
+      var FONTS = {
+        sans: '"Hiragino Sans", "Yu Gothic UI", "Noto Sans JP", -apple-system, BlinkMacSystemFont, sans-serif',
+        rounded: '"Hiragino Maru Gothic ProN", "M PLUS Rounded 1c", "BIZ UDPGothic", sans-serif',
+        serif: 'Georgia, "Yu Mincho", "Hiragino Mincho ProN", serif',
+        mono: '"Cascadia Code", Consolas, "SFMono-Regular", Menlo, monospace'
+      };
+
+      var MOCK_POOL = {
+        ja: [
+          { author: 'haru_desk', color: '#c1522b', badge: 'member', text: 'こんばんは！今日も作業お邪魔します〜' },
+          { author: 'mika_obs', color: '#396851', badge: '', text: '右下のタイマー見やすくて助かります' },
+          { author: 'kenji_dev', color: '#475569', badge: 'mod', text: 'CSSの透過いい感じですね、背景の邪魔にならない' },
+          { author: 'sato_25', color: '#8f6425', badge: '', text: '25分集中してきます！' },
+          { author: 'yuki_note', color: '#6b4c7a', badge: 'member', text: 'このチャット配色めっちゃ読みやすいです' },
+          { author: 'taku_audio', color: '#2e6a73', badge: '', text: '音量バランスちょうどいいです👍' }
+        ],
+        en: [
+          { author: 'haru_desk', color: '#c1522b', badge: 'member', text: 'Evening! Jumping in for a 50m study block.' },
+          { author: 'mika_obs', color: '#396851', badge: '', text: 'Love how crisp this chat overlay looks on dark scenes.' },
+          { author: 'kenji_dev', color: '#475569', badge: 'mod', text: 'Reminder: drop !todo in chat if you want your task pinned.' },
+          { author: 'alex_builds', color: '#8f6425', badge: '', text: 'Zero neon glare, actually readable on mobile too.' },
+          { author: 'nora_ui', color: '#6b4c7a', badge: 'member', text: 'The spacing feels super clean.' },
+          { author: 'sam_audio', color: '#2e6a73', badge: '', text: 'Mic levels sound great today!' }
+        ]
+      };
+
+      var state = {
+        platform: 'youtube',
+        theme: 'editorial',
+        font: 'sans',
+        fontSize: 18,
+        opacity: 92,
+        gap: 10,
+        shadow: true,
+        hideAvatar: false,
+        hideBadges: false,
+        hideTime: true,
+        fadeOut: false,
+        fadeSec: 25,
+        alignRight: false,
+        paused: false,
+        msgIdx: 0
+      };
+
+      var els = {
+        selFont: document.getElementById('selFont'),
+        rngSize: document.getElementById('rngSize'),
+        valSize: document.getElementById('valSize'),
+        rngOpacity: document.getElementById('rngOpacity'),
+        valOpacity: document.getElementById('valOpacity'),
+        rngGap: document.getElementById('rngGap'),
+        valGap: document.getElementById('valGap'),
+        chkShadow: document.getElementById('chkShadow'),
+        chkHideAvatar: document.getElementById('chkHideAvatar'),
+        chkHideBadges: document.getElementById('chkHideBadges'),
+        chkHideTime: document.getElementById('chkHideTime'),
+        chkFadeOut: document.getElementById('chkFadeOut'),
+        chkAlignRight: document.getElementById('chkAlignRight'),
+        fadeSecWrap: document.getElementById('fadeSecWrap'),
+        rngFadeSec: document.getElementById('rngFadeSec'),
+        valFadeSec: document.getElementById('valFadeSec'),
+        obsStage: document.getElementById('obsStage'),
+        mockFeed: document.getElementById('mockChatFeed'),
+        livePreviewCss: document.getElementById('livePreviewCss'),
+        cssOutput: document.getElementById('cssOutput'),
+        previewBarTitle: document.getElementById('previewBarTitle'),
+        copyStatus: document.getElementById('copyStatus'),
+        btnCopyCss: document.getElementById('btnCopyCss'),
+        btnDownloadCss: document.getElementById('btnDownloadCss'),
+        btnReset: document.getElementById('btnReset'),
+        btnAddMsg: document.getElementById('btnAddMsg'),
+        btnAddSuper: document.getElementById('btnAddSuper'),
+        btnPause: document.getElementById('btnPause')
+      };
+
+      function rgbaStr(rgb, opacityPct) {
+        var alpha = (opacityPct / 100).toFixed(2);
+        return 'rgba(' + rgb[0] + ', ' + rgb[1] + ', ' + rgb[2] + ', ' + alpha + ')';
+      }
+
+      function buildObsCss() {
+        var th = THEMES[state.theme];
+        var fontStack = FONTS[state.font] || FONTS.sans;
+        var bg = rgbaStr(th.bgRgb, state.opacity);
+        var shadowLine = state.shadow ? ('  text-shadow: ' + th.shadowCss + ' !important;\n') : '  text-shadow: none !important;\n';
+        var boxShadowVal = state.opacity < 12 ? 'none' : th.boxShadow;
+        var borderVal = state.opacity < 12 ? 'none' : th.border;
+        var borderLeftVal = state.opacity < 12 ? 'none' : th.borderLeft;
+
+        var lines = [];
+        lines.push('/* Generated by KitWorks Lab — OBS Live Chat CSS Generator */');
+        lines.push('/* Theme: ' + th.label + ' | Target: ' + (state.platform === 'youtube' ? 'YouTube Live Chat' : 'Twitch / Generic Chat') + ' */');
+        lines.push('');
+        lines.push('html, body {');
+        lines.push('  background-color: transparent !important;');
+        lines.push('  margin: 0 !important;');
+        lines.push('  padding: 0 !important;');
+        lines.push('  overflow: hidden !important;');
+        lines.push('  font-family: ' + fontStack + ' !important;');
+        lines.push('}');
+        lines.push('');
+
+        if (state.platform === 'youtube') {
+          lines.push('/* Hide YouTube Live Chrome & Scrollbars */');
+          lines.push('yt-live-chat-renderer,');
+          lines.push('yt-live-chat-item-list-renderer #items,');
+          lines.push('yt-live-chat-item-list-renderer #item-scroller {');
+          lines.push('  background: transparent !important;');
+          lines.push('  overflow: hidden !important;');
+          lines.push('}');
+          lines.push('yt-live-chat-header-renderer,');
+          lines.push('yt-live-chat-message-input-renderer,');
+          lines.push('yt-live-chat-ticker-renderer,');
+          lines.push('#action-panel, #reaction-control-panel {');
+          lines.push('  display: none !important;');
+          lines.push('}');
+          lines.push('');
+          lines.push('/* Message Card */');
+          lines.push('yt-live-chat-text-message-renderer {');
+          lines.push('  background-color: ' + bg + ' !important;');
+          lines.push('  border: ' + borderVal + ' !important;');
+          lines.push('  border-left: ' + borderLeftVal + ' !important;');
+          lines.push('  border-radius: ' + th.radius + ' !important;');
+          lines.push('  box-shadow: ' + boxShadowVal + ' !important;');
+          lines.push('  padding: ' + th.padding + ' !important;');
+          lines.push('  margin: 0 8px ' + state.gap + 'px 8px !important;');
+          lines.push('  font-size: ' + state.fontSize + 'px !important;');
+          lines.push('  line-height: 1.45 !important;');
+          if (state.alignRight) {
+            lines.push('  margin-left: auto !important;');
+            lines.push('  max-width: 92% !important;');
+          }
+          if (state.fadeOut) {
+            lines.push('  animation: kwChatIn 0.25s ease-out, kwChatFade 0.6s ease-in ' + state.fadeSec + 's forwards !important;');
+          } else {
+            lines.push('  animation: kwChatIn 0.25s ease-out !important;');
+          }
+          lines.push('}');
+          lines.push('');
+          lines.push('yt-live-chat-text-message-renderer #message {');
+          lines.push('  color: ' + th.textColor + ' !important;');
+          lines.push(shadowLine.trimEnd());
+          lines.push('}');
+          lines.push('yt-live-chat-author-chip #author-name {');
+          lines.push('  color: ' + th.authorColor + ' !important;');
+          lines.push('  font-weight: 800 !important;');
+          lines.push('}');
+          lines.push('yt-live-chat-author-chip #author-name.member {');
+          lines.push('  color: ' + th.memberColor + ' !important;');
+          lines.push('}');
+          if (state.hideAvatar) {
+            lines.push('yt-live-chat-text-message-renderer #author-photo { display: none !important; }');
+          }
+          if (state.hideBadges) {
+            lines.push('yt-live-chat-author-chip #chat-badges { display: none !important; }');
+          }
+          if (state.hideTime) {
+            lines.push('yt-live-chat-text-message-renderer #timestamp { display: none !important; }');
+          }
+        } else {
+          lines.push('/* Twitch / StreamElements / Generic Chat Container */');
+          lines.push('#log, .chat-list--default {');
+          lines.push('  background: transparent !important;');
+          lines.push('}');
+          lines.push('#log > div, .chat-line__message {');
+          lines.push('  background-color: ' + bg + ' !important;');
+          lines.push('  color: ' + th.textColor + ' !important;');
+          lines.push('  border: ' + borderVal + ' !important;');
+          lines.push('  border-left: ' + borderLeftVal + ' !important;');
+          lines.push('  border-radius: ' + th.radius + ' !important;');
+          lines.push('  box-shadow: ' + boxShadowVal + ' !important;');
+          lines.push('  padding: ' + th.padding + ' !important;');
+          lines.push('  margin: 0 6px ' + state.gap + 'px 6px !important;');
+          lines.push('  font-size: ' + state.fontSize + 'px !important;');
+          lines.push('  line-height: 1.45 !important;');
+          lines.push(shadowLine.trimEnd());
+          if (state.fadeOut) {
+            lines.push('  animation: kwChatIn 0.25s ease-out, kwChatFade 0.6s ease-in ' + state.fadeSec + 's forwards !important;');
+          } else {
+            lines.push('  animation: kwChatIn 0.25s ease-out !important;');
+          }
+          lines.push('}');
+          lines.push('.chat-author__display-name, .meta .name {');
+          lines.push('  color: ' + th.authorColor + ' !important;');
+          lines.push('  font-weight: 800 !important;');
+          lines.push('}');
+          if (state.hideBadges) {
+            lines.push('.chat-badge, .badges { display: none !important; }');
+          }
+          if (state.hideTime) {
+            lines.push('.chat-line__timestamp, .timestamp { display: none !important; }');
+          }
+        }
+
+        lines.push('');
+        lines.push('@keyframes kwChatIn {');
+        lines.push('  from { opacity: 0; transform: translateY(10px); }');
+        lines.push('  to { opacity: 1; transform: translateY(0); }');
+        lines.push('}');
+        if (state.fadeOut) {
+          lines.push('@keyframes kwChatFade {');
+          lines.push('  to { opacity: 0; max-height: 0; margin: 0; padding-top: 0; padding-bottom: 0; overflow: hidden; }');
+          lines.push('}');
+        }
+
+        return lines.join('\n');
+      }
+
+      function applyPreviewStyles() {
+        var th = THEMES[state.theme];
+        var fontStack = FONTS[state.font] || FONTS.sans;
+        var bg = rgbaStr(th.bgRgb, state.opacity);
+        var boxShadowVal = state.opacity < 12 ? 'none' : th.boxShadow;
+        var borderVal = state.opacity < 12 ? 'none' : th.border;
+        var borderLeftVal = state.opacity < 12 ? 'none' : th.borderLeft;
+        var textShadowVal = state.shadow ? th.shadowCss : 'none';
+
+        var previewCss = [
+          '#mockChatFeed { gap: ' + state.gap + 'px; font-family: ' + fontStack + '; }',
+          '#mockChatFeed .mock-msg {',
+          '  background-color: ' + bg + ';',
+          '  color: ' + th.textColor + ';',
+          '  border: ' + borderVal + ';',
+          '  border-left: ' + borderLeftVal + ';',
+          '  border-radius: ' + th.radius + ';',
+          '  box-shadow: ' + boxShadowVal + ';',
+          '  padding: ' + th.padding + ';',
+          '  font-size: ' + state.fontSize + 'px;',
+          '  text-shadow: ' + textShadowVal + ';',
+          '}',
+          '#mockChatFeed .mock-msg.is-super {',
+          '  border-left: 4px solid #c8963e;',
+          '}',
+          '#mockChatFeed .mock-author { color: ' + th.authorColor + '; }',
+          '#mockChatFeed .mock-msg.is-member .mock-author { color: ' + th.memberColor + '; }',
+          state.hideAvatar ? '#mockChatFeed .mock-avatar { display: none; }' : '',
+          state.hideBadges ? '#mockChatFeed .mock-badge { display: none; }' : '',
+          state.hideTime ? '#mockChatFeed .mock-time { display: none; }' : ''
+        ].join('\n');
+
+        els.livePreviewCss.textContent = previewCss;
+        els.mockFeed.classList.toggle('align-right', state.alignRight);
+        els.cssOutput.textContent = buildObsCss();
+        els.previewBarTitle.textContent = 'OBS Live Chat Preview · ' + th.label + ' · ' + state.fontSize + 'px';
+        els.valSize.textContent = state.fontSize + 'px';
+        els.valOpacity.textContent = state.opacity + '%';
+        els.valGap.textContent = state.gap + 'px';
+        els.valFadeSec.textContent = state.fadeSec + 's';
+        els.fadeSecWrap.hidden = !state.fadeOut;
+      }
+
+      function appendMockMessage(isSuper) {
+        var lang = window.KitWorksLang === 'en' ? 'en' : 'ja';
+        var pool = MOCK_POOL[lang];
+        var item = pool[state.msgIdx % pool.length];
+        state.msgIdx += 1;
+
+        var now = new Date();
+        var hh = String(now.getHours()).padStart(2, '0');
+        var mm = String(now.getMinutes()).padStart(2, '0');
+
+        var row = document.createElement('div');
+        row.className = 'mock-msg' + (item.badge === 'member' ? ' is-member' : '') + (isSuper ? ' is-super' : '');
+
+        var avatar = document.createElement('span');
+        avatar.className = 'mock-avatar';
+        avatar.style.background = item.color;
+        avatar.textContent = item.author.charAt(0).toUpperCase();
+
+        var content = document.createElement('div');
+        content.className = 'mock-content';
+
+        var meta = document.createElement('span');
+        meta.className = 'mock-meta';
+
+        var timeEl = document.createElement('span');
+        timeEl.className = 'mock-time';
+        timeEl.textContent = hh + ':' + mm;
+        meta.appendChild(timeEl);
+
+        if (item.badge) {
+          var badge = document.createElement('span');
+          badge.className = 'mock-badge ' + (item.badge === 'mod' ? 'is-mod' : 'is-member');
+          badge.textContent = item.badge === 'mod' ? 'MOD' : '★';
+          meta.appendChild(badge);
+        }
+
+        var author = document.createElement('span');
+        author.className = 'mock-author';
+        author.textContent = item.author;
+        meta.appendChild(author);
+
+        content.appendChild(meta);
+
+        if (isSuper) {
+          var amt = document.createElement('span');
+          amt.className = 'mock-super-amount';
+          amt.textContent = lang === 'en' ? '$5.00' : '¥500';
+          content.appendChild(amt);
+        }
+
+        var txt = document.createElement('span');
+        txt.className = 'mock-text';
+        txt.textContent = isSuper
+          ? (lang === 'en' ? 'Thanks for the cozy coworking stream!' : '作業配信いつも助かってます！コーヒー代です☕')
+          : item.text;
+        content.appendChild(txt);
+
+        row.appendChild(avatar);
+        row.appendChild(content);
+        els.mockFeed.appendChild(row);
+
+        while (els.mockFeed.children.length > 6) {
+          els.mockFeed.removeChild(els.mockFeed.firstChild);
+        }
+
+        if (state.fadeOut) {
+          var fadeDelayMs = Math.min(state.fadeSec * 1000, 12000);
+          setTimeout(function () {
+            if (row.parentNode) {
+              row.style.transition = 'opacity 0.5s ease';
+              row.style.opacity = '0';
+              setTimeout(function () {
+                if (row.parentNode) row.parentNode.removeChild(row);
+              }, 550);
+            }
+          }, fadeDelayMs);
+        }
+      }
+
+      // Bindings
+      document.querySelectorAll('[data-platform]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          state.platform = btn.getAttribute('data-platform');
+          document.querySelectorAll('[data-platform]').forEach(function (b) { b.classList.toggle('is-active', b === btn); });
+          applyPreviewStyles();
+        });
+      });
+
+      document.querySelectorAll('[data-theme]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          state.theme = btn.getAttribute('data-theme');
+          document.querySelectorAll('[data-theme]').forEach(function (b) { b.classList.toggle('is-active', b === btn); });
+          if (state.theme === 'terminal') {
+            state.font = 'mono';
+            els.selFont.value = 'mono';
+          }
+          applyPreviewStyles();
+        });
+      });
+
+      document.querySelectorAll('[data-stage-bg]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          els.obsStage.setAttribute('data-bg', btn.getAttribute('data-stage-bg'));
+          document.querySelectorAll('[data-stage-bg]').forEach(function (b) { b.classList.toggle('is-active', b === btn); });
+        });
+      });
+
+      els.selFont.addEventListener('change', function () { state.font = els.selFont.value; applyPreviewStyles(); });
+      els.rngSize.addEventListener('input', function () { state.fontSize = Number(els.rngSize.value); applyPreviewStyles(); });
+      els.rngOpacity.addEventListener('input', function () { state.opacity = Number(els.rngOpacity.value); applyPreviewStyles(); });
+      els.rngGap.addEventListener('input', function () { state.gap = Number(els.rngGap.value); applyPreviewStyles(); });
+      els.rngFadeSec.addEventListener('input', function () { state.fadeSec = Number(els.rngFadeSec.value); applyPreviewStyles(); });
+      els.chkShadow.addEventListener('change', function () { state.shadow = els.chkShadow.checked; applyPreviewStyles(); });
+      els.chkHideAvatar.addEventListener('change', function () { state.hideAvatar = els.chkHideAvatar.checked; applyPreviewStyles(); });
+      els.chkHideBadges.addEventListener('change', function () { state.hideBadges = els.chkHideBadges.checked; applyPreviewStyles(); });
+      els.chkHideTime.addEventListener('change', function () { state.hideTime = els.chkHideTime.checked; applyPreviewStyles(); });
+      els.chkFadeOut.addEventListener('change', function () { state.fadeOut = els.chkFadeOut.checked; applyPreviewStyles(); });
+      els.chkAlignRight.addEventListener('change', function () { state.alignRight = els.chkAlignRight.checked; applyPreviewStyles(); });
+
+      els.btnAddMsg.addEventListener('click', function () { appendMockMessage(false); });
+      els.btnAddSuper.addEventListener('click', function () { appendMockMessage(true); });
+      els.btnPause.addEventListener('click', function () {
+        state.paused = !state.paused;
+        var dict = DICT[window.KitWorksLang === 'en' ? 'en' : 'ja'];
+        els.btnPause.textContent = state.paused ? dict.btnResume : dict.btnPause;
+        els.btnPause.classList.toggle('is-active', state.paused);
+      });
+
+      els.btnReset.addEventListener('click', function () {
+        state.theme = 'editorial';
+        state.font = 'sans';
+        state.fontSize = 18;
+        state.opacity = 92;
+        state.gap = 10;
+        state.shadow = true;
+        state.hideAvatar = false;
+        state.hideBadges = false;
+        state.hideTime = true;
+        state.fadeOut = false;
+        state.fadeSec = 25;
+        state.alignRight = false;
+        els.selFont.value = 'sans';
+        els.rngSize.value = 18;
+        els.rngOpacity.value = 92;
+        els.rngGap.value = 10;
+        els.rngFadeSec.value = 25;
+        els.chkShadow.checked = true;
+        els.chkHideAvatar.checked = false;
+        els.chkHideBadges.checked = false;
+        els.chkHideTime.checked = true;
+        els.chkFadeOut.checked = false;
+        els.chkAlignRight.checked = false;
+        document.querySelectorAll('[data-theme]').forEach(function (b) {
+          b.classList.toggle('is-active', b.getAttribute('data-theme') === 'editorial');
+        });
+        applyPreviewStyles();
+      });
+
+      els.btnCopyCss.addEventListener('click', function () {
+        window.KitWorksTools.copyText(els.cssOutput.textContent).then(function () {
+          var dict = DICT[window.KitWorksLang === 'en' ? 'en' : 'ja'];
+          els.copyStatus.textContent = '✓ ' + dict.copied;
+          setTimeout(function () { els.copyStatus.textContent = ''; }, 2400);
+        });
+      });
+
+      els.btnDownloadCss.addEventListener('click', function () {
+        var blob = new Blob([els.cssOutput.textContent], { type: 'text/css;charset=utf-8' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'kitworks-obs-chat-' + state.theme + '.css';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+      });
+
+      window.addEventListener('kitworks:langchange', function () {
+        var dict = DICT[window.KitWorksLang === 'en' ? 'en' : 'ja'];
+        els.btnPause.textContent = state.paused ? dict.btnResume : dict.btnPause;
+        els.mockFeed.innerHTML = '';
+        state.msgIdx = 0;
+        appendMockMessage(false);
+        appendMockMessage(false);
+        appendMockMessage(false);
+        appendMockMessage(false);
+      });
+
+      window.KitWorksTools.initI18n(DICT);
+      applyPreviewStyles();
+
+      if (els.mockFeed.children.length === 0) {
+        appendMockMessage(false);
+        appendMockMessage(false);
+        appendMockMessage(false);
+        appendMockMessage(false);
+      }
+
+      setInterval(function () {
+        if (!state.paused && !document.hidden) {
+          appendMockMessage(false);
+        }
+      }, 3200);
+    })();
+  </script>
+</body>
+</html>

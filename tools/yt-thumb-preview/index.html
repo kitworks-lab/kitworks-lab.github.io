@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YouTubeサムネイル実寸＆視認性チェッカー｜KitWorks Lab 無料Webツール</title>
+  <meta name="description" content="YouTubeのホーム画面・検索結果・スマホ・関連動画（サイドバー）の実寸サイズでサムネイルの読みやすさを一括チェック。右下の時間バッジ被り、ダークモード、グレースケール、色覚シミュレーション対応。画像はサーバー送信せずブラウザ内だけで処理します。">
+  <link rel="canonical" href="https://kitworks-lab.github.io/tools/yt-thumb-preview/">
+  <meta property="og:title" content="YouTube Thumbnail Real-Size & Legibility Checker — KitWorks Lab">
+  <meta property="og:description" content="Preview YouTube thumbnails at actual Home, Search, Mobile, and Sidebar sizes with Light/Dark mode, 12:34 timestamp overlay, and grayscale/colorblind checks. 100% local.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="../../assets/avatar-600.png">
+  <link rel="icon" type="image/svg+xml" href="../../assets/favicon.svg">
+  <link rel="icon" type="image/png" href="../../assets/favicon.png">
+  <link rel="stylesheet" href="../../css/styles.css">
+  <link rel="stylesheet" href="../tools.css">
+  <style>
+    .yt-layout {
+      display: grid;
+      grid-template-columns: 330px minmax(0, 1fr);
+      gap: 24px;
+      align-items: start;
+    }
+
+    .yt-controls {
+      position: sticky;
+      top: 80px;
+    }
+
+    .img-spec-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 8px 11px;
+      border: 1px solid var(--rule);
+      border-radius: var(--radius-sm);
+      background: var(--paper-muted);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--ink-soft);
+    }
+
+    .spec-ok {
+      color: var(--sage);
+      font-weight: 700;
+    }
+
+    .spec-warn {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    /* YouTube Surface Stage */
+    .yt-stage {
+      border: 1.5px solid var(--rule-strong);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-ink);
+      overflow: hidden;
+      background: #ffffff;
+      color: #0f0f0f;
+      transition: background-color 0.16s ease, color 0.16s ease;
+    }
+
+    .yt-stage.is-dark {
+      background: #0f0f0f;
+      color: #f1f1f1;
+    }
+
+    .yt-stage-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 16px;
+      background: var(--dock-bar);
+      color: var(--dock-text);
+      flex-wrap: wrap;
+    }
+
+    .yt-stage-body {
+      padding: 22px;
+      display: grid;
+      gap: 28px;
+    }
+
+    .yt-block-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      padding-bottom: 8px;
+      margin-bottom: 14px;
+      border-bottom: 1px solid rgba(128, 128, 128, 0.24);
+      flex-wrap: wrap;
+    }
+
+    .yt-block-title {
+      margin: 0;
+      font-size: 13.5px;
+      font-weight: 800;
+    }
+
+    .yt-block-size {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      opacity: 0.72;
+    }
+
+    /* Vision Filters applied ONLY to thumbnails */
+    .yt-stage[data-vision="grayscale"] .yt-thumb-media {
+      filter: grayscale(100%);
+    }
+
+    .yt-stage[data-vision="colorblind"] .yt-thumb-media {
+      filter: url(#deuteranopia-filter);
+    }
+
+    .yt-stage[data-vision="glance"] .yt-thumb-media {
+      filter: blur(1.6px) contrast(0.92);
+    }
+
+    /* Shared Thumbnail Box */
+    .yt-thumb-box {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #222;
+    }
+
+    .yt-thumb-box.is-sharp {
+      border-radius: 8px;
+    }
+
+    .yt-thumb-box.is-mobile {
+      border-radius: 0;
+    }
+
+    .yt-thumb-media {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .yt-duration {
+      position: absolute;
+      right: 6px;
+      bottom: 6px;
+      padding: 2px 5px;
+      border-radius: 4px;
+      background: rgba(0, 0, 0, 0.84);
+      color: #ffffff;
+      font-family: Roboto, Arial, sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.2;
+      letter-spacing: 0.02em;
+      pointer-events: none;
+    }
+
+    .yt-duration.is-compact {
+      font-size: 11px;
+      right: 4px;
+      bottom: 4px;
+      padding: 1px 4px;
+    }
+
+    .yt-progress {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.35);
+      pointer-events: none;
+    }
+
+    .yt-progress::after {
+      content: "";
+      display: block;
+      width: 38%;
+      height: 100%;
+      background: #ff0033;
+    }
+
+    /* 1. Home Desktop Grid */
+    .yt-home-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .yt-home-card-meta {
+      display: grid;
+      grid-template-columns: 36px minmax(0, 1fr);
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .yt-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 800;
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+    }
+
+    .yt-avatar.is-ghost {
+      background: rgba(128, 128, 128, 0.28);
+      color: transparent;
+    }
+
+    .yt-video-title {
+      margin: 0 0 4px;
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.38;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      word-break: break-word;
+    }
+
+    .yt-video-sub {
+      margin: 0;
+      font-size: 12px;
+      line-height: 1.45;
+      color: #606060;
+    }
+
+    .yt-stage.is-dark .yt-video-sub {
+      color: #aaaaaa;
+    }
+
+    .yt-ghost-thumb {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      border-radius: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .yt-ghost-1 {
+      background: linear-gradient(135deg, #2d3436 0%, #485460 55%, #1e272e 100%);
+    }
+
+    .yt-ghost-2 {
+      background: linear-gradient(135deg, #e7dfd0 0%, #c9bda8 60%, #8e8270 100%);
+    }
+
+    .yt-ghost-label {
+      position: absolute;
+      left: 10px;
+      top: 10px;
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(0, 0, 0, 0.45);
+      color: #fff;
+    }
+
+    .yt-ghost-line {
+      height: 11px;
+      border-radius: 4px;
+      background: rgba(128, 128, 128, 0.26);
+      margin-bottom: 6px;
+    }
+
+    .yt-ghost-line.short {
+      width: 64%;
+      height: 9px;
+      opacity: 0.7;
+    }
+
+    /* 2. Search Result Row */
+    .yt-search-row {
+      display: grid;
+      grid-template-columns: minmax(0, 360px) minmax(0, 1fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .yt-search-title {
+      margin: 0 0 5px;
+      font-size: 17px;
+      font-weight: 700;
+      line-height: 1.38;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .yt-search-channel {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 10px 0 8px;
+    }
+
+    .yt-avatar-sm {
+      width: 24px;
+      height: 24px;
+      font-size: 11px;
+    }
+
+    .yt-search-snippet {
+      margin: 0;
+      font-size: 12px;
+      line-height: 1.5;
+      color: #606060;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .yt-stage.is-dark .yt-search-snippet {
+      color: #aaaaaa;
+    }
+
+    /* 3. Bottom Pair: Mobile Feed + Sidebar */
+    .yt-compact-pair {
+      display: grid;
+      grid-template-columns: minmax(0, 360px) minmax(0, 1fr);
+      gap: 24px;
+      align-items: start;
+    }
+
+    .yt-mobile-shell {
+      width: 100%;
+      max-width: 360px;
+      border: 1.5px solid rgba(128, 128, 128, 0.38);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .yt-mobile-top {
+      padding: 8px 12px;
+      font-size: 11.5px;
+      font-weight: 700;
+      border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+      display: flex;
+      justify-content: space-between;
+      opacity: 0.8;
+    }
+
+    .yt-mobile-meta {
+      padding: 10px 12px 14px;
+      display: grid;
+      grid-template-columns: 36px minmax(0, 1fr);
+      gap: 10px;
+    }
+
+    .yt-sidebar-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .yt-sidebar-row {
+      display: grid;
+      grid-template-columns: 168px minmax(0, 1fr);
+      gap: 10px;
+      align-items: start;
+    }
+
+    .yt-sidebar-title {
+      margin: 0 0 4px;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.35;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .yt-check-notes {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 24px;
+    }
+
+    .yt-check-note {
+      padding: 15px 16px;
+      background: var(--paper-card);
+      border: 1px solid var(--rule);
+      border-radius: var(--radius-sm);
+    }
+
+    .yt-check-note h3 {
+      margin: 0 0 5px;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .yt-check-note p {
+      margin: 0;
+      font-size: 13px;
+      color: var(--ink-soft);
+      line-height: 1.6;
+    }
+
+    @media (max-width: 1060px) {
+      .yt-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .yt-controls {
+        position: static;
+      }
+
+      .yt-home-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .yt-home-grid .yt-ghost-card-2 {
+        display: none;
+      }
+
+      .yt-compact-pair {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .yt-stage-body {
+        padding: 14px;
+      }
+
+      .yt-home-grid,
+      .yt-search-row,
+      .yt-check-notes {
+        grid-template-columns: 1fr;
+      }
+
+      .yt-home-grid .yt-ghost-card-1 {
+        display: none;
+      }
+
+      .yt-sidebar-row {
+        grid-template-columns: 144px minmax(0, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Hidden SVG colorblind simulation filter (Deuteranopia approximation) -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <filter id="deuteranopia-filter">
+        <feColorMatrix type="matrix" values="0.625 0.375 0 0 0  0.7 0.3 0 0 0  0 0.3 0.7 0 0  0 0 0 1 0"></feColorMatrix>
+      </filter>
+    </defs>
+  </svg>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand-link" href="../../">
+        <img class="brand-avatar" src="../../assets/avatar-600.png" alt="KitWorks Lab" width="36" height="36">
+        <span class="brand-name">KitWorks Lab</span>
+      </a>
+      <div class="header-right">
+        <nav class="site-nav" aria-label="Primary">
+          <a href="../" data-i18n="navTools">無料ツール一覧</a>
+          <a href="./" class="is-current" data-i18n="navYt">サムネ確認</a>
+          <a href="../obs-chat-css/" data-i18n="navChat">OBSチャットCSS</a>
+          <a href="../image-batch-resize/" data-i18n="navResize">画像リサイズ</a>
+          <a href="../../" data-i18n="navObs">OBS製品デモ</a>
+        </nav>
+        <div class="lang-toggle" role="group" aria-label="Language">
+          <button type="button" class="lang-btn is-active" data-lang-btn="ja" aria-pressed="true">JP</button>
+          <button type="button" class="lang-btn" data-lang-btn="en" aria-pressed="false">EN</button>
+        </div>
+      </div>
+    </div>
+    <nav class="mobile-tool-nav" aria-label="Tools navigation">
+      <a href="../" data-i18n="navTools">無料ツール一覧</a>
+      <a href="./" class="is-current" data-i18n="navYt">サムネ確認</a>
+      <a href="../obs-chat-css/" data-i18n="navChat">OBSチャットCSS</a>
+      <a href="../image-batch-resize/" data-i18n="navResize">画像リサイズ</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="tool-hero">
+      <div class="container">
+        <div class="breadcrumb">
+          <a href="../../">KitWorks Lab</a>
+          <span class="breadcrumb-sep">/</span>
+          <a href="../" data-i18n="navTools">無料ツール一覧</a>
+          <span class="breadcrumb-sep">/</span>
+          <span data-i18n="crumbCurrent">YouTubeサムネイル実寸チェッカー</span>
+        </div>
+        <div class="tool-hero-row">
+          <div>
+            <h1 class="tool-hero-title" data-i18n="title">YouTubeサムネイル実寸＆視認性チェッカー</h1>
+            <p class="tool-hero-lead" data-i18n="lead">書き出したサムネを放り込むだけで、ホーム画面・検索結果・スマホ・関連動画（幅168px）の実寸表示をまとめて確認できます。右下の時間バッジ被りや白黒コントラストもその場でチェック。</p>
+          </div>
+          <div class="local-stamp">
+            <span class="local-stamp-dot" aria-hidden="true"></span>
+            <span data-i18n="localStamp">ブラウザ内完結 / 画像送信なし</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="tool-section">
+      <div class="container">
+        <div class="yt-layout">
+          <!-- Left Controls -->
+          <aside class="tool-panel yt-controls" aria-label="Preview controls">
+            <div class="tool-panel-head">
+              <h2 class="tool-panel-title" data-i18n="ctrlHeading">サムネイル設定</h2>
+              <button type="button" class="btn btn-secondary btn-sm" id="btnSampleSwap" data-i18n="btnSample">サンプル切替</button>
+            </div>
+            <div class="tool-panel-body ctrl-grid">
+              <div>
+                <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Upload thumbnail image">
+                  <p class="dropzone-title" data-i18n="dropTitle">画像をドロップ / クリックして選択</p>
+                  <p class="dropzone-sub" data-i18n="dropSub">PNG・JPEG・WebP対応 / Ctrl+V 貼り付け可</p>
+                </div>
+                <input type="file" id="fileInput" accept="image/*" hidden>
+              </div>
+
+              <div class="img-spec-bar" id="specBar">
+                <span id="specDim">1280 × 720</span>
+                <span id="specRatio" class="spec-ok">16:9 OK</span>
+              </div>
+
+              <div>
+                <span class="ctrl-label" data-i18n="labelTheme">YouTube 表示テーマ</span>
+                <div class="seg-group" role="group" aria-label="YouTube theme">
+                  <button type="button" class="seg-btn is-active" data-yt-theme="light" data-i18n="themeLight">ライト</button>
+                  <button type="button" class="seg-btn" data-yt-theme="dark" data-i18n="themeDark">ダーク</button>
+                </div>
+              </div>
+
+              <div>
+                <span class="ctrl-label" data-i18n="labelVision">視認性シミュレーション</span>
+                <div class="seg-group" role="group" aria-label="Vision simulation">
+                  <button type="button" class="seg-btn is-active" data-vision-btn="normal" data-i18n="visNormal">標準</button>
+                  <button type="button" class="seg-btn" data-vision-btn="grayscale" data-i18n="visGray">白黒</button>
+                  <button type="button" class="seg-btn" data-vision-btn="colorblind" data-i18n="visCb">色覚(D型)</button>
+                  <button type="button" class="seg-btn" data-vision-btn="glance" data-i18n="visGlance">流し見</button>
+                </div>
+              </div>
+
+              <div>
+                <label class="ctrl-label" for="inputTitle" data-i18n="labelTitle">動画タイトル（2行省略を確認）</label>
+                <input type="text" class="text-input" id="inputTitle" value="【OBS設定】画面に操作ボタンを映さず配信を回すカスタムドック活用術">
+              </div>
+
+              <div style="display:grid; grid-template-columns: 1fr 96px; gap:10px;">
+                <div>
+                  <label class="ctrl-label" for="inputChannel" data-i18n="labelChannel">チャンネル名</label>
+                  <input type="text" class="text-input" id="inputChannel" value="KitWorks Lab">
+                </div>
+                <div>
+                  <label class="ctrl-label" for="inputDuration" data-i18n="labelDuration">再生時間</label>
+                  <input type="text" class="text-input" id="inputDuration" value="12:34" maxlength="10">
+                </div>
+              </div>
+
+              <div>
+                <label class="ctrl-label" for="inputMeta" data-i18n="labelMeta">再生数・投稿日</label>
+                <input type="text" class="text-input" id="inputMeta" value="1.8万回視聴・2時間前">
+              </div>
+
+              <div class="ctrl-row" style="gap: 14px; padding-top: 2px;">
+                <label class="check-toggle">
+                  <input type="checkbox" id="chkDuration" checked>
+                  <span data-i18n="chkDuration">右下の時間バッジ表示</span>
+                </label>
+                <label class="check-toggle">
+                  <input type="checkbox" id="chkProgress">
+                  <span data-i18n="chkProgress">再生済み赤バー表示</span>
+                </label>
+              </div>
+            </div>
+          </aside>
+
+          <!-- Right Preview Stage -->
+          <div class="yt-stage" id="ytStage" data-vision="normal">
+            <div class="yt-stage-bar">
+              <span class="window-dots" aria-hidden="true"><span></span><span></span><span></span></span>
+              <span class="window-bar-title" id="stageStatus">YouTube Preview · Light · Normal</span>
+            </div>
+
+            <div class="yt-stage-body">
+              <!-- 1. Home Desktop -->
+              <div>
+                <div class="yt-block-head">
+                  <h2 class="yt-block-title" data-i18n="secHome">1. ホーム画面（デスクトップ一覧の中での目立ち方）</h2>
+                  <span class="yt-block-size">~360 × 202 px</span>
+                </div>
+                <div class="yt-home-grid">
+                  <article>
+                    <div class="yt-thumb-box">
+                      <img class="yt-thumb-media js-thumb-img" alt="Thumbnail preview in Home Desktop">
+                      <span class="yt-duration js-duration">12:34</span>
+                      <span class="yt-progress js-progress" hidden></span>
+                    </div>
+                    <div class="yt-home-card-meta">
+                      <span class="yt-avatar js-avatar">K</span>
+                      <div>
+                        <p class="yt-video-title js-title"></p>
+                        <p class="yt-video-sub js-channel"></p>
+                        <p class="yt-video-sub js-meta"></p>
+                      </div>
+                    </div>
+                  </article>
+
+                  <article class="yt-ghost-card-1" aria-hidden="true">
+                    <div class="yt-ghost-thumb yt-ghost-1">
+                      <span class="yt-ghost-label" data-i18n="neighborDark">周囲の動画（暗色系）</span>
+                      <span class="yt-duration">18:05</span>
+                    </div>
+                    <div class="yt-home-card-meta">
+                      <span class="yt-avatar is-ghost">A</span>
+                      <div style="padding-top:4px;">
+                        <div class="yt-ghost-line"></div>
+                        <div class="yt-ghost-line short"></div>
+                      </div>
+                    </div>
+                  </article>
+
+                  <article class="yt-ghost-card-2" aria-hidden="true">
+                    <div class="yt-ghost-thumb yt-ghost-2">
+                      <span class="yt-ghost-label" data-i18n="neighborLight">周囲の動画（明色系）</span>
+                      <span class="yt-duration">09:42</span>
+                    </div>
+                    <div class="yt-home-card-meta">
+                      <span class="yt-avatar is-ghost">B</span>
+                      <div style="padding-top:4px;">
+                        <div class="yt-ghost-line"></div>
+                        <div class="yt-ghost-line short"></div>
+                      </div>
+                    </div>
+                  </article>
+                </div>
+              </div>
+
+              <!-- 2. Search Result -->
+              <div>
+                <div class="yt-block-head">
+                  <h2 class="yt-block-title" data-i18n="secSearch">2. 検索結果（デスクトップ横並び）</h2>
+                  <span class="yt-block-size">360 × 202 px</span>
+                </div>
+                <article class="yt-search-row">
+                  <div class="yt-thumb-box">
+                    <img class="yt-thumb-media js-thumb-img" alt="Thumbnail preview in Search Result">
+                    <span class="yt-duration js-duration">12:34</span>
+                    <span class="yt-progress js-progress" hidden></span>
+                  </div>
+                  <div>
+                    <p class="yt-search-title js-title"></p>
+                    <p class="yt-video-sub js-meta"></p>
+                    <div class="yt-search-channel">
+                      <span class="yt-avatar yt-avatar-sm js-avatar">K</span>
+                      <span class="yt-video-sub js-channel"></span>
+                    </div>
+                    <p class="yt-search-snippet" data-i18n="searchSnippet">検索一覧ではサムネのすぐ右にタイトルと概要文の冒頭が並びます。画像内の文字と動画タイトルの言い回しが丸被りしていないかも一緒に見直せます。</p>
+                  </div>
+                </article>
+              </div>
+
+              <!-- 3 & 4. Mobile Feed & Sidebar -->
+              <div class="yt-compact-pair">
+                <div>
+                  <div class="yt-block-head">
+                    <h2 class="yt-block-title" data-i18n="secMobile">3. スマホ縦フィード</h2>
+                    <span class="yt-block-size">360 px width</span>
+                  </div>
+                  <div class="yt-mobile-shell">
+                    <div class="yt-mobile-top">
+                      <span>YouTube Mobile</span>
+                      <span>9:41</span>
+                    </div>
+                    <div class="yt-thumb-box is-mobile">
+                      <img class="yt-thumb-media js-thumb-img" alt="Thumbnail preview in Mobile Feed">
+                      <span class="yt-duration js-duration">12:34</span>
+                      <span class="yt-progress js-progress" hidden></span>
+                    </div>
+                    <div class="yt-mobile-meta">
+                      <span class="yt-avatar js-avatar">K</span>
+                      <div>
+                        <p class="yt-video-title js-title"></p>
+                        <p class="yt-video-sub"><span class="js-channel"></span> · <span class="js-meta"></span></p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <div class="yt-block-head">
+                    <h2 class="yt-block-title" data-i18n="secSidebar">4. 関連動画・サイドバー（最小サイズ）</h2>
+                    <span class="yt-block-size">168 × 94 px</span>
+                  </div>
+                  <div class="yt-sidebar-list">
+                    <article class="yt-sidebar-row">
+                      <div class="yt-thumb-box is-sharp">
+                        <img class="yt-thumb-media js-thumb-img" alt="Thumbnail preview in Sidebar">
+                        <span class="yt-duration is-compact js-duration">12:34</span>
+                        <span class="yt-progress js-progress" hidden></span>
+                      </div>
+                      <div>
+                        <p class="yt-sidebar-title js-title"></p>
+                        <p class="yt-video-sub js-channel"></p>
+                        <p class="yt-video-sub js-meta"></p>
+                      </div>
+                    </article>
+
+                    <article class="yt-sidebar-row" aria-hidden="true" style="opacity:0.7;">
+                      <div class="yt-ghost-thumb yt-ghost-1" style="border-radius:8px;">
+                        <span class="yt-duration is-compact">08:19</span>
+                      </div>
+                      <div style="padding-top:3px;">
+                        <div class="yt-ghost-line"></div>
+                        <div class="yt-ghost-line short"></div>
+                      </div>
+                    </article>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Practical Checkpoints -->
+        <div class="yt-check-notes">
+          <div class="yt-check-note">
+            <h3 data-i18n="tip1Title">右下の安全余白</h3>
+            <p data-i18n="tip1Desc">再生時間バッジ（12:34）は幅168pxの関連動画だと画像面積の約1割を占めます。右下に文字や顔の要点を置かないだけで事故が減ります。</p>
+          </div>
+          <div class="yt-check-note">
+            <h3 data-i18n="tip2Title">白黒で明度差を見る</h3>
+            <p data-i18n="tip2Desc">赤や緑の派手な配色でも、白黒にした瞬間背景と同化する文字はスマホで読めません。白黒モードで文字だけ浮かぶか確認してみてください。</p>
+          </div>
+          <div class="yt-check-note">
+            <h3 data-i18n="tip3Title">サイズ調整もそのまま</h3>
+            <p data-i18n="tip3Desc">画像が2MBを超えている、または1280×720に揃えたいときは隣のローカル画像リサイズツールで書き出し直せます。</p>
+          </div>
+        </div>
+
+        <div class="promo-strip">
+          <div class="promo-strip-copy">
+            <h2 class="promo-strip-title" data-i18n="promoTitle">配信画面のタイマーや目標バーもローカルHTMLで</h2>
+            <p class="promo-strip-desc" data-i18n="promoDesc">KitWorks Lab では、OBSのカスタムブラウザドックから手元操作できる無料・Pro版オーバーレイ（TokiDock / GoalDock）を配布しています。</p>
+          </div>
+          <div class="promo-strip-actions">
+            <a class="btn btn-secondary btn-sm" href="../image-batch-resize/" data-i18n="promoResize">1280×720にリサイズする</a>
+            <a class="btn btn-primary btn-sm" href="https://kitworks.booth.pm/" target="_blank" rel="noopener noreferrer" data-i18n="promoStore" data-i18n-href="storeHome">BOOTH ショップを見る</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <img class="brand-avatar" src="../../assets/avatar-600.png" alt="KitWorks Lab" width="32" height="32">
+        <p class="footer-note" data-i18n="footerNote">KitWorks Lab — 個人制作のOBS配信ツール・無料Webツール工房。すべての処理はブラウザ内ローカルで完結します。</p>
+      </div>
+      <nav class="footer-links" aria-label="Footer links">
+        <a href="../" data-i18n="navTools">無料ツール一覧</a>
+        <a href="../../" data-i18n="navObs">OBS製品デモ</a>
+        <a href="https://kitworks.booth.pm/" target="_blank" rel="noopener noreferrer">BOOTH</a>
+        <a href="https://earnbot7.gumroad.com/" target="_blank" rel="noopener noreferrer">Gumroad (EN)</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script src="../tools-common.js"></script>
+  <script>
+    (function () {
+      'use strict';
+
+      var DICT = {
+        ja: {
+          pageTitle: 'YouTubeサムネイル実寸＆視認性チェッカー｜KitWorks Lab 無料Webツール',
+          pageDesc: 'YouTubeのホーム・検索・スマホ・関連動画（168×94）の実寸でサムネイルの見え方を確認。時間バッジ被り、ダークモード、白黒・色覚シミュレーション対応。完全ローカル動作。',
+          navTools: '無料ツール一覧',
+          navYt: 'サムネ確認',
+          navChat: 'OBSチャットCSS',
+          navResize: '画像リサイズ',
+          navObs: 'OBS製品デモ',
+          crumbCurrent: 'YouTubeサムネイル実寸チェッカー',
+          title: 'YouTubeサムネイル実寸＆視認性チェッカー',
+          lead: '書き出したサムネを放り込むだけで、ホーム画面・検索結果・スマホ・関連動画（幅168px）の実寸表示をまとめて確認できます。右下の時間バッジ被りや白黒コントラストもその場でチェック。',
+          localStamp: 'ブラウザ内完結 / 画像送信なし',
+          ctrlHeading: 'サムネイル設定',
+          btnSample: 'サンプル切替',
+          dropTitle: '画像をドロップ / クリックして選択',
+          dropSub: 'PNG・JPEG・WebP対応 / Ctrl+V 貼り付け可',
+          labelTheme: 'YouTube 表示テーマ',
+          themeLight: 'ライト',
+          themeDark: 'ダーク',
+          labelVision: '視認性シミュレーション',
+          visNormal: '標準',
+          visGray: '白黒',
+          visCb: '色覚(D型)',
+          visGlance: '流し見',
+          labelTitle: '動画タイトル（2行省略を確認）',
+          labelChannel: 'チャンネル名',
+          labelDuration: '再生時間',
+          labelMeta: '再生数・投稿日',
+          chkDuration: '右下の時間バッジ表示',
+          chkProgress: '再生済み赤バー表示',
+          secHome: '1. ホーム画面（デスクトップ一覧の中での目立ち方）',
+          secSearch: '2. 検索結果（デスクトップ横並び）',
+          secMobile: '3. スマホ縦フィード',
+          secSidebar: '4. 関連動画・サイドバー（最小サイズ）',
+          neighborDark: '周囲の動画（暗色系）',
+          neighborLight: '周囲の動画（明色系）',
+          searchSnippet: '検索一覧ではサムネのすぐ右にタイトルと概要文の冒頭が並びます。画像内の文字と動画タイトルの言い回しが丸被りしていないかも一緒に見直せます。',
+          tip1Title: '右下の安全余白',
+          tip1Desc: '再生時間バッジ（12:34）は幅168pxの関連動画だと画像面積の約1割を占めます。右下に文字や顔の要点を置かないだけで事故が減ります。',
+          tip2Title: '白黒で明度差を見る',
+          tip2Desc: '赤や緑の派手な配色でも、白黒にした瞬間背景と同化する文字はスマホで読めません。白黒モードで文字だけ浮かぶか確認してみてください。',
+          tip3Title: 'サイズ調整もそのまま',
+          tip3Desc: '画像が2MBを超えている、または1280×720に揃えたいときは隣のローカル画像リサイズツールで書き出し直せます。',
+          promoTitle: '配信画面のタイマーや目標バーもローカルHTMLで',
+          promoDesc: 'KitWorks Lab では、OBSのカスタムブラウザドックから手元操作できる無料・Pro版オーバーレイ（TokiDock / GoalDock）を配布しています。',
+          promoResize: '1280×720にリサイズする',
+          promoStore: 'BOOTH ショップを見る',
+          footerNote: 'KitWorks Lab — 個人制作のOBS配信ツール・無料Webツール工房。すべての処理はブラウザ内ローカルで完結します。',
+          defaultTitle: '【OBS設定】画面に操作ボタンを映さず配信を回すカスタムドック活用術',
+          defaultMeta: '1.8万回視聴・2時間前',
+          links: { storeHome: 'https://kitworks.booth.pm/' }
+        },
+        en: {
+          pageTitle: 'YouTube Thumbnail Real-Size & Legibility Checker — KitWorks Lab',
+          pageDesc: 'Test YouTube thumbnails at real Desktop Home, Search, Mobile, and 168px Sidebar sizes. Includes Light/Dark mode, 12:34 timestamp overlay, grayscale & colorblind checks. 100% browser-local.',
+          navTools: 'Free Tools',
+          navYt: 'Thumb Preview',
+          navChat: 'OBS Chat CSS',
+          navResize: 'Image Resizer',
+          navObs: 'OBS Overlays',
+          crumbCurrent: 'YouTube Thumbnail Checker',
+          title: 'YouTube Thumbnail Real-Size & Legibility Checker',
+          lead: 'Drop a thumbnail to inspect it at real Home, Search, Mobile, and 168px Sidebar dimensions side-by-side. Check bottom-right timestamp collisions, dark mode framing, and luminance contrast locally.',
+          localStamp: '100% Local · No Upload',
+          ctrlHeading: 'Thumbnail Controls',
+          btnSample: 'Switch Demo',
+          dropTitle: 'Drop image here or click to pick',
+          dropSub: 'PNG, JPEG, WebP · Paste with Ctrl+V',
+          labelTheme: 'YouTube Appearance',
+          themeLight: 'Light',
+          themeDark: 'Dark',
+          labelVision: 'Legibility Simulation',
+          visNormal: 'Normal',
+          visGray: 'Grayscale',
+          visCb: 'Deuteranopia',
+          visGlance: 'Quick Glance',
+          labelTitle: 'Video Title (checks 2-line clamp)',
+          labelChannel: 'Channel',
+          labelDuration: 'Timestamp',
+          labelMeta: 'Views & Time',
+          chkDuration: 'Show bottom-right timestamp',
+          chkProgress: 'Show watched red bar',
+          secHome: '1. Desktop Home Feed (in-context contrast)',
+          secSearch: '2. Desktop Search Result',
+          secMobile: '3. Mobile Feed (360px)',
+          secSidebar: '4. Watch Sidebar / Recommended (smallest)',
+          neighborDark: 'Neighbor (dark)',
+          neighborLight: 'Neighbor (light)',
+          searchSnippet: 'In Search, your title and description snippet sit directly beside the image. Check that your thumbnail text adds context rather than repeating the exact title.',
+          tip1Title: 'Protect the bottom-right corner',
+          tip1Desc: 'At 168px sidebar width, the 12:34 badge covers a noticeable chunk of the bottom-right quadrant. Keep key text and faces away from that corner.',
+          tip2Title: 'Verify value contrast in Grayscale',
+          tip2Desc: 'Bright red or green text can still fail readability if its brightness matches the background. Flip to Grayscale to make sure the focal text pops.',
+          tip3Title: 'Need exact 1280×720 or under 2MB?',
+          tip3Desc: 'Resize and compress directly to 1280×720 WebP or JPEG with our local browser Image Resizer — no uploads needed.',
+          promoTitle: 'Clean local HTML overlays for OBS Studio',
+          promoDesc: 'KitWorks Lab builds zero-server OBS Custom Browser Dock tools (TokiDock & GoalDock) with free Lite editions.',
+          promoResize: 'Resize to 1280×720',
+          promoStore: 'Visit Gumroad Store',
+          footerNote: 'KitWorks Lab — Indie OBS overlays & zero-upload creator utilities. Everything runs locally in your browser.',
+          defaultTitle: 'OBS Custom Browser Dock Setup: Keep Stream Controls Off-Screen',
+          defaultMeta: '18K views · 2 hours ago',
+          links: { storeHome: 'https://earnbot7.gumroad.com/' }
+        }
+      };
+
+      var state = {
+        theme: 'light',
+        vision: 'normal',
+        sampleIndex: 0,
+        userEditedTitle: false,
+        userEditedMeta: false,
+        hasCustomImage: false
+      };
+
+      var els = {
+        stage: document.getElementById('ytStage'),
+        stageStatus: document.getElementById('stageStatus'),
+        dropzone: document.getElementById('dropzone'),
+        fileInput: document.getElementById('fileInput'),
+        specDim: document.getElementById('specDim'),
+        specRatio: document.getElementById('specRatio'),
+        inputTitle: document.getElementById('inputTitle'),
+        inputChannel: document.getElementById('inputChannel'),
+        inputDuration: document.getElementById('inputDuration'),
+        inputMeta: document.getElementById('inputMeta'),
+        chkDuration: document.getElementById('chkDuration'),
+        chkProgress: document.getElementById('chkProgress'),
+        btnSampleSwap: document.getElementById('btnSampleSwap')
+      };
+
+      function drawDemoCanvas(index) {
+        var canvas = document.createElement('canvas');
+        canvas.width = 1280;
+        canvas.height = 720;
+        var ctx = canvas.getContext('2d');
+        var isEn = (window.KitWorksLang === 'en');
+
+        if (index % 2 === 0) {
+          ctx.fillStyle = '#1e1b18';
+          ctx.fillRect(0, 0, 1280, 720);
+
+          ctx.fillStyle = 'rgba(247, 243, 235, 0.08)';
+          for (var x = 24; x < 1280; x += 36) {
+            for (var y = 24; y < 720; y += 36) {
+              ctx.beginPath();
+              ctx.arc(x, y, 2, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+
+          ctx.fillStyle = '#f7f3eb';
+          ctx.fillRect(710, 76, 510, 568);
+          ctx.lineWidth = 6;
+          ctx.strokeStyle = '#c1522b';
+          ctx.strokeRect(710, 76, 510, 568);
+
+          ctx.fillStyle = '#2b2723';
+          ctx.fillRect(710, 76, 510, 52);
+          ['#c1522b', '#ddb056', '#4b7a62'].forEach(function (col, i) {
+            ctx.fillStyle = col;
+            ctx.beginPath();
+            ctx.arc(746 + i * 26, 102, 8, 0, Math.PI * 2);
+            ctx.fill();
+          });
+
+          ctx.fillStyle = '#1e1b18';
+          ctx.font = '800 94px "Cascadia Code", Consolas, monospace';
+          ctx.fillText('24:59', 804, 305);
+          ctx.fillStyle = '#396851';
+          ctx.fillRect(766, 355, 398, 22);
+          ctx.fillStyle = '#d7cebf';
+          ctx.fillRect(1020, 355, 144, 22);
+
+          ctx.fillStyle = '#5a5248';
+          ctx.font = '700 28px sans-serif';
+          ctx.fillText('LOCAL HTML · 0MB SERVER', 766, 445);
+
+          ctx.fillStyle = '#c1522b';
+          ctx.fillRect(68, 92, 240, 52);
+          ctx.fillStyle = '#fffaf5';
+          ctx.font = '800 32px sans-serif';
+          ctx.fillText(isEn ? 'OBS SETUP' : 'OBS 設定術', 96, 129);
+
+          ctx.fillStyle = '#f7f3eb';
+          ctx.font = '900 108px "Hiragino Sans", "Yu Gothic UI", sans-serif';
+          if (isEn) {
+            ctx.fillText('HIDE YOUR', 64, 290);
+            ctx.fillStyle = '#e8b959';
+            ctx.fillText('CONTROLS', 64, 416);
+            ctx.fillStyle = '#f7f3eb';
+            ctx.font = '800 56px sans-serif';
+            ctx.fillText('Custom Dock Workflow', 68, 520);
+          } else {
+            ctx.fillText('操作ボタン', 60, 294);
+            ctx.fillStyle = '#e8b959';
+            ctx.fillText('映さない。', 60, 424);
+            ctx.fillStyle = '#f7f3eb';
+            ctx.font = '700 46px sans-serif';
+            ctx.fillText('カスタムドックだけで完結', 66, 522);
+          }
+        } else {
+          ctx.fillStyle = '#f7f3eb';
+          ctx.fillRect(0, 0, 1280, 720);
+          ctx.fillStyle = '#396851';
+          ctx.fillRect(0, 0, 1280, 24);
+          ctx.fillStyle = '#1e1b18';
+          ctx.fillRect(64, 96, 310, 56);
+          ctx.fillStyle = '#fbf9f4';
+          ctx.font = '800 32px monospace';
+          ctx.fillText('CASE STUDY #04', 86, 134);
+
+          ctx.fillStyle = '#1e1b18';
+          ctx.font = '900 102px "Hiragino Sans", "Yu Gothic UI", sans-serif';
+          if (isEn) {
+            ctx.fillText('Readable at', 64, 300);
+            ctx.fillStyle = '#c1522b';
+            ctx.fillText('168px Wide?', 64, 424);
+            ctx.fillStyle = '#3c3630';
+            ctx.font = '700 42px sans-serif';
+            ctx.fillText('Check bottom-right timestamp overlap →', 64, 540);
+          } else {
+            ctx.fillText('幅168pxでも', 64, 300);
+            ctx.fillStyle = '#c1522b';
+            ctx.fillText('一瞬で読める？', 64, 424);
+            ctx.fillStyle = '#3c3630';
+            ctx.font = '700 42px sans-serif';
+            ctx.fillText('右下の時間バッジ被りを実寸チェック', 64, 540);
+          }
+
+          ctx.fillStyle = 'rgba(193, 82, 43, 0.16)';
+          ctx.fillRect(1020, 580, 230, 110);
+          ctx.strokeStyle = '#c1522b';
+          ctx.lineWidth = 4;
+          ctx.strokeRect(1020, 580, 230, 110);
+          ctx.fillStyle = '#c1522b';
+          ctx.font = '700 24px monospace';
+          ctx.fillText('BADGE ZONE', 1054, 642);
+        }
+        return canvas.toDataURL('image/png');
+      }
+
+      function setThumbnailData(src, width, height) {
+        document.querySelectorAll('.js-thumb-img').forEach(function (img) {
+          img.src = src;
+        });
+        els.specDim.textContent = width + ' × ' + height + ' px';
+        var ratio = width / height;
+        var is169 = Math.abs(ratio - 16 / 9) < 0.03;
+        var isBigEnough = width >= 1280;
+        if (is169 && isBigEnough) {
+          els.specRatio.textContent = '16:9 OK';
+          els.specRatio.className = 'spec-ok';
+        } else if (!is169) {
+          els.specRatio.textContent = (window.KitWorksLang === 'en') ? 'Not 16:9' : '16:9比率外';
+          els.specRatio.className = 'spec-warn';
+        } else {
+          els.specRatio.textContent = (window.KitWorksLang === 'en') ? '16:9 (<1280w)' : '16:9 (幅1280未満)';
+          els.specRatio.className = 'spec-warn';
+        }
+      }
+
+      function syncTextAndBadges() {
+        var title = els.inputTitle.value.trim() || 'Untitled Video';
+        var channel = els.inputChannel.value.trim() || 'Channel';
+        var meta = els.inputMeta.value.trim() || '';
+        var dur = els.inputDuration.value.trim() || '12:34';
+        var initial = channel.charAt(0).toUpperCase() || 'K';
+
+        document.querySelectorAll('.js-title').forEach(function (el) { el.textContent = title; });
+        document.querySelectorAll('.js-channel').forEach(function (el) { el.textContent = channel; });
+        document.querySelectorAll('.js-meta').forEach(function (el) { el.textContent = meta; });
+        document.querySelectorAll('.js-avatar').forEach(function (el) { el.textContent = initial; });
+        document.querySelectorAll('.js-duration').forEach(function (el) {
+          el.textContent = dur;
+          el.hidden = !els.chkDuration.checked;
+        });
+        document.querySelectorAll('.js-progress').forEach(function (el) {
+          el.hidden = !els.chkProgress.checked;
+        });
+      }
+
+      function updateStageStatus() {
+        var themeLabel = state.theme === 'dark' ? 'Dark' : 'Light';
+        var visMap = { normal: 'Normal', grayscale: 'Grayscale', colorblind: 'Deuteranopia', glance: 'Glance Blur' };
+        els.stageStatus.textContent = 'YouTube Preview · ' + themeLabel + ' · ' + (visMap[state.vision] || 'Normal');
+      }
+
+      function loadFile(file) {
+        if (!file || !file.type.startsWith('image/')) return;
+        var reader = new FileReader();
+        reader.onload = function (ev) {
+          var img = new Image();
+          img.onload = function () {
+            state.hasCustomImage = true;
+            setThumbnailData(ev.target.result, img.naturalWidth, img.naturalHeight);
+          };
+          img.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+
+      els.dropzone.addEventListener('click', function () { els.fileInput.click(); });
+      els.dropzone.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          els.fileInput.click();
+        }
+      });
+      els.fileInput.addEventListener('change', function (e) {
+        if (e.target.files && e.target.files[0]) loadFile(e.target.files[0]);
+      });
+
+      ['dragenter', 'dragover'].forEach(function (evName) {
+        els.dropzone.addEventListener(evName, function (e) {
+          e.preventDefault();
+          els.dropzone.classList.add('is-dragover');
+        });
+      });
+      ['dragleave', 'drop'].forEach(function (evName) {
+        els.dropzone.addEventListener(evName, function (e) {
+          e.preventDefault();
+          els.dropzone.classList.remove('is-dragover');
+        });
+      });
+      els.dropzone.addEventListener('drop', function (e) {
+        var file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+        if (file) loadFile(file);
+      });
+
+      window.addEventListener('paste', function (e) {
+        var items = e.clipboardData && e.clipboardData.items;
+        if (!items) return;
+        for (var i = 0; i < items.length; i++) {
+          if (items[i].type.indexOf('image/') === 0) {
+            loadFile(items[i].getAsFile());
+            break;
+          }
+        }
+      });
+
+      document.querySelectorAll('[data-yt-theme]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          state.theme = btn.getAttribute('data-yt-theme');
+          els.stage.classList.toggle('is-dark', state.theme === 'dark');
+          document.querySelectorAll('[data-yt-theme]').forEach(function (b) {
+            b.classList.toggle('is-active', b === btn);
+          });
+          updateStageStatus();
+        });
+      });
+
+      document.querySelectorAll('[data-vision-btn]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          state.vision = btn.getAttribute('data-vision-btn');
+          els.stage.setAttribute('data-vision', state.vision);
+          document.querySelectorAll('[data-vision-btn]').forEach(function (b) {
+            b.classList.toggle('is-active', b === btn);
+          });
+          updateStageStatus();
+        });
+      });
+
+      els.btnSampleSwap.addEventListener('click', function () {
+        state.sampleIndex = (state.sampleIndex + 1) % 2;
+        state.hasCustomImage = false;
+        setThumbnailData(drawDemoCanvas(state.sampleIndex), 1280, 720);
+      });
+
+      els.inputTitle.addEventListener('input', function () { state.userEditedTitle = true; syncTextAndBadges(); });
+      els.inputMeta.addEventListener('input', function () { state.userEditedMeta = true; syncTextAndBadges(); });
+      els.inputChannel.addEventListener('input', syncTextAndBadges);
+      els.inputDuration.addEventListener('input', syncTextAndBadges);
+      els.chkDuration.addEventListener('change', syncTextAndBadges);
+      els.chkProgress.addEventListener('change', syncTextAndBadges);
+
+      window.addEventListener('kitworks:langchange', function (e) {
+        var d = e.detail.dict;
+        if (!state.userEditedTitle && d.defaultTitle) els.inputTitle.value = d.defaultTitle;
+        if (!state.userEditedMeta && d.defaultMeta) els.inputMeta.value = d.defaultMeta;
+        if (!state.hasCustomImage) {
+          setThumbnailData(drawDemoCanvas(state.sampleIndex), 1280, 720);
+        }
+        syncTextAndBadges();
+      });
+
+      window.KitWorksTools.initI18n(DICT);
+      setThumbnailData(drawDemoCanvas(0), 1280, 720);
+      syncTextAndBadges();
+      updateStageStatus();
+    })();
+  </script>
+</body>
+</html>
