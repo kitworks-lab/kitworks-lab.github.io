@@ -160,11 +160,20 @@
       readLink: 'ページを開く →',
 
       channelsTitle: '公式リンク',
-      chBoothDesc: 'TokiDock / GoalDock の無料版・Pro版を配布中',
+      chBoothDesc: 'TokiDock / GoalDock の無料版・Pro版を配布中（JP / ¥）',
+      chGumroadDesc: '海外向け英語ストア（USD / $0+・$5）',
       chYoutubeDesc: 'OBSツールの実演ショート動画・機能紹介',
       chXDesc: 'アップデート情報・制作ログ',
 
-      footerNote: 'KitWorks Lab — 個人制作のOBS配信ツール・ローカル自動化工房。収益化配信での商用利用OK、クレジット表記は任意です。'
+      footerNote: 'KitWorks Lab — 個人制作のOBS配信ツール・ローカル自動化工房。収益化配信での商用利用OK、クレジット表記は任意です。',
+
+      links: {
+        storeHome: 'https://kitworks.booth.pm/',
+        tokiPro: 'https://kitworks.booth.pm/items/9206701',
+        tokiLite: 'https://kitworks.booth.pm/items/9206837',
+        goalPro: 'https://kitworks.booth.pm/items/9207731',
+        goalLite: 'https://kitworks.booth.pm/items/9207744'
+      }
     },
 
     en: {
@@ -179,7 +188,7 @@
       heroTitle: 'Keep OBS controls off\nyour stream canvas.',
       heroLead: 'Start a Pomodoro session or bump a subscriber goal with one click from OBS Studio’s Custom Browser Dock. 100% local HTML widgets—no accounts, no cloud servers, no install.',
       heroCtaDemo: 'Try Live Demos',
-      heroCtaBooth: 'Visit BOOTH Store',
+      heroCtaBooth: 'Visit Gumroad Store',
       heroNote: 'Monetized streams OK · No credit required · Free Lite editions available',
 
       archTitle: 'Two local HTML files, talking inside OBS',
@@ -194,8 +203,8 @@
 
       tokiHeading: 'TokiDock — Pomodoro, Clock & Watch-Party Timer',
       tokiDesc: 'Built for study/coworking streams, chatting layouts, and watch-alongs. Click the Dock controls on the left and watch the OBS overlay preview on the right respond in real time.',
-      tokiLiteBtn: 'Lite Free (¥0)',
-      tokiProBtn: 'Pro (¥500 / ~$5)',
+      tokiLiteBtn: 'Lite Free ($0+)',
+      tokiProBtn: 'Pro ($5)',
 
       dockWindowLabel: 'OBS Custom Browser Dock — controller.html',
       previewWindowLabel: 'OBS Stream Preview — widget.html',
@@ -241,8 +250,8 @@
 
       goalHeading: 'GoalDock — Goal Bar, Endurance Counter & Topic Roulette',
       goalDesc: 'Stop double-clicking OBS text sources mid-stream. Update subscriber goals, track win/death challenges, or spin chatting prompts directly from your OBS dock.',
-      goalLiteBtn: 'Lite Free (¥0)',
-      goalProBtn: 'Pro (¥500 / ~$5)',
+      goalLiteBtn: 'Lite Free ($0+)',
+      goalProBtn: 'Pro ($5)',
 
       goalModeLabel: 'Mode',
       goalModeGoal: 'Goal Bar',
@@ -269,11 +278,11 @@
       goalRoulettePrompt: 'Click “Spin Roulette” in the Dock',
       goalRouletteResultLabel: 'Current Topic',
 
-      compareHeading: 'Lite (Free) vs Pro (¥500 / ~$5)',
+      compareHeading: 'Lite (Free) vs Pro ($5)',
       compareLead: 'One-time purchase, cleared for monetized streams on YouTube, Twitch, and TikTok. Start with a free Lite pack to verify it in your OBS setup first.',
       colFeature: 'Feature',
-      colLite: 'Lite (Free)',
-      colPro: 'Pro (¥500 / ~$5)',
+      colLite: 'Lite (Free / $0+)',
+      colPro: 'Pro ($5)',
 
       tokiCompareTitle: 'TokiDock Editions',
       tokiRow1Label: 'Pomodoro timer (auto Work/Break + session dots)',
@@ -298,13 +307,13 @@
 
       yes: 'Included',
       no: '—',
-      ctaBoothLite: 'Free Download (BOOTH)',
-      ctaBoothPro: 'Get Pro on BOOTH (¥500)',
+      ctaBoothLite: 'Free Download (Gumroad)',
+      ctaBoothPro: 'Get Pro on Gumroad ($5)',
 
       setupHeading: 'Up and running in 3 steps',
       setupLead: 'No coding or CSS edits required. Works out of the box on OBS Studio 28+.',
       step1Title: 'Unzip the pack',
-      step1Desc: 'Extract the downloaded ZIP from BOOTH into a permanent folder on your PC.',
+      step1Desc: 'Extract the downloaded ZIP from Gumroad (or BOOTH) into a permanent folder on your PC.',
       step2Title: 'Add widget.html as a Browser Source',
       step2Desc: 'In OBS Sources, add Browser → check “Local file” → select widget.html.',
       step3Title: 'Dock controller.html in OBS',
@@ -324,11 +333,20 @@
       readLink: 'Open page →',
 
       channelsTitle: 'Official Channels',
-      chBoothDesc: 'Download TokiDock & GoalDock (Lite Free / Pro ¥500)',
+      chBoothDesc: 'Japanese storefront (¥0 Lite / ¥500 Pro)',
+      chGumroadDesc: 'English storefront for TokiDock & GoalDock ($0+ Lite / $5 Pro)',
       chYoutubeDesc: 'Short OBS demo videos & feature walkthroughs',
       chXDesc: 'Release updates & indie toolmaker devlogs',
 
-      footerNote: 'KitWorks Lab — Indie OBS streaming tools & local automation studio. Commercial / monetized stream use permitted; attribution optional.'
+      footerNote: 'KitWorks Lab — Indie OBS streaming tools & local automation studio. Commercial / monetized stream use permitted; attribution optional.',
+
+      links: {
+        storeHome: 'https://earnbot7.gumroad.com/',
+        tokiPro: 'https://earnbot7.gumroad.com/l/tokidock-pro-obs',
+        tokiLite: 'https://earnbot7.gumroad.com/l/tokidock-lite-obs',
+        goalPro: 'https://earnbot7.gumroad.com/l/goaldock-pro-obs',
+        goalLite: 'https://earnbot7.gumroad.com/l/goaldock-lite-obs'
+      }
     }
   };
 

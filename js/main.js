@@ -48,6 +48,14 @@
       }
     });
 
+    var links = dict.links || {};
+    document.querySelectorAll('[data-i18n-href]').forEach(function (el) {
+      var key = el.getAttribute('data-i18n-href');
+      if (links[key]) {
+        el.setAttribute('href', links[key]);
+      }
+    });
+
     document.querySelectorAll('[data-lang-btn]').forEach(function (btn) {
       var active = btn.getAttribute('data-lang-btn') === safeLang;
       btn.classList.toggle('is-active', active);
