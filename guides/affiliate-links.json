@@ -147,10 +147,11 @@
     "name": "Mangools",
     "official_url": "https://mangools.com/",
     "pricing_url": "https://mangools.com/plans-and-pricing",
-    "affiliate_url": "",
+    "affiliate_url": "https://mangools.com#a6b053c226aee08bafb28305d",
     "network": "Direct",
-    "status": "official_fallback",
-    "note": "Budget-focused keyword research and SERP analysis suite. Verified Nov 2026."
+    "status": "affiliate_live",
+    "note": "Budget-focused keyword research and SERP analysis suite. Verified Nov 2026.",
+    "updated_at": "2026-11-24"
   },
   "surfer": {
     "name": "Surfer SEO",
