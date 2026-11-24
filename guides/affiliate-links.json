@@ -138,10 +138,11 @@
     "name": "SE Ranking",
     "official_url": "https://seranking.com/",
     "pricing_url": "https://seranking.com/subscription.html",
-    "affiliate_url": "",
+    "affiliate_url": "https://seranking.com/?ga=5353838&source=link",
     "network": "Direct",
-    "status": "official_fallback",
-    "note": "SEO platform with daily keyword tracking, API, and MCP access. Verified Nov 2026."
+    "status": "affiliate_live",
+    "note": "SEO platform with daily keyword tracking, API, and MCP access. Verified Nov 2026.",
+    "updated_at": "2026-11-24"
   },
   "mangools": {
     "name": "Mangools",
