@@ -1,0 +1,1339 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>無料リモートMCPサーバー探索＆mcp.jsonジェネレーター（31,845件調査）｜KitWorks Lab</title>
+  <meta name="description" content="公式MCPレジストリ31,845エンドポイント調査（認証不要18,439件・破壊ツール警告14,268件）から厳選230件をローカル高速検索。Read-only安全フィルタ・リスクメーター付きで Claude Desktop / Claude Code / Cursor / Antigravity 向け mcp.json を1クリック生成。">
+  <link rel="canonical" href="https://kitworks-lab.github.io/tools/free-mcp-explorer/">
+  <meta property="og:title" content="Free Remote MCP Explorer &amp; Safe mcp.json Generator — KitWorks Lab">
+  <meta property="og:description" content="Search 230 curated keyless remote MCP endpoints from the 31,845-endpoint 2026 scan (MIT / CC BY 4.0). Filter readOnlyHint vs destructiveHint warnings and generate Claude / Cursor / Antigravity configs.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="../../assets/avatar-600.png">
+  <link rel="icon" type="image/svg+xml" href="../../assets/favicon.svg">
+  <link rel="icon" type="image/png" href="../../assets/favicon.png">
+  <link rel="stylesheet" href="../../css/styles.css">
+  <link rel="stylesheet" href="../tools.css">
+  <style>
+    .skip-link {
+      position: fixed;
+      top: 8px;
+      left: 8px;
+      z-index: 100;
+      padding: 8px 14px;
+      background: var(--ink);
+      color: var(--paper-card);
+      font-weight: 700;
+      font-size: 13px;
+      border-radius: var(--radius-sm);
+      text-decoration: none;
+    }
+    .visually-hidden:where(:not(:focus-within, :active)) {
+      position: absolute !important;
+      clip-path: inset(50%) !important;
+      overflow: hidden !important;
+      width: 1px !important;
+      height: 1px !important;
+      margin: -1px !important;
+      padding: 0 !important;
+      border: 0 !important;
+      white-space: nowrap !important;
+    }
+
+    /* Full Scan Security Reality Strip */
+    .scan-banner {
+      background: var(--paper-card);
+      border: 1.5px solid var(--rule-strong);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-ink);
+      padding: 18px 20px;
+      margin-bottom: 22px;
+      display: grid;
+      gap: 14px;
+    }
+    .scan-stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .scan-stat {
+      padding: 10px 12px;
+      background: var(--paper);
+      border: 1.5px solid var(--rule-strong);
+      border-radius: var(--radius-sm);
+    }
+    .scan-stat.is-danger {
+      background: #fdf2ee;
+      border-color: var(--accent);
+    }
+    .scan-stat.is-safe {
+      background: var(--sage-tint);
+      border-color: var(--sage);
+    }
+    .scan-k {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--ink-muted);
+    }
+    .scan-v {
+      font-family: var(--font-mono);
+      font-size: 21px;
+      font-weight: 800;
+      line-height: 1.25;
+      color: var(--ink);
+      font-variant-numeric: tabular-nums;
+      margin-top: 2px;
+    }
+    .scan-stat.is-danger .scan-v { color: var(--accent); }
+    .scan-stat.is-safe .scan-v { color: var(--sage); }
+    .scan-sub {
+      font-size: 11.5px;
+      color: var(--ink-muted);
+      margin-top: 2px;
+    }
+    .scan-warn-bar {
+      padding: 11px 14px;
+      border-left: 4px solid var(--accent);
+      background: #fdf2ee;
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      font-size: 13px;
+      line-height: 1.58;
+      color: var(--ink);
+    }
+    .scan-warn-bar strong {
+      color: var(--accent);
+    }
+
+    /* Main 2-Column Layout */
+    .mcp-workbench {
+      display: grid;
+      grid-template-columns: minmax(0, 1.38fr) minmax(330px, 0.86fr);
+      gap: 22px;
+      align-items: start;
+    }
+    .mcp-col {
+      display: grid;
+      gap: 16px;
+      min-width: 0;
+    }
+    .sticky-builder {
+      position: sticky;
+      top: 78px;
+    }
+
+    /* Search & Filter Toolbar */
+    .filter-box {
+      background: var(--paper-card);
+      border: 1.5px solid var(--rule-strong);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-ink-sm);
+      padding: 16px 18px;
+      display: grid;
+      gap: 12px;
+    }
+    .search-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(160px, 0.9fr) minmax(130px, 0.65fr);
+      gap: 10px;
+      align-items: end;
+    }
+    .field-block label {
+      display: block;
+      font-size: 11.5px;
+      font-weight: 800;
+      color: var(--ink-muted);
+      margin-bottom: 4px;
+    }
+    .safety-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px 10px;
+    }
+    .safety-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+    .sf-pill {
+      min-block-size: 30px;
+      padding: 4px 9px;
+      border: 1.5px solid var(--rule-strong);
+      border-radius: var(--radius-sm);
+      background: var(--paper);
+      color: var(--ink-soft);
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .sf-pill:hover { background: var(--paper-hover); color: var(--ink); }
+    .sf-pill.is-active { background: var(--ink); color: var(--paper-card); }
+    .sf-pill.is-ro.is-active { background: var(--sage); border-color: var(--sage); color: #fff; }
+    .sf-pill.is-dest.is-active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+    .result-meta-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      font-size: 12.5px;
+      color: var(--ink-muted);
+      font-family: var(--font-mono);
+    }
+
+    /* Server Cards */
+    .server-list {
+      display: grid;
+      gap: 12px;
+    }
+    .srv-card {
+      background: var(--paper-card);
+      border: 1.5px solid var(--rule-strong);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-ink-sm);
+      padding: 15px 16px;
+      display: grid;
+      gap: 9px;
+      transition: border-color 0.14s ease, background-color 0.14s ease;
+    }
+    .srv-card.is-selected {
+      border-color: var(--sage);
+      background: #f4f8f5;
+    }
+    .srv-card.is-selected.is-dest-card {
+      border-color: var(--accent);
+      background: #fdf4f0;
+    }
+    .srv-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .srv-title-block {
+      min-width: 0;
+      flex: 1;
+    }
+    .srv-name {
+      margin: 0;
+      font-size: 15.5px;
+      font-weight: 800;
+      line-height: 1.3;
+      color: var(--ink);
+    }
+    .srv-topic-line {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      margin-top: 4px;
+    }
+    .s-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 3px;
+      white-space: nowrap;
+    }
+    .s-badge.is-readonly { background: var(--sage); color: #fff; }
+    .s-badge.is-partial { background: var(--ochre); color: #1e1b18; }
+    .s-badge.is-unannotated { background: var(--paper-muted); border: 1px solid var(--rule-strong); color: var(--ink-soft); }
+    .s-badge.is-destructive { background: var(--accent); color: #fff; }
+    .topic-tag {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      font-weight: 700;
+      color: var(--ink-muted);
+      background: var(--paper);
+      border: 1px solid var(--rule);
+      padding: 1px 6px;
+      border-radius: 3px;
+    }
+    .tool-count-tag {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--ink-soft);
+      font-variant-numeric: tabular-nums;
+    }
+    .srv-desc {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.55;
+      color: var(--ink-soft);
+    }
+    .srv-url-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 6px 9px;
+      background: var(--paper);
+      border: 1px solid var(--rule);
+      border-radius: var(--radius-sm);
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      color: var(--ink);
+      overflow-wrap: anywhere;
+    }
+    .srv-tools-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+    .tool-chip {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      padding: 1px 6px;
+      border-radius: 3px;
+      background: var(--paper-muted);
+      color: var(--ink-soft);
+      border: 1px solid var(--rule);
+    }
+    .srv-foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding-top: 4px;
+    }
+    .srv-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .srv-links a {
+      color: var(--ink-soft);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .srv-links a:hover { color: var(--accent); }
+    .select-srv-btn {
+      min-block-size: 32px;
+      padding: 5px 12px;
+      border: 1.5px solid var(--rule-strong);
+      border-radius: var(--radius-sm);
+      background: var(--paper);
+      color: var(--ink);
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .select-srv-btn:hover { background: var(--paper-hover); }
+    .select-srv-btn.is-added {
+      background: var(--sage);
+      border-color: var(--sage);
+      color: #fff;
+    }
+
+    /* Live Security Risk Meter */
+    .risk-meter-box {
+      padding: 14px 16px;
+      border-bottom: 1.5px solid var(--rule-strong);
+      background: var(--paper);
+    }
+    .risk-meter-box[data-level="safe"] { background: #eef6f1; }
+    .risk-meter-box[data-level="caution"] { background: #fbf4e4; }
+    .risk-meter-box[data-level="high"] { background: #fdf0eb; }
+    .risk-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .risk-pill {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 3px;
+      background: var(--ink);
+      color: #fff;
+    }
+    .risk-meter-box[data-level="safe"] .risk-pill { background: var(--sage); }
+    .risk-meter-box[data-level="caution"] .risk-pill { background: var(--ochre); color: #1e1b18; }
+    .risk-meter-box[data-level="high"] .risk-pill { background: var(--accent); }
+    .risk-bar-track {
+      height: 9px;
+      border-radius: 3px;
+      border: 1px solid var(--rule-strong);
+      background: #fff;
+      overflow: hidden;
+      margin: 7px 0;
+    }
+    .risk-bar-fill {
+      height: 100%;
+      width: 15%;
+      background: var(--sage);
+      transition: width 0.2s ease, background-color 0.2s ease;
+    }
+    .risk-meter-box[data-level="caution"] .risk-bar-fill { background: var(--ochre); }
+    .risk-meter-box[data-level="high"] .risk-bar-fill { background: var(--accent); }
+    .risk-msg {
+      margin: 0;
+      font-size: 12.5px;
+      line-height: 1.5;
+      color: var(--ink-soft);
+    }
+
+    /* Selected chips & Target tabs */
+    .selected-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    .sel-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--rule-strong);
+      background: var(--paper);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .sel-chip button {
+      border: 0;
+      background: transparent;
+      color: var(--accent);
+      font-weight: 800;
+      cursor: pointer;
+      padding: 0 2px;
+      line-height: 1;
+    }
+
+    .client-tabs {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .client-tab {
+      min-block-size: 32px;
+      padding: 6px 8px;
+      border: 1.5px solid var(--rule-strong);
+      border-radius: var(--radius-sm);
+      background: var(--paper);
+      color: var(--ink-soft);
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .client-tab.is-active {
+      background: var(--ink);
+      color: var(--paper-card);
+    }
+    .client-hint {
+      margin: 0 0 10px;
+      font-size: 12px;
+      color: var(--ink-muted);
+      line-height: 1.5;
+    }
+    .cfg-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    /* Cross-links & Attribution */
+    .cross-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 26px;
+    }
+    .cross-card {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 15px 16px;
+      background: var(--paper-card);
+      border: 1.5px solid var(--rule-strong);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-ink-sm);
+      text-decoration: none;
+    }
+    .cross-card:hover {
+      transform: translate(-1px, -1px);
+      box-shadow: 4px 4px 0 var(--ink);
+    }
+    .cross-tag {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      font-weight: 800;
+      color: var(--accent);
+    }
+    .cross-title { font-size: 14.5px; font-weight: 800; color: var(--ink); }
+    .cross-desc { font-size: 12.5px; color: var(--ink-soft); line-height: 1.55; }
+
+    .credit-box {
+      margin-top: 20px;
+      padding: 14px 16px;
+      background: var(--paper-muted);
+      border: 1px solid var(--rule-strong);
+      border-radius: var(--radius-sm);
+      font-size: 12.5px;
+      line-height: 1.6;
+      color: var(--ink-soft);
+    }
+    .credit-box a { color: var(--accent); font-weight: 700; }
+
+    @media (max-width: 1020px) {
+      .scan-stats-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .mcp-workbench { grid-template-columns: 1fr; }
+      .sticky-builder { position: static; }
+    }
+    @media (max-width: 680px) {
+      .search-row { grid-template-columns: 1fr; }
+      .cross-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <a href="#main-content" class="skip-link visually-hidden" data-i18n="skipLink">メインコンテンツへ移動</a>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand-link" href="../../">
+        <img class="brand-avatar" src="../../assets/avatar-600.png" alt="KitWorks Lab" width="36" height="36">
+        <span class="brand-name">KitWorks Lab</span>
+      </a>
+      <div class="header-right">
+        <nav class="site-nav" aria-label="Primary">
+          <a href="../" data-i18n="navTools">無料ツール一覧</a>
+          <a href="../llm-cost-calc/" data-i18n="navLlm">LLMコスト試算</a>
+          <a href="../agent-stack-picks/" data-i18n="navStack">AI選定スタック</a>
+          <a href="./" class="is-current" aria-current="page" data-i18n="navMcp">無料MCP探索</a>
+          <a href="../../guides/" data-i18n="navGuides">SaaSコスト試算</a>
+          <a href="../../" data-i18n="navObs">OBS製品デモ</a>
+        </nav>
+        <div class="lang-toggle" role="group" aria-label="Language">
+          <button type="button" class="lang-btn is-active" data-lang-btn="ja" aria-pressed="true">JP</button>
+          <button type="button" class="lang-btn" data-lang-btn="en" aria-pressed="false">EN</button>
+        </div>
+      </div>
+    </div>
+    <nav class="mobile-tool-nav" aria-label="Tools">
+      <a href="../" data-i18n="navTools">無料ツール一覧</a>
+      <a href="../llm-cost-calc/" data-i18n="navLlm">LLMコスト試算</a>
+      <a href="../agent-stack-picks/" data-i18n="navStack">AI選定スタック</a>
+      <a href="./" class="is-current" aria-current="page" data-i18n="navMcp">無料MCP探索</a>
+      <a href="../../guides/" data-i18n="navGuides">SaaSコスト試算</a>
+    </nav>
+  </header>
+
+  <main id="main-content">
+    <section class="tool-hero">
+      <div class="container">
+        <div class="breadcrumb">
+          <a href="../../">KitWorks Lab</a>
+          <span class="breadcrumb-sep">/</span>
+          <a href="../" data-i18n="navTools">無料ツール一覧</a>
+          <span class="breadcrumb-sep">/</span>
+          <span data-i18n="navMcp">無料MCP探索</span>
+        </div>
+        <div class="tool-hero-row">
+          <div>
+            <h1 class="tool-hero-title" tabindex="-1" data-i18n="heroTitle">無料リモートMCPサーバー探索＆安全な mcp.json 生成</h1>
+            <p class="tool-hero-lead" data-i18n="heroLead">公式MCPレジストリ 31,845件の毎週スキャン実測（認証不要 18,439件）から、実用性の高い230件を安全性バッジ付きで収録。Read-only安全フィルタとリスクメーターを確認しながら、Claude Desktop / Claude Code / Cursor / Antigravity 向け設定を1クリック生成できます。</p>
+          </div>
+          <div class="local-stamp">
+            <span class="local-stamp-dot" aria-hidden="true"></span>
+            <span data-i18n="localStamp">31,845 調査 / 230 厳選収録 / ローカル動作</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="tool-section">
+      <div class="container">
+        <!-- Full-Scan Security Reality Banner -->
+        <div class="scan-banner" role="region" aria-label="Full MCP Registry scan summary">
+          <div class="scan-stats-row">
+            <div class="scan-stat">
+              <div class="scan-k" data-i18n="stScanned">公式レジストリ調査総数</div>
+              <div class="scan-v">31,845</div>
+              <div class="scan-sub" data-i18n="stScannedSub">2026-11-23 スキャン実測</div>
+            </div>
+            <div class="scan-stat is-safe">
+              <div class="scan-k" data-i18n="stOpen">認証なしオープン (58%)</div>
+              <div class="scan-v">18,439</div>
+              <div class="scan-sub" data-i18n="stOpenSub">重複除外後 14,776件</div>
+            </div>
+            <div class="scan-stat is-danger">
+              <div class="scan-k" data-i18n="stDest">destructiveHint: true</div>
+              <div class="scan-v">14,268</div>
+              <div class="scan-sub" data-i18n="stDestSub">認証なし破壊ツール数</div>
+            </div>
+            <div class="scan-stat">
+              <div class="scan-k" data-i18n="stUnann">属性未申告の公開数</div>
+              <div class="scan-v">3,920</div>
+              <div class="scan-sub" data-i18n="stUnannSub">ツール属性ゼロのサーバー</div>
+            </div>
+          </div>
+          <div class="scan-warn-bar" data-i18n="warnBanner">
+            <strong>セキュリティ注意:</strong> 「認証なし無料」は「安全」と同義ではありません。全スキャンでは <strong>14,268個のツールが destructiveHint: true</strong> を申告し、3,920サーバーはツール属性を一切宣言していません。自律型エージェントには原則 <strong>Read-only safe</strong> のみ接続し、外部ツール説明文によるプロンプトインジェクションにも注意してください。
+          </div>
+        </div>
+
+        <div class="mcp-workbench">
+          <!-- Left: Search, Filters & Server Directory -->
+          <div class="mcp-col">
+            <div class="filter-box">
+              <div class="search-row">
+                <div class="field-block">
+                  <label for="mcpSearch" data-i18n="lblSearch">キーワード検索（名前・ツール名・説明・URL）</label>
+                  <input type="search" id="mcpSearch" class="text-input" data-i18n-placeholder="phSearch" placeholder="例: cve, docs, mermaid, github, finance...">
+                </div>
+                <div class="field-block">
+                  <label for="mcpTopic" data-i18n="lblTopic">カテゴリ（12分類）</label>
+                  <select id="mcpTopic" class="select-input"></select>
+                </div>
+                <div class="field-block">
+                  <label for="mcpToolCount" data-i18n="lblTools">ツール数</label>
+                  <select id="mcpToolCount" class="select-input">
+                    <option value="all" data-i18n="tcAll">すべて</option>
+                    <option value="1-5">1–5 tools</option>
+                    <option value="6-15">6–15 tools</option>
+                    <option value="16+">16+ tools</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="safety-row">
+                <div class="safety-pills" role="group" aria-label="Safety filter" id="safetyFilter">
+                  <button type="button" class="sf-pill is-active" data-safety="all" aria-pressed="true" data-i18n="sfAll">すべて (230)</button>
+                  <button type="button" class="sf-pill is-ro" data-safety="readonly" aria-pressed="false" data-i18n="sfRo">Read-only安全のみ (156)</button>
+                  <button type="button" class="sf-pill" data-safety="partial-ro" aria-pressed="false" data-i18n="sfPart">一部Read-only (28)</button>
+                  <button type="button" class="sf-pill" data-safety="unannotated" aria-pressed="false" data-i18n="sfUnann">未申告 (18)</button>
+                  <button type="button" class="sf-pill is-dest" data-safety="destructive" aria-pressed="false" data-i18n="sfDest">破壊ツール警告あり (28)</button>
+                </div>
+                <div class="field-block" style="min-width:140px;">
+                  <label for="mcpSort" class="visually-hidden" data-i18n="lblSort">並び順</label>
+                  <select id="mcpSort" class="select-input" style="padding:5px 8px; font-size:12px;">
+                    <option value="rec" data-i18n="sortRec">おすすめ順</option>
+                    <option value="safe" data-i18n="sortSafe">安全性優先</option>
+                    <option value="tools" data-i18n="sortTools">ツール数が多い順</option>
+                    <option value="name" data-i18n="sortName">名前順 (A-Z)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="result-meta-bar">
+              <span id="resultCount" role="status" aria-live="polite">Loading curated dataset...</span>
+              <button type="button" class="preset-btn" id="btnResetFilters" data-i18n="btnReset">条件リセット</button>
+            </div>
+
+            <div class="server-list" id="serverList"></div>
+
+            <div style="text-align:center;" id="loadMoreWrap" hidden>
+              <button type="button" class="btn btn-secondary btn-sm" id="btnLoadMore" data-i18n="btnMore">さらに表示</button>
+            </div>
+          </div>
+
+          <!-- Right: Sticky Security Risk Meter & 1-Click mcp.json Generator -->
+          <aside class="mcp-col sticky-builder" aria-label="MCP Configuration Generator">
+            <div class="tool-panel">
+              <div class="tool-panel-head">
+                <h2 class="tool-panel-title" data-i18n="genTitle">mcp.json 設定ジェネレーター</h2>
+                <span class="ctrl-value" id="selCountBadge">1 selected</span>
+              </div>
+
+              <!-- Live Security Risk Meter -->
+              <div class="risk-meter-box" id="riskMeter" data-level="safe" role="status" aria-live="polite">
+                <div class="risk-head">
+                  <strong style="font-size:12.5px;" data-i18n="riskLabel">選択構成のセキュリティリスク判定</strong>
+                  <span class="risk-pill" id="riskBadge">SAFE · READ-ONLY</span>
+                </div>
+                <div class="risk-bar-track" aria-hidden="true">
+                  <div class="risk-bar-fill" id="riskBarFill"></div>
+                </div>
+                <p class="risk-msg" id="riskMsg">—</p>
+              </div>
+
+              <div class="tool-panel-body">
+                <div class="selected-chips" id="selectedChips"></div>
+
+                <div class="client-tabs" role="tablist" aria-label="Target MCP Client" id="clientTabs">
+                  <button type="button" role="tab" class="client-tab is-active" data-client="claude-code" aria-selected="true">Claude Code CLI</button>
+                  <button type="button" role="tab" class="client-tab" data-client="claude-desktop" aria-selected="false">Claude Desktop</button>
+                  <button type="button" role="tab" class="client-tab" data-client="cursor" aria-selected="false">Cursor (.cursor/mcp.json)</button>
+                  <button type="button" role="tab" class="client-tab" data-client="antigravity" aria-selected="false">Antigravity / VS Code</button>
+                </div>
+
+                <p class="client-hint" id="clientHint">—</p>
+
+                <pre class="code-output" id="configPreview" style="border:1.5px solid var(--rule-strong); border-radius:var(--radius-sm);"></pre>
+
+                <div class="cfg-actions">
+                  <button type="button" class="btn btn-primary btn-sm" id="btnCopyConfig" data-i18n="btnCopy">設定をコピー</button>
+                  <button type="button" class="btn btn-secondary btn-sm" id="btnDownloadJson" data-i18n="btnDl">JSON保存</button>
+                  <button type="button" class="preset-btn" id="btnClearSel" data-i18n="btnClear">選択解除</button>
+                  <span class="inline-feedback" id="cfgCopyStatus" role="status" aria-live="polite"></span>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
+
+        <!-- Cross-links -->
+        <div class="cross-grid">
+          <a class="cross-card" href="../agent-stack-picks/">
+            <span class="cross-tag">COMPANION TOOL · 360 RUNS</span>
+            <span class="cross-title" data-i18n="cr1Title">AIコーディングエージェント選定スタック実測ビューア</span>
+            <span class="cross-desc" data-i18n="cr1Desc">Claude Code 5.5 が指示なしで勝手に選ぶDB・認証・ORM・決済を360回の実データで比較。</span>
+          </a>
+          <a class="cross-card" href="../llm-cost-calc/">
+            <span class="cross-tag">RELATED TOOL · LLM API</span>
+            <span class="cross-title" data-i18n="cr2Title">LLM API コスト＆日本語トークン・推論トラップ試算</span>
+            <span class="cross-desc" data-i18n="cr2Desc">MCPツール定義で増えたシステムプロンプトのトークン膨張と月額コストを即計算。</span>
+          </a>
+        </div>
+
+        <!-- MIT / CC BY 4.0 Attribution -->
+        <div class="credit-box">
+          <strong data-i18n="creditHead">データ出典・ライセンス（MIT / CC BY 4.0）:</strong>
+          <span data-i18n="creditBody">本ツールは 2026年11月23日スキャン結果の公開プロジェクト</span>
+          <a href="https://github.com/diegobruegger-prog/free-remote-mcp-servers" target="_blank" rel="noopener noreferrer">diegobruegger-prog/free-remote-mcp-servers</a>
+          (MIT code / <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a> data)
+          <span data-i18n="creditTail">をもとに、上位230件のオフライン厳選JSON（data/mcp-curated.json）を生成してブラウザ内のみで検索・設定生成を行います。接続先エンドポイントの稼働や安全性は自己責任でご確認ください。</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <img class="brand-avatar" src="../../assets/avatar-600.png" alt="KitWorks Lab" width="32" height="32">
+        <p class="footer-note" data-i18n="footerNote">KitWorks Lab — 個人制作のOBS配信ツール・無料Webツール工房。すべてのツールはブラウザ内ローカルで完結します。</p>
+      </div>
+      <nav class="footer-links" aria-label="Official channels">
+        <a href="../" data-i18n="navTools">無料ツール一覧</a>
+        <a href="../agent-stack-picks/" data-i18n="navStack">AI選定スタック</a>
+        <a href="../llm-cost-calc/" data-i18n="navLlm">LLMコスト試算</a>
+        <a href="https://kitworks.booth.pm/" target="_blank" rel="noopener noreferrer">BOOTH</a>
+        <a href="https://github.com/kitworks-lab" target="_blank" rel="noopener noreferrer">GitHub</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script src="../tools-common.js"></script>
+  <script>
+    (function () {
+      'use strict';
+
+      var DICT = {
+        ja: {
+          pageTitle: '無料リモートMCPサーバー探索＆mcp.jsonジェネレーター（31,845件調査）｜KitWorks Lab',
+          pageDesc: '公式MCPレジストリ31,845件調査から厳選230件をローカル高速検索。Read-only安全フィルタとリスクメーター付きで Claude / Cursor / Antigravity 用 mcp.json を1クリック生成。',
+          skipLink: 'メインコンテンツへ移動',
+          navTools: '無料ツール一覧',
+          navLlm: 'LLMコスト試算',
+          navStack: 'AI選定スタック',
+          navMcp: '無料MCP探索',
+          navGuides: 'SaaSコスト試算',
+          navObs: 'OBS製品デモ',
+          heroTitle: '無料リモートMCPサーバー探索＆安全な mcp.json 生成',
+          heroLead: '公式MCPレジストリ 31,845件の毎週スキャン実測（認証不要 18,439件）から、実用性の高い230件を安全性バッジ付きで収録。Read-only安全フィルタとリスクメーターを確認しながら、Claude Desktop / Claude Code / Cursor / Antigravity 向け設定を1クリック生成できます。',
+          localStamp: '31,845 調査 / 230 厳選収録 / ローカル動作',
+          stScanned: '公式レジストリ調査総数',
+          stScannedSub: '2026-11-23 スキャン実測',
+          stOpen: '認証なしオープン (58%)',
+          stOpenSub: '重複除外後 14,776件',
+          stDest: 'destructiveHint: true',
+          stDestSub: '認証なし破壊ツール数',
+          stUnann: '属性未申告の公開数',
+          stUnannSub: 'ツール属性ゼロのサーバー',
+          warnBanner: 'セキュリティ注意: 「認証なし無料」は「安全」と同義ではありません。全スキャンでは 14,268個のツールが destructiveHint: true を申告し、3,920サーバーはツール属性を一切宣言していません。自律型エージェントには原則 Read-only safe のみ接続し、外部ツール説明文によるプロンプトインジェクションにも注意してください。',
+          lblSearch: 'キーワード検索（名前・ツール名・説明・URL）',
+          phSearch: '例: cve, docs, mermaid, github, finance...',
+          lblTopic: 'カテゴリ（12分類）',
+          lblTools: 'ツール数',
+          tcAll: 'すべて',
+          sfAll: 'すべて (230)',
+          sfRo: 'Read-only安全のみ (156)',
+          sfPart: '一部Read-only (28)',
+          sfUnann: '未申告 (18)',
+          sfDest: '破壊ツール警告あり (28)',
+          lblSort: '並び順',
+          sortRec: 'おすすめ順',
+          sortSafe: '安全性優先',
+          sortTools: 'ツール数が多い順',
+          sortName: '名前順 (A-Z)',
+          btnReset: '条件リセット',
+          btnMore: 'さらに表示',
+          genTitle: 'mcp.json 設定ジェネレーター',
+          riskLabel: '選択構成のセキュリティリスク判定',
+          btnCopy: '設定をコピー',
+          btnDl: 'JSON保存',
+          btnClear: '選択解除',
+          copied: 'コピーしました',
+          cr1Title: 'AIコーディングエージェント選定スタック実測ビューア',
+          cr1Desc: 'Claude Code 5.5 が指示なしで勝手に選ぶDB・認証・ORM・決済を360回の実データで比較。',
+          cr2Title: 'LLM API コスト＆日本語トークン・推論トラップ試算',
+          cr2Desc: 'MCPツール定義で増えたシステムプロンプトのトークン膨張と月額コストを即計算。',
+          creditHead: 'データ出典・ライセンス（MIT / CC BY 4.0）:',
+          creditBody: '本ツールは 2026年11月23日スキャン結果の公開プロジェクト',
+          creditTail: 'をもとに、上位230件のオフライン厳選JSON（data/mcp-curated.json）を生成してブラウザ内のみで検索・設定生成を行います。接続先エンドポイントの稼働や安全性は自己責任でご確認ください。',
+          footerNote: 'KitWorks Lab — 個人制作のOBS配信ツール・無料Webツール工房。すべてのツールはブラウザ内ローカルで完結します。'
+        },
+        en: {
+          pageTitle: 'Free Remote MCP Explorer & Safe mcp.json Generator (31,845 Scanned) — KitWorks Lab',
+          pageDesc: 'Search 230 curated keyless remote MCP servers from the 31,845-endpoint scan (18,439 open, 14,268 destructiveHint warnings). Filter read-only safe endpoints and generate Claude / Cursor / Antigravity configs.',
+          skipLink: 'Skip to main content',
+          navTools: 'Free Tools',
+          navLlm: 'LLM Cost Calc',
+          navStack: 'Agent Stack Picks',
+          navMcp: 'Free MCP Explorer',
+          navGuides: 'SaaS Cost Guides',
+          navObs: 'OBS Overlays',
+          heroTitle: 'Free Remote MCP Explorer & Safe mcp.json Generator',
+          heroLead: 'Curated offline directory of 230 high-utility keyless endpoints from the 31,845-server official MCP Registry scan. Filter by readOnlyHint vs destructiveHint warnings and generate ready-to-paste configs for Claude Desktop, Claude Code, Cursor, and Antigravity.',
+          localStamp: '31,845 Scanned · 230 Curated · Offline JSON',
+          stScanned: 'Registry Endpoints Tested',
+          stScannedSub: 'Measured 2026-11-23',
+          stOpen: 'Open Without Auth (58%)',
+          stOpenSub: '14,776 unique servers',
+          stDest: 'destructiveHint: true',
+          stDestSub: 'unauth destructive tools',
+          stUnann: 'Zero-Annotation Servers',
+          stUnannSub: 'no tool hints declared',
+          warnBanner: 'Security Warning: "Free & no login" does NOT mean safe. Across the full scan, 14,268 exposed tools declare destructiveHint: true without authentication and 3,920 open servers annotate zero tools. Prefer Read-only safe servers for autonomous coding agents and review tool schemas for prompt injection.',
+          lblSearch: 'Search (name, tool name, description, URL)',
+          phSearch: 'e.g. cve, docs, mermaid, github, finance...',
+          lblTopic: 'Topic (12 Categories)',
+          lblTools: 'Tool Count',
+          tcAll: 'Any count',
+          sfAll: 'All (230)',
+          sfRo: 'Read-only safe only (156)',
+          sfPart: 'Partial read-only (28)',
+          sfUnann: 'Unannotated (18)',
+          sfDest: 'Has destructive warning (28)',
+          lblSort: 'Sort order',
+          sortRec: 'Recommended',
+          sortSafe: 'Safest first',
+          sortTools: 'Most tools',
+          sortName: 'Name (A-Z)',
+          btnReset: 'Reset Filters',
+          btnMore: 'Show More',
+          genTitle: 'mcp.json Config Generator',
+          riskLabel: 'Selected Stack Security Risk Meter',
+          btnCopy: 'Copy Snippet',
+          btnDl: 'Download JSON',
+          btnClear: 'Clear',
+          copied: 'Copied to clipboard',
+          cr1Title: 'AI Coding Agent Default Stack Explorer',
+          cr1Desc: 'Explore 360 Claude Code 5.5 runs to see which DB, Auth, ORM, and host AI picks by default.',
+          cr2Title: 'LLM API Cost & Reasoning-Trap Simulator',
+          cr2Desc: 'Estimate how much extra MCP tool schemas add to your monthly input token bill.',
+          creditHead: 'Dataset Attribution (MIT / CC BY 4.0):',
+          creditBody: 'Built from the Nov 23, 2026 weekly scan dataset',
+          creditTail: 'using a compact 230-endpoint offline snapshot (data/mcp-curated.json). Verify third-party endpoints before granting agent access.',
+          footerNote: 'KitWorks Lab — Indie OBS overlays & zero-upload creator utilities. Everything runs locally in your browser.'
+        }
+      };
+
+      var TOPIC_JA = {
+        'Developer tools': '開発者ツール',
+        'Documentation and knowledge': 'ドキュメント・知識',
+        'Search and web': '検索・Web',
+        'AI, agents and memory': 'AI・エージェント・記憶',
+        'Finance and crypto': '金融・暗号資産',
+        'Open data and government': 'オープンデータ・公的統計',
+        'Science, health and research': '科学・研究・医療',
+        'Weather, maps and travel': '気象・地図・旅行',
+        'Utilities': 'ユーティリティ',
+        'Media and content': 'メディア・コンテンツ',
+        'Business and marketing': 'ビジネス・マーケ',
+        'Other': 'その他'
+      };
+
+      var SAFETY_RANK = { readonly: 0, 'partial-ro': 1, unannotated: 2, caution: 2, destructive: 3 };
+
+      var state = {
+        lang: 'ja',
+        data: null,
+        q: '',
+        topic: 'all',
+        safety: 'all',
+        toolRange: 'all',
+        sort: 'rec',
+        limit: 24,
+        selectedIds: [],
+        client: 'claude-code'
+      };
+
+      function safetyBadge(srv) {
+        var isJa = state.lang === 'ja';
+        if (srv.safety === 'readonly') {
+          return { cls: 'is-readonly', txt: isJa ? 'READ-ONLY 安全 (' + srv.ro + '/' + srv.tools + ')' : 'READ-ONLY SAFE (' + srv.ro + '/' + srv.tools + ')' };
+        }
+        if (srv.safety === 'destructive') {
+          return { cls: 'is-destructive', txt: isJa ? '破壊ツール警告 (' + srv.dest + '件)' : 'DESTRUCTIVE WARNING (' + srv.dest + ')' };
+        }
+        if (srv.safety === 'unannotated') {
+          return { cls: 'is-unannotated', txt: isJa ? '属性未申告 (0/' + srv.tools + ')' : 'UNANNOTATED (0/' + srv.tools + ')' };
+        }
+        return { cls: 'is-partial', txt: isJa ? '一部Read-only (' + srv.ro + '/' + srv.tools + ')' : 'PARTIAL RO (' + srv.ro + '/' + srv.tools + ')' };
+      }
+
+      function populateTopics() {
+        var sel = document.getElementById('mcpTopic');
+        var prev = state.topic;
+        sel.innerHTML = '';
+        var optAll = document.createElement('option');
+        optAll.value = 'all';
+        optAll.textContent = state.lang === 'ja' ? '全カテゴリ（230件厳選 / 全14,776件）' : 'All Topics (230 curated / 14,776 total)';
+        sel.appendChild(optAll);
+
+        var counts = {};
+        state.data.servers.forEach(function (s) { counts[s.topic] = (counts[s.topic] || 0) + 1; });
+        Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; }).forEach(function (t) {
+          var opt = document.createElement('option');
+          opt.value = t;
+          var label = state.lang === 'ja' && TOPIC_JA[t] ? TOPIC_JA[t] + ' (' + t + ')' : t;
+          var fullN = (state.data.meta.topicTotals && state.data.meta.topicTotals[t]) || counts[t];
+          opt.textContent = label + ' — ' + counts[t] + ' / ' + fullN.toLocaleString();
+          sel.appendChild(opt);
+        });
+        sel.value = prev;
+      }
+
+      function getFiltered() {
+        if (!state.data) return [];
+        var q = state.q.trim().toLowerCase();
+        var list = state.data.servers.filter(function (s) {
+          if (state.topic !== 'all' && s.topic !== state.topic) return false;
+          if (state.safety !== 'all' && s.safety !== state.safety) return false;
+          if (state.toolRange === '1-5' && (s.tools < 1 || s.tools > 5)) return false;
+          if (state.toolRange === '6-15' && (s.tools < 6 || s.tools > 15)) return false;
+          if (state.toolRange === '16+' && s.tools < 16) return false;
+          if (q) {
+            var hay = (s.name + ' ' + s.topic + ' ' + s.desc + ' ' + s.url + ' ' + (s.sampleTools || []).join(' ')).toLowerCase();
+            if (hay.indexOf(q) === -1) return false;
+          }
+          return true;
+        });
+
+        if (state.sort === 'safe') {
+          list = list.slice().sort(function (a, b) {
+            return (SAFETY_RANK[a.safety] - SAFETY_RANK[b.safety]) || (b.ro - a.ro);
+          });
+        } else if (state.sort === 'tools') {
+          list = list.slice().sort(function (a, b) { return b.tools - a.tools; });
+        } else if (state.sort === 'name') {
+          list = list.slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
+        }
+        return list;
+      }
+
+      function toggleSelect(id) {
+        var idx = state.selectedIds.indexOf(id);
+        if (idx >= 0) {
+          state.selectedIds.splice(idx, 1);
+        } else {
+          state.selectedIds.push(id);
+        }
+        renderList();
+        renderBuilder();
+      }
+
+      function renderList() {
+        var filtered = getFiltered();
+        var shown = filtered.slice(0, state.limit);
+        var isJa = state.lang === 'ja';
+
+        document.getElementById('resultCount').textContent = isJa
+          ? filtered.length + ' 件ヒット（' + shown.length + ' 件表示中 / 厳選 ' + state.data.servers.length + ' 件）'
+          : filtered.length + ' matches (showing ' + shown.length + ' of ' + state.data.servers.length + ' curated)';
+
+        var wrap = document.getElementById('serverList');
+        wrap.innerHTML = '';
+
+        if (!shown.length) {
+          var empty = document.createElement('div');
+          empty.className = 'srv-card';
+          empty.textContent = isJa
+            ? '条件に一致するサーバーがありません。検索語またはフィルタを緩めてください。'
+            : 'No matching MCP servers. Try clearing your search or broadening filters.';
+          wrap.appendChild(empty);
+        }
+
+        shown.forEach(function (srv) {
+          var isAdded = state.selectedIds.indexOf(srv.id) >= 0;
+          var badge = safetyBadge(srv);
+          var card = document.createElement('article');
+          card.className = 'srv-card' + (isAdded ? ' is-selected' : '') + (srv.safety === 'destructive' ? ' is-dest-card' : '');
+
+          var top = document.createElement('div');
+          top.className = 'srv-top';
+
+          var titleBlock = document.createElement('div');
+          titleBlock.className = 'srv-title-block';
+          var h3 = document.createElement('h3');
+          h3.className = 'srv-name';
+          h3.textContent = srv.name;
+          var tLine = document.createElement('div');
+          tLine.className = 'srv-topic-line';
+          var bSpan = document.createElement('span');
+          bSpan.className = 's-badge ' + badge.cls;
+          bSpan.textContent = badge.txt;
+          var tSpan = document.createElement('span');
+          tSpan.className = 'topic-tag';
+          tSpan.textContent = isJa && TOPIC_JA[srv.topic] ? TOPIC_JA[srv.topic] : srv.topic;
+          var cSpan = document.createElement('span');
+          cSpan.className = 'tool-count-tag';
+          cSpan.textContent = srv.tools + ' tools · ann ' + srv.ann;
+          tLine.appendChild(bSpan);
+          tLine.appendChild(tSpan);
+          tLine.appendChild(cSpan);
+          titleBlock.appendChild(h3);
+          titleBlock.appendChild(tLine);
+
+          var selBtn = document.createElement('button');
+          selBtn.type = 'button';
+          selBtn.className = 'select-srv-btn' + (isAdded ? ' is-added' : '');
+          selBtn.setAttribute('aria-pressed', isAdded ? 'true' : 'false');
+          selBtn.setAttribute('aria-label', (isAdded ? (isJa ? '構成から外す: ' : 'Remove from config: ') : (isJa ? 'mcp.jsonに追加: ' : 'Add to mcp.json: ')) + srv.name);
+          selBtn.textContent = isAdded ? (isJa ? '選択中 ✓' : 'Selected ✓') : (isJa ? '+ 設定に追加' : '+ Add to Config');
+          selBtn.addEventListener('click', function () { toggleSelect(srv.id); });
+
+          top.appendChild(titleBlock);
+          top.appendChild(selBtn);
+          card.appendChild(top);
+
+          var desc = document.createElement('p');
+          desc.className = 'srv-desc';
+          desc.textContent = srv.desc;
+          card.appendChild(desc);
+
+          var urlRow = document.createElement('div');
+          urlRow.className = 'srv-url-row';
+          var urlCode = document.createElement('code');
+          urlCode.textContent = srv.url;
+          urlRow.appendChild(urlCode);
+          card.appendChild(urlRow);
+
+          if (srv.sampleTools && srv.sampleTools.length) {
+            var toolsRow = document.createElement('div');
+            toolsRow.className = 'srv-tools-row';
+            srv.sampleTools.slice(0, 6).forEach(function (tn) {
+              var chip = document.createElement('code');
+              chip.className = 'tool-chip';
+              chip.textContent = tn;
+              toolsRow.appendChild(chip);
+            });
+            card.appendChild(toolsRow);
+          }
+
+          var foot = document.createElement('div');
+          foot.className = 'srv-foot';
+          var links = document.createElement('div');
+          links.className = 'srv-links';
+          if (srv.web) {
+            var aW = document.createElement('a');
+            aW.href = srv.web;
+            aW.target = '_blank';
+            aW.rel = 'noopener noreferrer';
+            aW.textContent = isJa ? '公式サイト ↗' : 'Website ↗';
+            links.appendChild(aW);
+          }
+          if (srv.repo) {
+            var aR = document.createElement('a');
+            aR.href = srv.repo;
+            aR.target = '_blank';
+            aR.rel = 'noopener noreferrer';
+            aR.textContent = 'GitHub ↗';
+            links.appendChild(aR);
+          }
+          foot.appendChild(links);
+          card.appendChild(foot);
+
+          wrap.appendChild(card);
+        });
+
+        var moreWrap = document.getElementById('loadMoreWrap');
+        moreWrap.hidden = filtered.length <= state.limit;
+      }
+
+      function getSelectedServers() {
+        if (!state.data) return [];
+        var map = {};
+        state.data.servers.forEach(function (s) { map[s.id] = s; });
+        return state.selectedIds.map(function (id) { return map[id]; }).filter(Boolean);
+      }
+
+      function buildSnippet(selected) {
+        if (!selected.length) {
+          return state.lang === 'ja'
+            ? '// 左の一覧から「+ 設定に追加」を押すと、ここに mcp.json / CLI コマンドが生成されます'
+            : '// Click "+ Add to Config" on any server to generate your mcp.json / CLI snippet';
+        }
+        if (state.client === 'claude-code') {
+          return selected.map(function (s) {
+            return 'claude mcp add --transport http ' + s.id + ' "' + s.url + '"';
+          }).join('\n');
+        }
+        if (state.client === 'claude-desktop') {
+          var desk = { mcpServers: {} };
+          selected.forEach(function (s) {
+            desk.mcpServers[s.id] = {
+              command: 'npx',
+              args: ['-y', 'mcp-remote', s.url]
+            };
+          });
+          return JSON.stringify(desk, null, 2);
+        }
+        if (state.client === 'cursor') {
+          var cur = { mcpServers: {} };
+          selected.forEach(function (s) {
+            cur.mcpServers[s.id] = { url: s.url };
+          });
+          return JSON.stringify(cur, null, 2);
+        }
+        // Antigravity / VS Code HTTP MCP config
+        var agy = { mcpServers: {} };
+        selected.forEach(function (s) {
+          agy.mcpServers[s.id] = {
+            serverUrl: s.url,
+            type: 'http'
+          };
+        });
+        return JSON.stringify(agy, null, 2);
+      }
+
+      function renderBuilder() {
+        var selected = getSelectedServers();
+        var isJa = state.lang === 'ja';
+        document.getElementById('selCountBadge').textContent = selected.length + (isJa ? ' 件選択中' : ' selected');
+
+        // Selected chips
+        var chips = document.getElementById('selectedChips');
+        chips.innerHTML = '';
+        selected.forEach(function (s) {
+          var c = document.createElement('span');
+          c.className = 'sel-chip';
+          c.textContent = s.id + ' ';
+          var rm = document.createElement('button');
+          rm.type = 'button';
+          rm.setAttribute('aria-label', (isJa ? '削除 ' : 'Remove ') + s.name);
+          rm.textContent = '×';
+          rm.addEventListener('click', function () { toggleSelect(s.id); });
+          c.appendChild(rm);
+          chips.appendChild(c);
+        });
+
+        // Security Risk Meter calculation
+        var totalTools = 0, roTools = 0, destTools = 0, unannSrv = 0, destSrv = 0;
+        selected.forEach(function (s) {
+          totalTools += s.tools;
+          roTools += s.ro;
+          destTools += s.dest;
+          if (s.ann === 0) unannSrv++;
+          if (s.dest > 0) destSrv++;
+        });
+
+        var meter = document.getElementById('riskMeter');
+        var badge = document.getElementById('riskBadge');
+        var bar = document.getElementById('riskBarFill');
+        var msg = document.getElementById('riskMsg');
+
+        if (!selected.length) {
+          meter.setAttribute('data-level', 'safe');
+          badge.textContent = isJa ? '未選択' : 'NONE';
+          bar.style.width = '0%';
+          msg.textContent = isJa ? 'サーバーを選択すると、readOnlyHint / destructiveHint の比率からリスクを自動判定します。' : 'Select one or more servers to compute a live safety score from declared tool annotations.';
+        } else if (destTools > 0) {
+          meter.setAttribute('data-level', 'high');
+          badge.textContent = isJa ? '高リスク · 破壊ツールあり' : 'HIGH RISK · DESTRUCTIVE';
+          bar.style.width = '92%';
+          msg.textContent = isJa
+            ? destSrv + 'サーバーに destructiveHint: true のツールが合計 ' + destTools + ' 個含まれます（全' + totalTools + 'ツール中）。本番エージェントには人間の承認ゲートを必ず挟んでください。'
+            : destSrv + ' selected server(s) expose ' + destTools + ' destructiveHint: true tool(s) without auth (out of ' + totalTools + ' total). Require human approval before tool execution.';
+        } else if (unannSrv > 0 || roTools < totalTools) {
+          meter.setAttribute('data-level', 'caution');
+          badge.textContent = isJa ? '注意 · 一部未申告/書込可' : 'CAUTION · UNANNOTATED/MIXED';
+          bar.style.width = '54%';
+          msg.textContent = isJa
+            ? 'Read-only確認済み ' + roTools + '/' + totalTools + ' ツール（未申告サーバー ' + unannSrv + '件）。初回接続前に tools/list の内容を確認してください。'
+            : roTools + '/' + totalTools + ' tools declare readOnlyHint (' + unannSrv + ' unannotated server(s)). Inspect tool definitions before enabling unattended runs.';
+        } else {
+          meter.setAttribute('data-level', 'safe');
+          badge.textContent = isJa ? '安全 · 全件 READ-ONLY' : 'SAFE · 100% READ-ONLY';
+          bar.style.width = '18%';
+          msg.textContent = isJa
+            ? '選択中の全 ' + totalTools + ' ツールが readOnlyHint: true・destructiveHint: 0 を申告しています（外部出力のインジェクション対策は引き続き推奨）。'
+            : 'All ' + totalTools + ' exposed tools declare readOnlyHint: true with 0 destructive hints. Still treat untrusted remote responses as data, not instructions.';
+        }
+
+        // Client hint
+        var hints = {
+          'claude-code': isJa
+            ? 'ターミナルでそのまま実行して HTTP リモートMCPを登録します。'
+            : 'Run directly in your terminal to register HTTP remote MCP servers in Claude Code.',
+          'claude-desktop': isJa
+            ? 'claude_desktop_config.json に貼り付け（または Claude の Connectors → Add custom connector に URL を直接登録）。'
+            : 'Paste into claude_desktop_config.json (or paste URLs directly in Claude Connectors → Add custom connector).',
+          'cursor': isJa
+            ? '~/.cursor/mcp.json またはプロジェクト直下の .cursor/mcp.json に保存してください。'
+            : 'Save into ~/.cursor/mcp.json or your workspace .cursor/mcp.json.',
+          'antigravity': isJa
+            ? 'Antigravity（mcp_config.json）および VS Code / Streamable HTTP クライアント向け形式です。'
+            : 'Ready for Antigravity mcp_config.json and Streamable HTTP / VS Code clients.'
+        };
+        document.getElementById('clientHint').textContent = hints[state.client];
+        document.getElementById('configPreview').textContent = buildSnippet(selected);
+      }
+
+      // Bind controls
+      document.getElementById('mcpSearch').addEventListener('input', function (e) {
+        state.q = e.target.value;
+        state.limit = 24;
+        renderList();
+      });
+      document.getElementById('mcpTopic').addEventListener('change', function (e) {
+        state.topic = e.target.value;
+        state.limit = 24;
+        renderList();
+      });
+      document.getElementById('mcpToolCount').addEventListener('change', function (e) {
+        state.toolRange = e.target.value;
+        state.limit = 24;
+        renderList();
+      });
+      document.getElementById('mcpSort').addEventListener('change', function (e) {
+        state.sort = e.target.value;
+        renderList();
+      });
+      document.getElementById('safetyFilter').addEventListener('click', function (e) {
+        var btn = e.target.closest('[data-safety]');
+        if (!btn) return;
+        state.safety = btn.getAttribute('data-safety');
+        state.limit = 24;
+        document.querySelectorAll('#safetyFilter [data-safety]').forEach(function (b) {
+          var on = b === btn;
+          b.classList.toggle('is-active', on);
+          b.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+        renderList();
+      });
+      document.getElementById('btnResetFilters').addEventListener('click', function () {
+        state.q = '';
+        state.topic = 'all';
+        state.safety = 'all';
+        state.toolRange = 'all';
+        state.sort = 'rec';
+        state.limit = 24;
+        document.getElementById('mcpSearch').value = '';
+        document.getElementById('mcpTopic').value = 'all';
+        document.getElementById('mcpToolCount').value = 'all';
+        document.getElementById('mcpSort').value = 'rec';
+        document.querySelectorAll('#safetyFilter [data-safety]').forEach(function (b) {
+          var on = b.getAttribute('data-safety') === 'all';
+          b.classList.toggle('is-active', on);
+          b.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+        renderList();
+      });
+      document.getElementById('btnLoadMore').addEventListener('click', function () {
+        state.limit += 30;
+        renderList();
+      });
+
+      document.getElementById('clientTabs').addEventListener('click', function (e) {
+        var btn = e.target.closest('[data-client]');
+        if (!btn) return;
+        state.client = btn.getAttribute('data-client');
+        document.querySelectorAll('#clientTabs [data-client]').forEach(function (b) {
+          var on = b === btn;
+          b.classList.toggle('is-active', on);
+          b.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+        renderBuilder();
+      });
+
+      document.getElementById('btnCopyConfig').addEventListener('click', function () {
+        var text = buildSnippet(getSelectedServers());
+        var st = document.getElementById('cfgCopyStatus');
+        window.KitWorksTools.copyText(text).then(function () {
+          st.textContent = '✓ ' + DICT[state.lang].copied;
+          setTimeout(function () { st.textContent = ''; }, 2400);
+        });
+      });
+
+      document.getElementById('btnDownloadJson').addEventListener('click', function () {
+        var selected = getSelectedServers();
+        var prev = state.client;
+        if (prev === 'claude-code') state.client = 'cursor';
+        var content = buildSnippet(selected);
+        state.client = prev;
+        var blob = new Blob([content + '\n'], { type: 'application/json' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'mcp.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      });
+
+      document.getElementById('btnClearSel').addEventListener('click', function () {
+        state.selectedIds = [];
+        renderList();
+        renderBuilder();
+      });
+
+      window.addEventListener('kitworks:langchange', function (e) {
+        state.lang = e.detail.lang;
+        if (state.data) {
+          populateTopics();
+          renderList();
+          renderBuilder();
+        }
+      });
+
+      var i18n = window.KitWorksTools.initI18n(DICT);
+      state.lang = i18n.getLang();
+
+      fetch('./data/mcp-curated.json')
+        .then(function (r) {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.json();
+        })
+        .then(function (json) {
+          state.data = json;
+          // Pre-select the first clean read-only dev server so the generator is immediately useful
+          var firstSafe = json.servers.find(function (s) { return s.safety === 'readonly' && s.topic === 'Developer tools'; }) || json.servers[0];
+          if (firstSafe) state.selectedIds = [firstSafe.id];
+          populateTopics();
+          renderList();
+          renderBuilder();
+        })
+        .catch(function (err) {
+          document.getElementById('resultCount').textContent = 'Failed to load local dataset: ' + err.message;
+        });
+    })();
+  </script>
+</body>
+</html>

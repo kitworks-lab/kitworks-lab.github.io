@@ -1,0 +1,1436 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AIコーディングエージェント選定スタック実測ビューア（Claude 5.5 360ラン）｜KitWorks Lab</title>
+  <meta name="description" content="Claude Code 5.5（Opus / Sonnet / Haiku）360回の実測データから、AIが指示なしで勝手に選ぶ決済・認証・DB・ORM・ホスティングを日英で分析。Stripe 100%・手書きJWT 91%・Supabase 0/36・Vercel 0/36の偏りを比較し、CLAUDE.md用のスタック指定Markdownを1クリック出力。">
+  <link rel="canonical" href="https://kitworks-lab.github.io/tools/agent-stack-picks/">
+  <meta property="og:title" content="AI Coding Agent Default Stack Explorer (360 Claude 5.5 Runs) — KitWorks Lab">
+  <meta property="og:description" content="Interactive JP/EN explorer of What Agents Pick (360 Claude Code 5.5 Opus/Sonnet/Haiku runs, CC BY 4.0). Filter by category, model tier, and starter stack; compare AI defaults vs popular SaaS; copy stack blueprints.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="../../assets/avatar-600.png">
+  <link rel="icon" type="image/svg+xml" href="../../assets/favicon.svg">
+  <link rel="icon" type="image/png" href="../../assets/favicon.png">
+  <link rel="stylesheet" href="../../css/styles.css">
+  <link rel="stylesheet" href="../tools.css">
+  <style>
+    .skip-link {
+      position: fixed;
+      top: 8px;
+      left: 8px;
+      z-index: 100;
+      padding: 8px 14px;
+      background: var(--ink);
+      color: var(--paper-card);
+      font-weight: 700;
+      font-size: 13px;
+      border-radius: var(--radius-sm);
+      text-decoration: none;
+    }
+    .visually-hidden:where(:not(:focus-within, :active)) {
+      position: absolute !important;
+      clip-path: inset(50%) !important;
+      overflow: hidden !important;
+      width: 1px !important;
+      height: 1px !important;
+      margin: -1px !important;
+      padding: 0 !important;
+      border: 0 !important;
+      white-space: nowrap !important;
+    }
+
+    /* Surprise Headline Strip */
+    .surprise-strip {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+    .surprise-card {
+      background: var(--paper-card);
+      border: 1.5px solid var(--rule-strong);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-ink-sm);
+      padding: 14px 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      cursor: pointer;
+      text-align: left;
+      transition: transform 0.14s ease, box-shadow 0.14s ease;
+    }
+    .surprise-card:hover {
+      transform: translate(-1px, -1px);
+      box-shadow: 4px 4px 0 var(--ink);
+    }
+    .surprise-card.is-selected {
+      background: var(--accent-tint);
+      border-color: var(--accent);
+    }
+    .surprise-k {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--ink-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .surprise-stat {
+      font-family: var(--font-mono);
+      font-size: clamp(15.5px, 1.32vw, 18.5px);
+      font-weight: 800;
+      line-height: 1.25;
+      color: var(--ink);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    .surprise-stat.is-accent { color: var(--accent); }
+    .surprise-stat.is-sage { color: var(--sage); }
+    .surprise-vs {
+      font-size: 12.5px;
+      line-height: 1.48;
+      color: var(--ink-soft);
+    }
+    .surprise-vs strong {
+      color: var(--ink);
+    }
+
+    /* Filter Bar */
+    .filter-bar {
+      background: var(--paper-card);
+      border: 1.5px solid var(--rule-strong);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-ink);
+      padding: 16px 18px;
+      margin-bottom: 22px;
+      display: grid;
+      gap: 14px;
+    }
+    .filter-top-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px 18px;
+    }
+    .filter-group {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+    .filter-group-label {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      font-weight: 800;
+      color: var(--ink-muted);
+      white-space: nowrap;
+    }
+    .cat-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .cat-pill {
+      min-block-size: 30px;
+      padding: 4px 10px;
+      border: 1.5px solid var(--rule-strong);
+      border-radius: var(--radius-sm);
+      background: var(--paper);
+      color: var(--ink-soft);
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background-color 0.14s ease, color 0.14s ease;
+    }
+    .cat-pill:hover {
+      background: var(--paper-hover);
+      color: var(--ink);
+    }
+    .cat-pill.is-active {
+      background: var(--ink);
+      color: var(--paper-card);
+    }
+
+    /* KPI Strip */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+    .kpi-tile {
+      background: var(--paper-card);
+      border: 1.5px solid var(--rule-strong);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+    }
+    .kpi-label {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--ink-muted);
+    }
+    .kpi-val {
+      font-family: var(--font-mono);
+      font-size: clamp(17px, 1.5vw, 21px);
+      font-weight: 800;
+      line-height: 1.28;
+      color: var(--ink);
+      margin-top: 2px;
+      font-variant-numeric: tabular-nums;
+    }
+    .kpi-val.is-accent { color: var(--accent); }
+    .kpi-val.is-sage { color: var(--sage); }
+    .kpi-sub {
+      font-size: 11.5px;
+      color: var(--ink-muted);
+      margin-top: 2px;
+      font-family: var(--font-mono);
+    }
+
+    /* Main Workbench */
+    .wap-workbench {
+      display: grid;
+      grid-template-columns: minmax(0, 1.32fr) minmax(350px, 0.92fr);
+      gap: 22px;
+      align-items: start;
+    }
+    .wap-col {
+      display: grid;
+      gap: 20px;
+      min-width: 0;
+    }
+
+    /* Responsive Accessible Table (modern-web-guidance responsive-table) */
+    .table-wrapper {
+      overflow: auto;
+      max-inline-size: 100%;
+      container-type: inline-size;
+    }
+    .wap-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 13px;
+    }
+    .wap-table caption {
+      text-align: left;
+      padding: 10px 16px;
+      font-size: 12px;
+      color: var(--ink-muted);
+      background: var(--paper);
+      border-bottom: 1px solid var(--rule);
+    }
+    .wap-table thead {
+      position: sticky;
+      inset-block-start: 0;
+      z-index: 2;
+    }
+    .wap-table thead th {
+      text-align: left;
+      padding: 10px 12px;
+      font-size: 11.5px;
+      font-weight: 800;
+      color: var(--ink-muted);
+      background: var(--paper-muted);
+      border-bottom: 1.5px solid var(--rule-strong);
+      white-space: nowrap;
+    }
+    .wap-table tbody tr {
+      cursor: pointer;
+      transition: background-color 0.12s ease;
+    }
+    .wap-table tbody tr:hover {
+      background: #f5efe3;
+    }
+    .wap-table tbody tr.is-focused {
+      background: var(--accent-tint);
+    }
+    .wap-table tbody th,
+    .wap-table tbody td {
+      padding: 11px 12px;
+      border-bottom: 1px solid var(--rule);
+      vertical-align: top;
+    }
+    .wap-table tbody th {
+      text-align: left;
+      font-weight: 800;
+      color: var(--ink);
+      background: var(--paper-card);
+      white-space: nowrap;
+    }
+    .wap-table tbody tr:hover th { background: #f5efe3; }
+    .wap-table tbody tr.is-focused th { background: #f7e4dc; }
+    .cat-btn-link {
+      all: unset;
+      cursor: pointer;
+      font-weight: 800;
+      color: var(--ink);
+      display: inline-flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .cat-btn-link:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+      border-radius: 3px;
+    }
+    .cat-sub-id {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      font-weight: 600;
+      color: var(--ink-muted);
+    }
+
+    /* Stacked Pick Bar */
+    .dist-bar {
+      height: 11px;
+      border-radius: 3px;
+      border: 1px solid var(--rule-strong);
+      background: var(--paper-muted);
+      overflow: hidden;
+      display: flex;
+      margin-bottom: 6px;
+      min-width: 150px;
+    }
+    .dist-seg {
+      height: 100%;
+    }
+    .dist-seg.seg-diy { background: var(--accent); }
+    .dist-seg.seg-diy-alt { background: var(--ochre); }
+    .dist-seg.seg-vendor { background: var(--sage); }
+    .dist-seg.seg-vendor-alt { background: #3a5a78; }
+    .dist-seg.seg-vendor-3 { background: #6b5b7b; }
+
+    .pick-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 10px;
+      font-size: 12px;
+      line-height: 1.45;
+      color: var(--ink-soft);
+    }
+    .pick-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-variant-numeric: tabular-nums;
+    }
+    .pick-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+    .diy-badge {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-variant-numeric: tabular-nums;
+    }
+    .diy-badge.is-high { background: var(--accent); color: #fff; }
+    .diy-badge.is-mid { background: var(--ochre); color: #1e1b18; }
+    .diy-badge.is-low { background: var(--sage); color: #fff; }
+    .zero-saas {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      color: var(--ink-muted);
+      line-height: 1.45;
+    }
+
+    @container (width < 600px) {
+      .wap-table, .wap-table thead, .wap-table tbody, .wap-table tr, .wap-table th, .wap-table td {
+        display: block;
+      }
+      .wap-table thead {
+        display: none;
+      }
+      .wap-table tbody tr {
+        margin: 10px 12px;
+        border: 1.5px solid var(--rule-strong);
+        border-radius: var(--radius-sm);
+        overflow: hidden;
+        background: var(--paper-card);
+      }
+      .wap-table tbody th {
+        position: sticky;
+        inset-block-start: 0;
+        z-index: 1;
+        background: var(--paper-muted);
+        border-bottom: 1px solid var(--rule);
+        padding: 9px 12px;
+      }
+      .wap-table tbody td {
+        padding: 8px 12px;
+        border-bottom: 1px dashed var(--rule);
+      }
+      .wap-table tbody td:last-child {
+        border-bottom: 0;
+      }
+      .wap-table tbody td::before {
+        display: block;
+        font-family: var(--font-mono);
+        font-size: 10.5px;
+        font-weight: 800;
+        color: var(--ink-muted);
+        margin-bottom: 3px;
+      }
+      .wap-table tbody td:nth-child(2)::before { content: var(--lbl-dist); }
+      .wap-table tbody td:nth-child(3)::before { content: var(--lbl-diy); }
+      .wap-table tbody td:nth-child(4)::before { content: var(--lbl-zero); }
+    }
+
+    /* Model Split Drilldown Card */
+    .drill-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .drill-model-box {
+      padding: 11px 12px;
+      border: 1.5px solid var(--rule-strong);
+      border-radius: var(--radius-sm);
+      background: var(--paper);
+    }
+    .drill-model-name {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--ink);
+      margin-bottom: 5px;
+      display: flex;
+      justify-content: space-between;
+      gap: 6px;
+    }
+    .drill-model-items {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      font-size: 12px;
+      line-height: 1.55;
+      color: var(--ink-soft);
+      font-variant-numeric: tabular-nums;
+    }
+    .risk-callout {
+      margin-top: 14px;
+      padding: 12px 14px;
+      border-left: 4px solid var(--accent);
+      background: #fdf2ee;
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--ink);
+    }
+    .risk-callout.is-sage {
+      border-left-color: var(--sage);
+      background: var(--sage-tint);
+    }
+    .risk-callout strong {
+      display: block;
+      font-size: 12px;
+      font-family: var(--font-mono);
+      margin-bottom: 3px;
+      color: var(--accent);
+    }
+    .risk-callout.is-sage strong {
+      color: var(--sage);
+    }
+
+    /* Blueprint Builder (Right Column) */
+    .bp-list {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .bp-row {
+      display: grid;
+      grid-template-columns: 98px minmax(0, 1fr);
+      gap: 8px;
+      align-items: center;
+      font-size: 12.5px;
+    }
+    .bp-cat {
+      font-weight: 800;
+      color: var(--ink-soft);
+      font-size: 12px;
+    }
+    .bp-select {
+      width: 100%;
+      padding: 6px 8px;
+      border: 1.5px solid var(--rule-strong);
+      border-radius: var(--radius-sm);
+      background: #ffffff;
+      color: var(--ink);
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .bp-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .bp-code-wrap {
+      border-top: 1.5px solid var(--rule-strong);
+    }
+
+    /* Cross-links & Attribution */
+    .cross-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 24px;
+    }
+    .cross-card {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 15px 16px;
+      background: var(--paper-card);
+      border: 1.5px solid var(--rule-strong);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-ink-sm);
+      text-decoration: none;
+      transition: transform 0.14s ease, box-shadow 0.14s ease;
+    }
+    .cross-card:hover {
+      transform: translate(-1px, -1px);
+      box-shadow: 4px 4px 0 var(--ink);
+    }
+    .cross-tag {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      font-weight: 800;
+      color: var(--accent);
+    }
+    .cross-title {
+      font-size: 14.5px;
+      font-weight: 800;
+      color: var(--ink);
+    }
+    .cross-desc {
+      font-size: 12.5px;
+      color: var(--ink-soft);
+      line-height: 1.55;
+    }
+
+    .credit-box {
+      margin-top: 22px;
+      padding: 14px 16px;
+      background: var(--paper-muted);
+      border: 1px solid var(--rule-strong);
+      border-radius: var(--radius-sm);
+      font-size: 12.5px;
+      line-height: 1.6;
+      color: var(--ink-soft);
+    }
+    .credit-box a {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    @media (max-width: 1020px) {
+      .surprise-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .wap-workbench { grid-template-columns: 1fr; }
+      .cross-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      .surprise-strip { grid-template-columns: 1fr; }
+      .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .drill-grid { grid-template-columns: 1fr; }
+      .bp-row { grid-template-columns: 1fr; gap: 4px; }
+    }
+  </style>
+</head>
+<body>
+  <a href="#main-content" class="skip-link visually-hidden" data-i18n="skipLink">メインコンテンツへ移動</a>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand-link" href="../../">
+        <img class="brand-avatar" src="../../assets/avatar-600.png" alt="KitWorks Lab" width="36" height="36">
+        <span class="brand-name">KitWorks Lab</span>
+      </a>
+      <div class="header-right">
+        <nav class="site-nav" aria-label="Primary">
+          <a href="../" data-i18n="navTools">無料ツール一覧</a>
+          <a href="../llm-cost-calc/" data-i18n="navLlm">LLMコスト試算</a>
+          <a href="./" class="is-current" aria-current="page" data-i18n="navStack">AI選定スタック</a>
+          <a href="../free-mcp-explorer/" data-i18n="navMcp">無料MCP探索</a>
+          <a href="../../guides/" data-i18n="navGuides">SaaSコスト試算</a>
+          <a href="../../" data-i18n="navObs">OBS製品デモ</a>
+        </nav>
+        <div class="lang-toggle" role="group" aria-label="Language">
+          <button type="button" class="lang-btn is-active" data-lang-btn="ja" aria-pressed="true">JP</button>
+          <button type="button" class="lang-btn" data-lang-btn="en" aria-pressed="false">EN</button>
+        </div>
+      </div>
+    </div>
+    <nav class="mobile-tool-nav" aria-label="Tools">
+      <a href="../" data-i18n="navTools">無料ツール一覧</a>
+      <a href="../llm-cost-calc/" data-i18n="navLlm">LLMコスト試算</a>
+      <a href="./" class="is-current" aria-current="page" data-i18n="navStack">AI選定スタック</a>
+      <a href="../free-mcp-explorer/" data-i18n="navMcp">無料MCP探索</a>
+      <a href="../../guides/" data-i18n="navGuides">SaaSコスト試算</a>
+    </nav>
+  </header>
+
+  <main id="main-content">
+    <section class="tool-hero">
+      <div class="container">
+        <div class="breadcrumb">
+          <a href="../../">KitWorks Lab</a>
+          <span class="breadcrumb-sep">/</span>
+          <a href="../" data-i18n="navTools">無料ツール一覧</a>
+          <span class="breadcrumb-sep">/</span>
+          <span data-i18n="navStack">AI選定スタック</span>
+        </div>
+        <div class="tool-hero-row">
+          <div>
+            <h1 class="tool-hero-title" tabindex="-1" data-i18n="heroTitle">AIコーディングエージェント選定スタック実測ビューア</h1>
+            <p class="tool-hero-lead" data-i18n="heroLead">ツール名を指定せず「実装して」と頼んだ360回の Claude Code 5.5（Opus / Sonnet / Haiku）実測データから、AIの無意識のデフォルト選定と定番SaaSとのズレを可視化。CLAUDE.md / AGENTS.md 用の指定Markdownも即生成できます。</p>
+          </div>
+          <div class="local-stamp">
+            <span class="local-stamp-dot" aria-hidden="true"></span>
+            <span data-i18n="localStamp">360 実測ラン / CC BY 4.0 / オフライン完結</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="tool-section">
+      <div class="container">
+        <!-- 4 Headline Surprises: AI Default vs Popular SaaS -->
+        <div class="surprise-strip" role="region" aria-label="Key dataset surprises">
+          <button type="button" class="surprise-card" data-jump-cat="payments">
+            <span class="surprise-k" data-i18n="s1K">PAYMENTS · 決済</span>
+            <span class="surprise-stat is-sage">Stripe 35/35 (100%)</span>
+            <span class="surprise-vs" data-i18n="s1Vs">全モデル・全スタックで100%一択。Paddle / Lemon Squeezy / PayPal は <strong>0/35</strong>。</span>
+          </button>
+          <button type="button" class="surprise-card" data-jump-cat="auth">
+            <span class="surprise-k" data-i18n="s2K">AUTH · 認証の罠</span>
+            <span class="surprise-stat is-accent" data-i18n="s2Stat">手書きJWT 32/35 (91.4%)</span>
+            <span class="surprise-vs" data-i18n="s2Vs">35/35すべて自作（DIY）。Clerk / Auth0 / Better Auth は <strong>0/35</strong> — 明示指定が必須。</span>
+          </button>
+          <button type="button" class="surprise-card" data-jump-cat="database">
+            <span class="surprise-k" data-i18n="s3K">DB &amp; HOSTING · 人気SaaSゼロ</span>
+            <span class="surprise-stat is-accent">Supabase 0 · Vercel 0</span>
+            <span class="surprise-vs" data-i18n="s3Vs">SQLite 20/36・素Docker 21/36が主流。Next.jsでも <strong>Vercel 0/36・Supabase 0/36</strong>。</span>
+          </button>
+          <button type="button" class="surprise-card" data-jump-cat="orm">
+            <span class="surprise-k" data-i18n="s4K">ORM · Prisma 0の衝撃</span>
+            <span class="surprise-stat is-sage">Drizzle 12 vs Prisma 0</span>
+            <span class="surprise-vs" data-i18n="s4Vs">FastAPIは SQLAlchemy 18/18、Next.jsは Drizzle 12/18。<strong>Prisma は 0/36</strong>。</span>
+          </button>
+        </div>
+
+        <!-- Interactive Filter Bar -->
+        <div class="filter-bar">
+          <div class="filter-top-row">
+            <div class="filter-group">
+              <span class="filter-group-label" data-i18n="lblModel">MODEL TIER</span>
+              <div class="seg-group" role="group" aria-label="Model filter" id="modelFilter">
+                <button type="button" class="seg-btn is-active" data-model="all" aria-pressed="true" data-i18n="mAll">全モデル (355)</button>
+                <button type="button" class="seg-btn" data-model="opus" aria-pressed="false">Opus 5.5 (120)</button>
+                <button type="button" class="seg-btn" data-model="sonnet" aria-pressed="false">Sonnet 5.5 (118)</button>
+                <button type="button" class="seg-btn" data-model="haiku" aria-pressed="false">Haiku 5.5 (117)</button>
+              </div>
+            </div>
+            <div class="filter-group">
+              <span class="filter-group-label" data-i18n="lblStack">STARTER STACK</span>
+              <div class="seg-group" role="group" aria-label="Starter stack filter" id="stackFilter">
+                <button type="button" class="seg-btn is-active" data-stack="all" aria-pressed="true" data-i18n="stAll">両方</button>
+                <button type="button" class="seg-btn" data-stack="next" aria-pressed="false">Next.js TS</button>
+                <button type="button" class="seg-btn" data-stack="py" aria-pressed="false">Python FastAPI</button>
+              </div>
+            </div>
+          </div>
+          <div class="filter-group">
+            <span class="filter-group-label" data-i18n="lblCat">CATEGORY</span>
+            <div class="cat-pills" role="group" aria-label="Category filter" id="catFilter"></div>
+          </div>
+        </div>
+
+        <!-- Live Filtered KPIs -->
+        <div class="kpi-grid" aria-live="polite">
+          <div class="kpi-tile">
+            <div class="kpi-label" data-i18n="kpiScored">対象スコア済みラン</div>
+            <div class="kpi-val" id="kpiScored">355</div>
+            <div class="kpi-sub" id="kpiScoredSub">of 360 total runs</div>
+          </div>
+          <div class="kpi-tile">
+            <div class="kpi-label" data-i18n="kpiDiy">自作（DIY / 非SaaS）比率</div>
+            <div class="kpi-val is-accent" id="kpiDiy">61.7%</div>
+            <div class="kpi-sub" id="kpiDiySub">219 DIY / 136 Vendor</div>
+          </div>
+          <div class="kpi-tile">
+            <div class="kpi-label" data-i18n="kpiTop">最多デフォルト選定</div>
+            <div class="kpi-val is-sage" id="kpiTop">—</div>
+            <div class="kpi-sub" id="kpiTopSub">—</div>
+          </div>
+          <div class="kpi-tile">
+            <div class="kpi-label" data-i18n="kpiCost">平均コスト / 実行時間</div>
+            <div class="kpi-val" id="kpiCost">$0.108</div>
+            <div class="kpi-sub" id="kpiCostSub">avg 57.6s / run</div>
+          </div>
+        </div>
+
+        <!-- Main 2-Column Workbench -->
+        <div class="wap-workbench">
+          <!-- Left: Accessible Responsive Table + Category Drilldown -->
+          <div class="wap-col">
+            <div class="tool-panel">
+              <div class="tool-panel-head">
+                <h2 class="tool-panel-title" id="tableHeading" data-i18n="tblTitle">カテゴリ別 AIデフォルト選定一覧（行クリックでモデル別詳細）</h2>
+                <span class="ctrl-value" id="filterSummaryLabel">All · 355 runs</span>
+              </div>
+              <div tabindex="0" role="region" aria-labelledby="tableHeading" class="table-wrapper">
+                <table class="wap-table" id="wapTable">
+                  <caption id="wapCaption" data-i18n="tblCaption">Claude Code 5.5 がベンダー名未指定のプロンプトで実際にインストールしたツール分布（2026年10月実測）</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col" data-i18n="thCat">カテゴリ</th>
+                      <th scope="col" data-i18n="thDist">実測ピック分布（赤/黄=DIY・緑/青=外部ツール）</th>
+                      <th scope="col" data-i18n="thDiy">DIY率</th>
+                      <th scope="col" data-i18n="thZero">0回だった定番SaaS</th>
+                    </tr>
+                  </thead>
+                  <tbody id="wapTbody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Selected Category Deep-Dive -->
+            <div class="tool-panel" id="drillPanel">
+              <div class="tool-panel-head">
+                <h2 class="tool-panel-title" id="drillTitle">—</h2>
+                <span class="ctrl-value" id="drillMeta">—</span>
+              </div>
+              <div class="tool-panel-body">
+                <p id="drillLead" style="margin:0; font-size:13.5px; color:var(--ink-soft); line-height:1.6;"></p>
+                <div class="drill-grid" id="drillGrid"></div>
+                <div class="risk-callout" id="drillRisk">
+                  <strong id="drillRiskHead">—</strong>
+                  <span id="drillRiskBody">—</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Stack Blueprint Builder & Markdown Copier -->
+          <div class="wap-col">
+            <div class="tool-panel">
+              <div class="tool-panel-head">
+                <h2 class="tool-panel-title" data-i18n="bpTitle">CLAUDE.md / AGENTS.md スタック指定ビルダー</h2>
+                <span class="ctrl-value" id="bpOverrideCount">0 overrides</span>
+              </div>
+              <div class="tool-panel-body">
+                <p style="margin:0 0 12px; font-size:12.5px; color:var(--ink-soft); line-height:1.55;" data-i18n="bpDesc">AI任せにすると手書きJWTやローカル保存を選びがちです。本番で上書きしたいカテゴリだけ差し替えて、そのままプロジェクト規約に貼れるMarkdownを出力します。</p>
+                <div class="bp-actions">
+                  <button type="button" class="preset-btn" id="btnPresetAi" data-i18n="btnPresetAi">AIデフォルトに戻す</button>
+                  <button type="button" class="preset-btn" id="btnPresetProd" data-i18n="btnPresetProd">本番SaaS推奨を一括適用</button>
+                </div>
+                <div class="bp-list" id="bpList"></div>
+                <div class="bp-actions" style="margin-bottom:0;">
+                  <button type="button" class="btn btn-primary btn-sm" id="btnCopyMd" data-i18n="btnCopyMd">Markdownをコピー</button>
+                  <span class="inline-feedback" id="copyStatus" role="status" aria-live="polite"></span>
+                </div>
+              </div>
+              <div class="bp-code-wrap">
+                <pre class="code-output" id="bpPreview"></pre>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Natural Editorial Cross-Links -->
+        <div class="cross-grid">
+          <a class="cross-card" href="../llm-cost-calc/">
+            <span class="cross-tag">RELATED TOOL · LLM COST</span>
+            <span class="cross-title" data-i18n="cr1Title">LLM API コスト＆日本語トークン試算</span>
+            <span class="cross-desc" data-i18n="cr1Desc">Opus / Sonnet / Haiku 5.5 の月額API費とキャッシュ・思考トークン罠をローカル試算。</span>
+          </a>
+          <a class="cross-card" href="../../guides/automation-cost-calculator/">
+            <span class="cross-tag">COST GUIDE · SAAS VS DIY</span>
+            <span class="cross-title" data-i18n="cr2Title">自動化＆SaaSコスト比較シミュレーター</span>
+            <span class="cross-desc" data-i18n="cr2Desc">AIが選びがちな自作（DIY）構成と、マネージドSaaS / Make / n8n 運用のコスト分岐点を試算。</span>
+          </a>
+          <a class="cross-card" href="../free-mcp-explorer/">
+            <span class="cross-tag">NEW TOOL · 31,845 SCAN</span>
+            <span class="cross-title" data-i18n="cr3Title">無料リモートMCPサーバー探索＆mcp.json生成</span>
+            <span class="cross-desc" data-i18n="cr3Desc">認証不要MCP 14,776件の安全性（readOnlyHint / destructiveHint）を確認して設定JSONを即生成。</span>
+          </a>
+        </div>
+
+        <!-- CC BY 4.0 Dataset Attribution -->
+        <div class="credit-box">
+          <strong data-i18n="creditHead">データ出典・ライセンス（CC BY 4.0）:</strong>
+          <span data-i18n="creditBody">本ツールは 2026年10月17–18日に計測された公開データセット</span>
+          <a href="https://whatagentspick.com" target="_blank" rel="noopener noreferrer">What Agents Pick</a>
+          (<a href="https://github.com/nmbrthirteen/what-agents-pick-data" target="_blank" rel="noopener noreferrer">nmbrthirteen/what-agents-pick-data</a>,
+          <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>)
+          <span data-i18n="creditTail">の事前集計JSONをページ内に同梱しています。外部API通信は一切行いません。</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <img class="brand-avatar" src="../../assets/avatar-600.png" alt="KitWorks Lab" width="32" height="32">
+        <p class="footer-note" data-i18n="footerNote">KitWorks Lab — 個人制作のOBS配信ツール・無料Webツール工房。すべてのツールはブラウザ内ローカルで完結します。</p>
+      </div>
+      <nav class="footer-links" aria-label="Official channels">
+        <a href="../" data-i18n="navTools">無料ツール一覧</a>
+        <a href="../free-mcp-explorer/" data-i18n="navMcp">無料MCP探索</a>
+        <a href="../llm-cost-calc/" data-i18n="navLlm">LLMコスト試算</a>
+        <a href="https://kitworks.booth.pm/" target="_blank" rel="noopener noreferrer">BOOTH</a>
+        <a href="https://github.com/kitworks-lab" target="_blank" rel="noopener noreferrer">GitHub</a>
+      </nav>
+    </div>
+  </footer>
+
+  <!-- Verified Pre-Aggregated Dataset (from runs.csv & picks-summary.csv, 360 runs / 355 scored) -->
+  <script id="wap-data" type="application/json">{"meta":{"source":"What Agents Pick","repo":"https://github.com/nmbrthirteen/what-agents-pick-data","site":"https://whatagentspick.com","license":"CC BY 4.0","measured":"2026-10-17..18","totalRuns":360,"scoredRuns":355,"unscoredRuns":5},"tools":{"hand-rolled-jwt":{"label":"Hand-rolled JWT or sessions","kind":"diy"},"sqlite":{"label":"SQLite file","kind":"diy"},"postgres-self-hosted":{"label":"Self-hosted Postgres","kind":"vendor"},"plain-docker":{"label":"Plain Docker","kind":"diy"},"fly":{"label":"Fly.io","kind":"vendor"},"heroku":{"label":"Heroku","kind":"vendor"},"raw-smtp":{"label":"Raw SMTP","kind":"diy"},"resend":{"label":"Resend","kind":"vendor"},"postmark":{"label":"Postmark","kind":"vendor"},"hand-rolled-queue":{"label":"Hand-rolled queue or cron","kind":"diy"},"sentry":{"label":"Sentry","kind":"vendor"},"posthog":{"label":"PostHog","kind":"vendor"},"sqlalchemy":{"label":"SQLAlchemy","kind":"vendor"},"drizzle":{"label":"Drizzle ORM","kind":"vendor"},"raw-sql":{"label":"Hand-written SQL","kind":"diy"},"kysely":{"label":"Kysely","kind":"vendor"},"stripe":{"label":"Stripe","kind":"vendor"},"local-disk":{"label":"Local disk","kind":"diy"},"s3":{"label":"Amazon S3","kind":"vendor"},"diy-builtin":{"label":"Built-in / Custom code (no library)","kind":"diy"}},"cells":[{"c":"payments","m":"opus","s":"next","n":6,"sc":6,"diy":0,"usd":0.3602,"sec":207.3,"t":{"stripe":6}},{"c":"payments","m":"opus","s":"py","n":6,"sc":6,"diy":0,"usd":0.5128,"sec":392.7,"t":{"stripe":6}},{"c":"payments","m":"sonnet","s":"next","n":6,"sc":6,"diy":0,"usd":0.2359,"sec":122.7,"t":{"stripe":6}},{"c":"payments","m":"sonnet","s":"py","n":6,"sc":6,"diy":0,"usd":0.6319,"sec":383.1,"t":{"stripe":6}},{"c":"payments","m":"haiku","s":"next","n":6,"sc":6,"diy":0,"usd":0.1803,"sec":243.1,"t":{"stripe":6}},{"c":"payments","m":"haiku","s":"py","n":6,"sc":5,"diy":0,"usd":0.1436,"sec":286.6,"t":{"stripe":5}},{"c":"auth","m":"opus","s":"next","n":6,"sc":6,"diy":6,"usd":1.5513,"sec":823.2,"t":{"hand-rolled-jwt":6}},{"c":"auth","m":"opus","s":"py","n":6,"sc":6,"diy":6,"usd":1.5051,"sec":428.3,"t":{"hand-rolled-jwt":6}},{"c":"auth","m":"sonnet","s":"next","n":6,"sc":6,"diy":6,"usd":0.7527,"sec":291.7,"t":{"hand-rolled-jwt":6}},{"c":"auth","m":"sonnet","s":"py","n":6,"sc":6,"diy":6,"usd":0.9726,"sec":331.8,"t":{"hand-rolled-jwt":6}},{"c":"auth","m":"haiku","s":"next","n":6,"sc":6,"diy":6,"usd":0.3369,"sec":440.5,"t":{"hand-rolled-jwt":4,"diy-builtin":2}},{"c":"auth","m":"haiku","s":"py","n":6,"sc":5,"diy":5,"usd":0.2478,"sec":236.2,"t":{"hand-rolled-jwt":4,"diy-builtin":1}},{"c":"database","m":"opus","s":"next","n":6,"sc":6,"diy":3,"usd":0.7083,"sec":259.1,"t":{"sqlite":3,"postgres-self-hosted":3}},{"c":"database","m":"opus","s":"py","n":6,"sc":6,"diy":1,"usd":1.0821,"sec":289.7,"t":{"postgres-self-hosted":5,"sqlite":1}},{"c":"database","m":"sonnet","s":"next","n":6,"sc":6,"diy":4,"usd":0.4189,"sec":158.8,"t":{"sqlite":4,"postgres-self-hosted":2}},{"c":"database","m":"sonnet","s":"py","n":6,"sc":6,"diy":5,"usd":0.6992,"sec":243.3,"t":{"sqlite":5,"postgres-self-hosted":1}},{"c":"database","m":"haiku","s":"next","n":6,"sc":6,"diy":4,"usd":0.0952,"sec":152.4,"t":{"sqlite":4,"postgres-self-hosted":2}},{"c":"database","m":"haiku","s":"py","n":6,"sc":6,"diy":3,"usd":0.2274,"sec":235,"t":{"sqlite":3,"postgres-self-hosted":3}},{"c":"orm","m":"opus","s":"next","n":6,"sc":6,"diy":2,"usd":1.1524,"sec":368.7,"t":{"raw-sql":1,"drizzle":4,"diy-builtin":1}},{"c":"orm","m":"opus","s":"py","n":6,"sc":6,"diy":0,"usd":0.3878,"sec":292.8,"t":{"sqlalchemy":6}},{"c":"orm","m":"sonnet","s":"next","n":6,"sc":6,"diy":1,"usd":0.4592,"sec":198.3,"t":{"kysely":1,"drizzle":4,"raw-sql":1}},{"c":"orm","m":"sonnet","s":"py","n":6,"sc":6,"diy":0,"usd":0.398,"sec":275.6,"t":{"sqlalchemy":6}},{"c":"orm","m":"haiku","s":"next","n":6,"sc":6,"diy":2,"usd":0.2101,"sec":253.5,"t":{"raw-sql":2,"drizzle":4}},{"c":"orm","m":"haiku","s":"py","n":6,"sc":6,"diy":0,"usd":0.138,"sec":263.3,"t":{"sqlalchemy":6}},{"c":"deployment","m":"opus","s":"next","n":6,"sc":6,"diy":4,"usd":1.1363,"sec":761.7,"t":{"plain-docker":4,"fly":2}},{"c":"deployment","m":"opus","s":"py","n":6,"sc":6,"diy":0,"usd":1.068,"sec":300.8,"t":{"heroku":4,"fly":2}},{"c":"deployment","m":"sonnet","s":"next","n":6,"sc":6,"diy":4,"usd":0.7365,"sec":251.6,"t":{"plain-docker":4,"fly":2}},{"c":"deployment","m":"sonnet","s":"py","n":6,"sc":6,"diy":3,"usd":0.5375,"sec":161.7,"t":{"plain-docker":3,"fly":2,"heroku":1}},{"c":"deployment","m":"haiku","s":"next","n":6,"sc":6,"diy":6,"usd":0.2565,"sec":261.8,"t":{"plain-docker":6}},{"c":"deployment","m":"haiku","s":"py","n":6,"sc":6,"diy":4,"usd":0.1967,"sec":191.3,"t":{"plain-docker":4,"heroku":2}},{"c":"email","m":"opus","s":"next","n":6,"sc":6,"diy":2,"usd":1.1835,"sec":331.6,"t":{"resend":4,"raw-smtp":2}},{"c":"email","m":"opus","s":"py","n":6,"sc":6,"diy":5,"usd":1.7166,"sec":493.2,"t":{"raw-smtp":5,"postmark":1}},{"c":"email","m":"sonnet","s":"next","n":6,"sc":6,"diy":4,"usd":0.3204,"sec":121.3,"t":{"resend":2,"raw-smtp":4}},{"c":"email","m":"sonnet","s":"py","n":6,"sc":6,"diy":6,"usd":0.7993,"sec":292.2,"t":{"raw-smtp":6}},{"c":"email","m":"haiku","s":"next","n":6,"sc":6,"diy":1,"usd":0.2485,"sec":521.1,"t":{"resend":5,"raw-smtp":1}},{"c":"email","m":"haiku","s":"py","n":6,"sc":6,"diy":6,"usd":0.2687,"sec":260.4,"t":{"raw-smtp":6}},{"c":"storage","m":"opus","s":"next","n":6,"sc":6,"diy":6,"usd":1.7155,"sec":1329.9,"t":{"local-disk":6}},{"c":"storage","m":"opus","s":"py","n":6,"sc":6,"diy":6,"usd":0.4466,"sec":241,"t":{"local-disk":6}},{"c":"storage","m":"sonnet","s":"next","n":6,"sc":6,"diy":6,"usd":1.0455,"sec":402.5,"t":{"local-disk":6}},{"c":"storage","m":"sonnet","s":"py","n":6,"sc":6,"diy":4,"usd":0.3026,"sec":139.9,"t":{"s3":2,"local-disk":4}},{"c":"storage","m":"haiku","s":"next","n":6,"sc":6,"diy":6,"usd":0.3001,"sec":330.1,"t":{"local-disk":6}},{"c":"storage","m":"haiku","s":"py","n":6,"sc":6,"diy":6,"usd":0.1249,"sec":208.9,"t":{"local-disk":6}},{"c":"observability","m":"opus","s":"next","n":6,"sc":6,"diy":6,"usd":1.879,"sec":561.9,"t":{"diy-builtin":6}},{"c":"observability","m":"opus","s":"py","n":6,"sc":6,"diy":0,"usd":0.4172,"sec":220,"t":{"sentry":4,"posthog":2}},{"c":"observability","m":"sonnet","s":"next","n":6,"sc":6,"diy":0,"usd":0.2464,"sec":135.9,"t":{"sentry":6}},{"c":"observability","m":"sonnet","s":"py","n":6,"sc":6,"diy":0,"usd":0.2794,"sec":110.4,"t":{"sentry":6}},{"c":"observability","m":"haiku","s":"next","n":6,"sc":6,"diy":4,"usd":0.2314,"sec":274.7,"t":{"diy-builtin":4,"posthog":1,"sentry":1}},{"c":"observability","m":"haiku","s":"py","n":6,"sc":6,"diy":1,"usd":0.1555,"sec":192.8,"t":{"sentry":4,"posthog":1,"diy-builtin":1}},{"c":"jobs","m":"opus","s":"next","n":6,"sc":6,"diy":6,"usd":1.8076,"sec":1002.1,"t":{"diy-builtin":4,"hand-rolled-queue":2}},{"c":"jobs","m":"opus","s":"py","n":6,"sc":6,"diy":6,"usd":1.5619,"sec":747.3,"t":{"diy-builtin":5,"hand-rolled-queue":1}},{"c":"jobs","m":"sonnet","s":"next","n":6,"sc":4,"diy":4,"usd":0.7887,"sec":278.5,"t":{"diy-builtin":2,"hand-rolled-queue":2}},{"c":"jobs","m":"sonnet","s":"py","n":6,"sc":6,"diy":6,"usd":0.847,"sec":284.7,"t":{"diy-builtin":6}},{"c":"jobs","m":"haiku","s":"next","n":6,"sc":6,"diy":6,"usd":0.3058,"sec":807.3,"t":{"diy-builtin":6}},{"c":"jobs","m":"haiku","s":"py","n":6,"sc":5,"diy":5,"usd":0.2629,"sec":254.2,"t":{"diy-builtin":5}},{"c":"caching","m":"opus","s":"next","n":6,"sc":6,"diy":6,"usd":0.9767,"sec":247,"t":{"diy-builtin":6}},{"c":"caching","m":"opus","s":"py","n":6,"sc":6,"diy":6,"usd":1.0722,"sec":272.2,"t":{"diy-builtin":6}},{"c":"caching","m":"sonnet","s":"next","n":6,"sc":6,"diy":6,"usd":0.5813,"sec":174.9,"t":{"diy-builtin":6}},{"c":"caching","m":"sonnet","s":"py","n":6,"sc":6,"diy":6,"usd":0.5783,"sec":177.7,"t":{"diy-builtin":6}},{"c":"caching","m":"haiku","s":"next","n":6,"sc":6,"diy":6,"usd":0.2533,"sec":725.6,"t":{"diy-builtin":6}},{"c":"caching","m":"haiku","s":"py","n":6,"sc":6,"diy":6,"usd":0.2401,"sec":226.3,"t":{"diy-builtin":6}}]}</script>
+
+  <script src="../tools-common.js"></script>
+  <script>
+    (function () {
+      'use strict';
+
+      var DATA = JSON.parse(document.getElementById('wap-data').textContent);
+
+      var CAT_META = {
+        payments: {
+          ja: '決済', en: 'Payments',
+          zero: 'Paddle, Lemon Squeezy, PayPal (0/35)',
+          prodPick: 'Stripe (Webhook署名検証 + Idempotency Key必須)',
+          prodPickEn: 'Stripe (enforce webhook signature + idempotency keys)',
+          riskType: 'sage',
+          noteJa: '全モデル・全スタックで唯一 100% 外部ベンダー（Stripe）を選択。API仕様の学習密度が圧倒的で、迷いなく決済SDKを導入します。',
+          noteEn: 'The only category with 100% vendor consensus (Stripe across all 35 scored runs). Still require webhook signature checks and idempotency keys explicitly.',
+          riskHeadJa: 'AI実測メモ：Stripe 一強でも安全策は明記する',
+          riskHeadEn: 'Agent Note: Stripe is 100% default, still pin safety guards'
+        },
+        auth: {
+          ja: '認証', en: 'Auth',
+          zero: 'Clerk, Auth0, Better Auth, Supabase Auth (0/35)',
+          prodPick: 'Better Auth / Clerk / Supabase Auth（手書きJWT禁止）',
+          prodPickEn: 'Better Auth / Clerk / Supabase Auth (ban hand-rolled JWT)',
+          riskType: 'warn',
+          noteJa: '35/35すべて自作（うち32回が手書きJWT/セッション）。トークン失効・CSRF・パスワードリセット・レート制限の漏れが起きやすい最大の罠です。',
+          noteEn: '100% DIY (32/35 hand-rolled JWT/sessions). Managed auth providers were picked zero times — a major production security trap if left unspecified.',
+          riskHeadJa: 'セキュリティ警告：指示しないと 100% 認証を自作する',
+          riskHeadEn: 'Security Warning: 100% DIY Auth unless explicitly overridden'
+        },
+        database: {
+          ja: 'データベース', en: 'Database',
+          zero: 'Supabase, Neon, PlanetScale, MongoDB (0/36)',
+          prodPick: 'Managed Postgres（Neon / Supabase / Cloudflare D1）',
+          prodPickEn: 'Managed Postgres (Neon / Supabase) or Cloudflare D1',
+          riskType: 'warn',
+          noteJa: 'Sonnet(9/12)とHaiku(7/12)はSQLite寄り、Opus(8/12)はセルフホストPostgres寄り。マネージドDB系SaaSは1回も選ばれませんでした。',
+          noteEn: 'Sonnet (9/12) and Haiku (7/12) lean SQLite, while Opus (8/12) leans self-hosted Postgres. Zero cloud-managed DB SaaS picks across 36 runs.',
+          riskHeadJa: 'モデル差に注意：OpusはPostgres、Sonnet/HaikuはSQLite寄り',
+          riskHeadEn: 'Model Split: Opus leans Postgres; Sonnet/Haiku lean SQLite'
+        },
+        orm: {
+          ja: 'ORM', en: 'ORM',
+          zero: 'Prisma, TypeORM, MikroORM (0/36)',
+          prodPick: 'Drizzle ORM (TS) / SQLAlchemy 2.0 (Python)',
+          prodPickEn: 'Drizzle ORM (TS) / SQLAlchemy 2.0 (Python)',
+          riskType: 'sage',
+          noteJa: 'PythonではSQLAlchemyが18/18の完全一択、Next.js TSではDrizzleが12/18。かつて定番だったPrismaは全36回で0回でした。',
+          noteEn: 'SQLAlchemy won 18/18 Python runs; Drizzle won 12/18 Next.js TS runs (plus 4 raw SQL, 1 Kysely). Prisma received 0 picks.',
+          riskHeadJa: '2026年の地殻変動：TSはDrizzle優勢、Prisma 0回',
+          riskHeadEn: '2026 Shift: Drizzle dominates TypeScript; Prisma picked 0/36'
+        },
+        deployment: {
+          ja: 'デプロイ', en: 'Deployment',
+          zero: 'Vercel, Netlify, Railway, Render (0/36)',
+          prodPick: 'Cloudflare Workers / Vercel / Fly.io（Docker明示時のみコンテナ）',
+          prodPickEn: 'Cloudflare Workers / Vercel / Fly.io (pin target host)',
+          riskType: 'warn',
+          noteJa: 'Next.jsプロジェクトでもVercelは0/18で、素のDocker(21/36)が最多。Opus×FastAPIだけはHeroku(4/6)+Fly.io(2/6)とPaaS寄りです。',
+          noteEn: 'Even on Next.js starter repos, Vercel scored 0/18 while Plain Docker dominated (21/36). Opus on FastAPI uniquely favored Heroku (4/6) and Fly.io (2/6).',
+          riskHeadJa: '意外な結果：Next.jsでも Vercel 0回、素Dockerが58%',
+          riskHeadEn: 'Surprise: Vercel 0/36 even on Next.js; Plain Docker leads 58%'
+        },
+        email: {
+          ja: 'メール送信', en: 'Email',
+          zero: 'SendGrid, Mailgun, AWS SES, Brevo (0/36)',
+          prodPick: 'Resend / Postmark / Cloudflare Email（素SMTP直打ち回避）',
+          prodPickEn: 'Resend / Postmark / Cloudflare Email (avoid raw SMTP)',
+          riskType: 'warn',
+          noteJa: '全体では素SMTPが24/36。ただしNext.jsではResendが11/18と健闘した一方、FastAPIでは17/18が素SMTPでSendGrid/SESはゼロでした。',
+          noteEn: 'Raw SMTP took 24/36 overall (17/18 on FastAPI). Resend captured 11/18 Next.js runs, while SendGrid, Mailgun, and SES were never picked.',
+          riskHeadJa: 'スタック差：Next.jsはResend 61%、FastAPIは素SMTP 94%',
+          riskHeadEn: 'Stack Split: Resend wins 61% on Next.js; Raw SMTP 94% on FastAPI'
+        },
+        storage: {
+          ja: 'ファイル保存', en: 'Storage',
+          zero: 'Cloudflare R2, UploadThing, GCS (0/36)',
+          prodPick: 'Cloudflare R2 / Amazon S3（ローカルディスク保存禁止）',
+          prodPickEn: 'Cloudflare R2 / Amazon S3 (ban ephemeral local disk)',
+          riskType: 'warn',
+          noteJa: '34/36（94.4%）がローカルディスク保存。コンテナやサーバーレス環境にそのままデプロイすると再起動でアップロード画像が消失します。',
+          noteEn: '34/36 runs (94.4%) wrote files to local disk (only 2 S3 picks, both Sonnet+FastAPI). Ephemeral container deploys will silently wipe user uploads.',
+          riskHeadJa: '本番事故リスク：94%がローカルディスク保存を選ぶ',
+          riskHeadEn: 'Production Trap: 94.4% default to ephemeral local disk'
+        },
+        observability: {
+          ja: '監視・ログ', en: 'Observability',
+          zero: 'Datadog, New Relic, Honeycomb (0/36)',
+          prodPick: 'Sentry + OpenTelemetry / PostHog',
+          prodPickEn: 'Sentry + OpenTelemetry / PostHog',
+          riskType: 'sage',
+          noteJa: 'Sonnet 5.5は全12回（100%）でSentryを導入。一方Opus 5.5はNext.jsで6/6自作ログを選ぶなど、モデル間で最も方針が割れました。',
+          noteEn: 'Biggest model divergence: Sonnet installed Sentry 12/12 (100%), while Opus on Next.js wrote custom logging 6/6 (100% DIY).',
+          riskHeadJa: 'モデル差が最大：SonnetはSentry 100%、Opus(Next)は自作100%',
+          riskHeadEn: 'Biggest Model Split: Sonnet picks Sentry 100%; Opus(Next) 100% DIY'
+        },
+        jobs: {
+          ja: '非同期ジョブ', en: 'Jobs / Queue',
+          zero: 'BullMQ, Inngest, Trigger.dev, Celery (0/33)',
+          prodPick: 'Cloudflare Queues / BullMQ / Inngest（永続リトライ付き）',
+          prodPickEn: 'Cloudflare Queues / BullMQ / Inngest (durable retries)',
+          riskType: 'warn',
+          noteJa: '33/33すべて自作（28回は素のasync/BackgroundTasks、5回は手書きキュー）。再起動で未処理ジョブが消えるため本番は永続キュー指定が必要です。',
+          noteEn: '100% DIY across 33 scored runs (28 built-in async/background tasks, 5 hand-rolled queues). Zero Celery, BullMQ, or Inngest installs.',
+          riskHeadJa: '信頼性注意：100%がインメモリ/手書きキューになる',
+          riskHeadEn: 'Reliability Note: 100% in-memory or hand-rolled queues'
+        },
+        caching: {
+          ja: 'キャッシュ', en: 'Caching',
+          zero: 'Redis, Upstash, Memcached (0/36)',
+          prodPick: 'Upstash Redis / Cloudflare KV（複数インスタンス時）',
+          prodPickEn: 'Upstash Redis / Cloudflare KV (for multi-instance deploys)',
+          riskType: 'warn',
+          noteJa: '全36回で外部キャッシュ導入ゼロ（すべてMap/dict等のインメモリ自作）。単体サーバーなら軽量ですが、スケールアウト時は整合性が崩れます。',
+          noteEn: 'Zero Redis or Upstash picks across all 36 runs (100% in-memory Map/dict). Fine for single-node apps, breaks under horizontal scaling.',
+          riskHeadJa: 'スケール注意：Redis/Upstashは 0/36、全件インメモリ自作',
+          riskHeadEn: 'Scaling Note: Redis/Upstash 0/36; 100% in-memory DIY'
+        }
+      };
+
+      var CAT_ORDER = ['payments', 'auth', 'database', 'orm', 'deployment', 'email', 'storage', 'observability', 'jobs', 'caching'];
+
+      var DICT = {
+        ja: {
+          pageTitle: 'AIコーディングエージェント選定スタック実測ビューア（Claude 5.5 360ラン）｜KitWorks Lab',
+          pageDesc: 'Claude Code 5.5（Opus / Sonnet / Haiku）360回の実測データから、AIが指示なしで選ぶ決済・認証・DB・ORM・ホスティングを日英で分析。CLAUDE.md用のスタック指定Markdownを1クリック出力。',
+          skipLink: 'メインコンテンツへ移動',
+          navTools: '無料ツール一覧',
+          navLlm: 'LLMコスト試算',
+          navStack: 'AI選定スタック',
+          navMcp: '無料MCP探索',
+          navGuides: 'SaaSコスト試算',
+          navObs: 'OBS製品デモ',
+          heroTitle: 'AIコーディングエージェント選定スタック実測ビューア',
+          heroLead: 'ツール名を指定せず「実装して」と頼んだ360回の Claude Code 5.5（Opus / Sonnet / Haiku）実測データから、AIの無意識のデフォルト選定と定番SaaSとのズレを可視化。CLAUDE.md / AGENTS.md 用の指定Markdownも即生成できます。',
+          localStamp: '360 実測ラン / CC BY 4.0 / オフライン完結',
+          s1K: 'PAYMENTS · 決済',
+          s1Vs: '全モデル・全スタックで100%一択。Paddle / Lemon Squeezy / PayPal は 0/35。',
+          s2K: 'AUTH · 認証の罠',
+          s2Stat: '手書きJWT 32/35 (91%)',
+          s2Vs: '35/35すべて自作（DIY）。Clerk / Auth0 / Better Auth は 0/35 — 明示指定が必須。',
+          s3K: 'DB & HOSTING · 人気SaaSゼロ',
+          s3Vs: 'SQLite 20/36・素Docker 21/36が主流。Next.jsでも Vercel 0/36・Supabase 0/36。',
+          s4K: 'ORM · Prisma 0の衝撃',
+          s4Vs: 'FastAPIは SQLAlchemy 18/18、Next.jsは Drizzle 12/18。Prisma は 0/36。',
+          lblModel: 'モデル帯',
+          mAll: '全モデル (355)',
+          lblStack: 'スターター構成',
+          stAll: '両方',
+          lblCat: 'カテゴリ絞込',
+          catAll: 'すべて (10)',
+          kpiScored: '対象スコア済みラン',
+          kpiDiy: '自作（DIY / 非SaaS）比率',
+          kpiTop: '最多デフォルト選定',
+          kpiCost: '平均コスト / 実行時間',
+          tblTitle: 'カテゴリ別 AIデフォルト選定一覧（行クリックでモデル別詳細）',
+          tblCaption: 'Claude Code 5.5 がベンダー名未指定のプロンプトで実際にインストールしたツール分布（2026年10月実測）',
+          thCat: 'カテゴリ',
+          thDist: '実測ピック分布（赤/黄=DIY・緑/青=外部ツール）',
+          thDiy: 'DIY率',
+          thZero: '0回だった定番SaaS',
+          bpTitle: 'CLAUDE.md / AGENTS.md スタック指定ビルダー',
+          bpDesc: 'AI任せにすると手書きJWTやローカル保存を選びがちです。本番で上書きしたいカテゴリだけ差し替えて、そのままプロジェクト規約に貼れるMarkdownを出力します。',
+          btnPresetAi: 'AIデフォルトに戻す',
+          btnPresetProd: '本番SaaS推奨を一括適用',
+          btnCopyMd: 'Markdownをコピー',
+          copied: 'コピーしました',
+          cr1Title: 'LLM API コスト＆日本語トークン試算',
+          cr1Desc: 'Opus / Sonnet / Haiku 5.5 の月額API費とキャッシュ・思考トークン罠をローカル試算。',
+          cr2Title: '自動化＆SaaSコスト比較シミュレーター',
+          cr2Desc: 'AIが選びがちな自作（DIY）構成と、マネージドSaaS / Make / n8n 運用のコスト分岐点を試算。',
+          cr3Title: '無料リモートMCPサーバー探索＆mcp.json生成',
+          cr3Desc: '認証不要MCP 14,776件の安全性（readOnlyHint / destructiveHint）を確認して設定JSONを即生成。',
+          creditHead: 'データ出典・ライセンス（CC BY 4.0）:',
+          creditBody: '本ツールは 2026年10月17–18日に計測された公開データセット',
+          creditTail: 'の事前集計JSONをページ内に同梱しています。外部API通信は一切行いません。',
+          footerNote: 'KitWorks Lab — 個人制作のOBS配信ツール・無料Webツール工房。すべてのツールはブラウザ内ローカルで完結します。'
+        },
+        en: {
+          pageTitle: 'AI Coding Agent Default Stack Explorer (360 Claude 5.5 Runs) — KitWorks Lab',
+          pageDesc: 'Explore 360 real Claude Code 5.5 (Opus / Sonnet / Haiku) runs from What Agents Pick (CC BY 4.0). Compare AI defaults vs popular SaaS (Stripe 100%, Hand-rolled JWT 91%, Supabase 0/36, Vercel 0/36) and export CLAUDE.md stack rules.',
+          skipLink: 'Skip to main content',
+          navTools: 'Free Tools',
+          navLlm: 'LLM Cost Calc',
+          navStack: 'Agent Stack Picks',
+          navMcp: 'Free MCP Explorer',
+          navGuides: 'SaaS Cost Guides',
+          navObs: 'OBS Overlays',
+          heroTitle: 'AI Coding Agent Default Stack Explorer',
+          heroLead: 'Based on 360 unprompted Claude Code 5.5 runs (Opus, Sonnet, Haiku), inspect what databases, auth, ORMs, and hosts agents actually install when you never name a vendor — and generate CLAUDE.md / AGENTS.md override rules.',
+          localStamp: '360 Measured Runs · CC BY 4.0 · 100% Offline',
+          s1K: 'PAYMENTS · CONSENSUS',
+          s1Vs: '100% unanimous across every model and stack. Paddle, Lemon Squeezy & PayPal scored 0/35.',
+          s2K: 'AUTH · SECURITY TRAP',
+          s2Stat: 'DIY JWT 32/35 (91.4%)',
+          s2Vs: '35/35 built custom auth. Clerk, Auth0 & Better Auth scored 0/35 — always specify auth explicitly.',
+          s3K: 'DB & HOSTING · ZERO SAAS',
+          s3Vs: 'SQLite (20/36) & Plain Docker (21/36) dominate. Even on Next.js, Vercel & Supabase scored 0/36.',
+          s4K: 'ORM · PRISMA AT ZERO',
+          s4Vs: 'SQLAlchemy won 18/18 FastAPI runs; Drizzle won 12/18 Next.js runs. Prisma scored 0/36.',
+          lblModel: 'MODEL TIER',
+          mAll: 'All Models (355)',
+          lblStack: 'STARTER STACK',
+          stAll: 'Both',
+          lblCat: 'CATEGORY',
+          catAll: 'All (10)',
+          kpiScored: 'Scored Runs in View',
+          kpiDiy: 'DIY (Built-Own) Share',
+          kpiTop: 'Top Default Pick',
+          kpiCost: 'Avg Cost / Duration',
+          tblTitle: 'Default Picks by Category (click any row for Opus vs Sonnet vs Haiku)',
+          tblCaption: 'Tools actually installed by Claude Code 5.5 when prompts named no vendor (measured Oct 17–18, 2026)',
+          thCat: 'Category',
+          thDist: 'Measured Pick Split (Red/Ochre = DIY · Green/Blue = Vendor)',
+          thDiy: 'DIY %',
+          thZero: 'Popular SaaS with 0 Picks',
+          bpTitle: 'CLAUDE.md / AGENTS.md Stack Blueprint Builder',
+          bpDesc: 'Override categories where AI defaults (hand-rolled auth, local disk storage) are unsafe for production, then copy a drop-in Markdown spec for your repo.',
+          btnPresetAi: 'Reset to AI Defaults',
+          btnPresetProd: 'Apply Production Overrides',
+          btnCopyMd: 'Copy Blueprint Markdown',
+          copied: 'Copied to clipboard',
+          cr1Title: 'LLM API Cost & Token Simulator',
+          cr1Desc: 'Simulate monthly Opus / Sonnet / Haiku 5.5 spend, prompt caching, and max_tokens reasoning traps.',
+          cr2Title: 'Workflow & SaaS Cost Calculator',
+          cr2Desc: 'Compare DIY self-hosted stacks against managed SaaS automation pricing (Make vs Zapier vs n8n).',
+          cr3Title: 'Free Remote MCP Explorer & mcp.json Generator',
+          cr3Desc: 'Filter 31,845 scanned MCP endpoints by readOnlyHint & destructiveHint and copy safe client configs.',
+          creditHead: 'Dataset Attribution (CC BY 4.0):',
+          creditBody: 'Pre-aggregated offline snapshot from',
+          creditTail: '(measured Oct 17–18, 2026). Zero external runtime requests.',
+          footerNote: 'KitWorks Lab — Indie OBS overlays & zero-upload creator utilities. Everything runs locally in your browser.'
+        }
+      };
+
+      var state = {
+        lang: 'ja',
+        model: 'all',
+        stack: 'all',
+        cat: 'all',
+        focusedCat: 'auth',
+        bpChoices: {} // cat -> 'ai' | 'prod'
+      };
+
+      CAT_ORDER.forEach(function (c) { state.bpChoices[c] = 'ai'; });
+
+      function getFilteredCells(catFilterOverride) {
+        var catTarget = catFilterOverride !== undefined ? catFilterOverride : state.cat;
+        return DATA.cells.filter(function (cell) {
+          if (state.model !== 'all' && cell.m !== state.model) return false;
+          if (state.stack !== 'all' && cell.s !== state.stack) return false;
+          if (catTarget !== 'all' && cell.c !== catTarget) return false;
+          return true;
+        });
+      }
+
+      function aggregate(cells) {
+        var totalN = 0, scored = 0, diy = 0, usd = 0, sec = 0;
+        var tools = {};
+        cells.forEach(function (c) {
+          totalN += c.n;
+          scored += c.sc;
+          diy += c.diy;
+          usd += c.usd;
+          sec += c.sec;
+          Object.keys(c.t).forEach(function (tid) {
+            tools[tid] = (tools[tid] || 0) + c.t[tid];
+          });
+        });
+        var sortedTools = Object.keys(tools)
+          .map(function (tid) {
+            var meta = DATA.tools[tid] || { label: tid, kind: 'vendor' };
+            return { id: tid, label: meta.label, kind: meta.kind, count: tools[tid] };
+          })
+          .sort(function (a, b) { return b.count - a.count; });
+        return { totalN: totalN, scored: scored, diy: diy, usd: usd, sec: sec, tools: sortedTools };
+      }
+
+      function renderCatPills() {
+        var wrap = document.getElementById('catFilter');
+        wrap.innerHTML = '';
+        var allBtn = document.createElement('button');
+        allBtn.type = 'button';
+        allBtn.className = 'cat-pill' + (state.cat === 'all' ? ' is-active' : '');
+        allBtn.setAttribute('aria-pressed', state.cat === 'all' ? 'true' : 'false');
+        allBtn.textContent = DICT[state.lang].catAll;
+        allBtn.addEventListener('click', function () {
+          state.cat = 'all';
+          renderAll();
+        });
+        wrap.appendChild(allBtn);
+
+        CAT_ORDER.forEach(function (c) {
+          var b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'cat-pill' + (state.cat === c ? ' is-active' : '');
+          b.setAttribute('aria-pressed', state.cat === c ? 'true' : 'false');
+          b.textContent = state.lang === 'ja' ? CAT_META[c].ja : CAT_META[c].en;
+          b.addEventListener('click', function () {
+            state.cat = c;
+            state.focusedCat = c;
+            renderAll();
+          });
+          wrap.appendChild(b);
+        });
+      }
+
+      function segClass(tool, diyIdx, venIdx) {
+        if (tool.kind === 'diy') return diyIdx === 0 ? 'seg-diy' : 'seg-diy-alt';
+        if (venIdx === 0) return 'seg-vendor';
+        if (venIdx === 1) return 'seg-vendor-alt';
+        return 'seg-vendor-3';
+      }
+
+      function renderKPIs() {
+        var agg = aggregate(getFilteredCells());
+        document.getElementById('kpiScored').textContent = String(agg.scored);
+        document.getElementById('kpiScoredSub').textContent =
+          (state.lang === 'ja' ? '全 ' + agg.totalN + ' ラン中' : 'of ' + agg.totalN + ' total runs');
+
+        var diyPct = agg.scored ? ((agg.diy / agg.scored) * 100).toFixed(1) : '0.0';
+        document.getElementById('kpiDiy').textContent = diyPct + '%';
+        document.getElementById('kpiDiySub').textContent = agg.diy + ' DIY / ' + (agg.scored - agg.diy) + ' Vendor';
+
+        if (agg.tools.length) {
+          var top = agg.tools[0];
+          document.getElementById('kpiTop').textContent = top.label.replace(' or sessions', '').replace(' (no library)', '');
+          document.getElementById('kpiTopSub').textContent =
+            top.count + '/' + agg.scored + ' (' + ((top.count / agg.scored) * 100).toFixed(0) + '%)';
+        } else {
+          document.getElementById('kpiTop').textContent = '—';
+          document.getElementById('kpiTopSub').textContent = '—';
+        }
+
+        var avgUsd = agg.scored ? (agg.usd / agg.scored).toFixed(3) : '0.000';
+        var avgSec = agg.scored ? (agg.sec / agg.scored).toFixed(1) : '0.0';
+        document.getElementById('kpiCost').textContent = '$' + avgUsd;
+        document.getElementById('kpiCostSub').textContent =
+          (state.lang === 'ja' ? '平均 ' + avgSec + '秒 / ラン' : 'avg ' + avgSec + 's / run');
+
+        var mLbl = state.model === 'all' ? 'All Models' : state.model.toUpperCase() + ' 5.5';
+        var sLbl = state.stack === 'all' ? 'Next.js + FastAPI' : (state.stack === 'next' ? 'Next.js TS' : 'FastAPI');
+        document.getElementById('filterSummaryLabel').textContent = mLbl + ' · ' + sLbl + ' · ' + agg.scored + ' runs';
+      }
+
+      function renderTable() {
+        var tbl = document.getElementById('wapTable');
+        var d = DICT[state.lang];
+        tbl.style.setProperty('--lbl-dist', '"' + d.thDist + '"');
+        tbl.style.setProperty('--lbl-diy', '"' + d.thDiy + '"');
+        tbl.style.setProperty('--lbl-zero', '"' + d.thZero + '"');
+
+        var tbody = document.getElementById('wapTbody');
+        tbody.innerHTML = '';
+
+        var cats = state.cat === 'all' ? CAT_ORDER : [state.cat];
+        cats.forEach(function (c) {
+          var agg = aggregate(getFilteredCells(c));
+          var tr = document.createElement('tr');
+          if (state.focusedCat === c) tr.className = 'is-focused';
+          tr.addEventListener('click', function () {
+            state.focusedCat = c;
+            renderTable();
+            renderDrilldown();
+          });
+
+          // Row header
+          var th = document.createElement('th');
+          th.scope = 'row';
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'cat-btn-link';
+          btn.innerHTML = '<span>' + (state.lang === 'ja' ? CAT_META[c].ja : CAT_META[c].en) + '</span>' +
+            '<span class="cat-sub-id">' + c + ' · ' + agg.scored + ' runs</span>';
+          th.appendChild(btn);
+          tr.appendChild(th);
+
+          // Distribution bar + tool chips
+          var tdDist = document.createElement('td');
+          var bar = document.createElement('div');
+          bar.className = 'dist-bar';
+          bar.setAttribute('aria-hidden', 'true');
+          var list = document.createElement('div');
+          list.className = 'pick-list';
+
+          var diyIdx = 0, venIdx = 0;
+          agg.tools.forEach(function (t) {
+            var cls = segClass(t, diyIdx, venIdx);
+            if (t.kind === 'diy') diyIdx++; else venIdx++;
+            var pct = agg.scored ? (t.count / agg.scored) * 100 : 0;
+            var seg = document.createElement('div');
+            seg.className = 'dist-seg ' + cls;
+            seg.style.width = pct.toFixed(1) + '%';
+            bar.appendChild(seg);
+
+            var chip = document.createElement('span');
+            chip.className = 'pick-chip';
+            chip.innerHTML = '<i class="pick-dot ' + cls + '" aria-hidden="true"></i>' +
+              '<strong>' + t.label + '</strong> ' + t.count + '/' + agg.scored + ' (' + Math.round(pct) + '%)';
+            list.appendChild(chip);
+          });
+          tdDist.appendChild(bar);
+          tdDist.appendChild(list);
+          tr.appendChild(tdDist);
+
+          // DIY %
+          var tdDiy = document.createElement('td');
+          var diyPct = agg.scored ? Math.round((agg.diy / agg.scored) * 100) : 0;
+          var badge = document.createElement('span');
+          badge.className = 'diy-badge ' + (diyPct >= 75 ? 'is-high' : diyPct >= 35 ? 'is-mid' : 'is-low');
+          badge.textContent = diyPct + '%';
+          tdDiy.appendChild(badge);
+          tr.appendChild(tdDiy);
+
+          // 0-pick popular SaaS
+          var tdZero = document.createElement('td');
+          tdZero.className = 'zero-saas';
+          tdZero.textContent = CAT_META[c].zero;
+          tr.appendChild(tdZero);
+
+          tbody.appendChild(tr);
+        });
+
+        // Update surprise card highlight
+        document.querySelectorAll('.surprise-card').forEach(function (card) {
+          card.classList.toggle('is-selected', card.getAttribute('data-jump-cat') === state.focusedCat);
+        });
+      }
+
+      function renderDrilldown() {
+        var c = state.focusedCat;
+        var meta = CAT_META[c];
+        var label = state.lang === 'ja' ? meta.ja + '（' + meta.en + '）のモデル別比較' : meta.en + ' — Opus vs Sonnet vs Haiku 5.5';
+        document.getElementById('drillTitle').textContent = label;
+        var stackTxt = state.stack === 'all' ? 'Next.js + FastAPI' : (state.stack === 'next' ? 'Next.js TS' : 'Python FastAPI');
+        document.getElementById('drillMeta').textContent = stackTxt;
+        document.getElementById('drillLead').textContent = state.lang === 'ja' ? meta.noteJa : meta.noteEn;
+
+        var grid = document.getElementById('drillGrid');
+        grid.innerHTML = '';
+        ['opus', 'sonnet', 'haiku'].forEach(function (m) {
+          var subCells = DATA.cells.filter(function (cell) {
+            if (cell.c !== c || cell.m !== m) return false;
+            if (state.stack !== 'all' && cell.s !== state.stack) return false;
+            return true;
+          });
+          var agg = aggregate(subCells);
+          var box = document.createElement('div');
+          box.className = 'drill-model-box';
+          var mName = m === 'opus' ? 'Opus 5.5' : m === 'sonnet' ? 'Sonnet 5.5' : 'Haiku 5.5';
+          var diyPct = agg.scored ? Math.round((agg.diy / agg.scored) * 100) : 0;
+          var html = '<div class="drill-model-name"><span>' + mName + '</span><span>DIY ' + diyPct + '%</span></div><ul class="drill-model-items">';
+          agg.tools.forEach(function (t) {
+            html += '<li>' + t.label + ': <strong>' + t.count + '/' + agg.scored + '</strong></li>';
+          });
+          html += '</ul>';
+          box.innerHTML = html;
+          grid.appendChild(box);
+        });
+
+        var risk = document.getElementById('drillRisk');
+        risk.className = 'risk-callout' + (meta.riskType === 'sage' ? ' is-sage' : '');
+        document.getElementById('drillRiskHead').textContent = state.lang === 'ja' ? meta.riskHeadJa : meta.riskHeadEn;
+        document.getElementById('drillRiskBody').textContent =
+          (state.lang === 'ja' ? '推奨上書き指定: ' + meta.prodPick : 'Suggested override: ' + meta.prodPickEn);
+      }
+
+      function getTopAiPickForCat(c) {
+        var agg = aggregate(getFilteredCells(c));
+        return agg.tools.length ? agg.tools[0].label + ' (' + agg.tools[0].count + '/' + agg.scored + ')' : 'DIY';
+      }
+
+      function renderBlueprint() {
+        var list = document.getElementById('bpList');
+        list.innerHTML = '';
+        var overrideCount = 0;
+
+        CAT_ORDER.forEach(function (c) {
+          var row = document.createElement('div');
+          row.className = 'bp-row';
+          var lbl = document.createElement('label');
+          lbl.className = 'bp-cat';
+          lbl.setAttribute('for', 'bp-sel-' + c);
+          lbl.textContent = state.lang === 'ja' ? CAT_META[c].ja : CAT_META[c].en;
+
+          var sel = document.createElement('select');
+          sel.id = 'bp-sel-' + c;
+          sel.className = 'bp-select';
+          var aiTxt = 'AI Default: ' + getTopAiPickForCat(c);
+          var prodTxt = (state.lang === 'ja' ? '上書き: ' + CAT_META[c].prodPick : 'Override: ' + CAT_META[c].prodPickEn);
+
+          var optAi = document.createElement('option');
+          optAi.value = 'ai';
+          optAi.textContent = aiTxt;
+          var optProd = document.createElement('option');
+          optProd.value = 'prod';
+          optProd.textContent = prodTxt;
+
+          sel.appendChild(optAi);
+          sel.appendChild(optProd);
+          sel.value = state.bpChoices[c] || 'ai';
+          if (sel.value === 'prod') overrideCount++;
+
+          sel.addEventListener('change', function () {
+            state.bpChoices[c] = sel.value;
+            renderBlueprintPreview();
+          });
+
+          row.appendChild(lbl);
+          row.appendChild(sel);
+          list.appendChild(row);
+        });
+
+        document.getElementById('bpOverrideCount').textContent = overrideCount + (state.lang === 'ja' ? ' 件上書き' : ' overrides');
+        renderBlueprintPreview();
+      }
+
+      function buildMarkdown() {
+        var isJa = state.lang === 'ja';
+        var stackName = state.stack === 'next' ? 'Next.js (TypeScript)' : state.stack === 'py' ? 'Python (FastAPI)' : 'Full-Stack Web';
+        var lines = [];
+        lines.push(isJa ? '## 技術スタック方針（CLAUDE.md / AGENTS.md 用）' : '## Explicit Stack Policy (for CLAUDE.md / AGENTS.md)');
+        lines.push('');
+        lines.push(isJa
+          ? '- 対象構成: ' + stackName + '（What Agents Pick 360ラン実測に基づく明示指定）'
+          : '- Target stack: ' + stackName + ' (grounded in What Agents Pick 360-run empirical defaults)');
+        lines.push('');
+        lines.push(isJa ? '| カテゴリ | 採用方針 | 備考 |' : '| Category | Required Choice | Note |');
+        lines.push('| --- | --- | --- |');
+
+        CAT_ORDER.forEach(function (c) {
+          var mode = state.bpChoices[c] || 'ai';
+          var catName = isJa ? CAT_META[c].ja : CAT_META[c].en;
+          var choice = mode === 'prod'
+            ? (isJa ? CAT_META[c].prodPick : CAT_META[c].prodPickEn)
+            : getTopAiPickForCat(c);
+          var note = mode === 'prod'
+            ? (isJa ? 'AIデフォルトを上書き指定' : 'Explicitly overrides AI default')
+            : (isJa ? 'AI実測デフォルトを許容' : 'Matches agent default');
+          lines.push('| ' + catName + ' | ' + choice + ' | ' + note + ' |');
+        });
+
+        lines.push('');
+        lines.push(isJa
+          ? '> 出典: What Agents Pick (https://whatagentspick.com, CC BY 4.0) / KitWorks Lab Explorer'
+          : '> Source: What Agents Pick (https://whatagentspick.com, CC BY 4.0) / KitWorks Lab Explorer');
+        return lines.join('\n');
+      }
+
+      function renderBlueprintPreview() {
+        var overrideCount = CAT_ORDER.filter(function (c) { return state.bpChoices[c] === 'prod'; }).length;
+        document.getElementById('bpOverrideCount').textContent = overrideCount + (state.lang === 'ja' ? ' 件上書き' : ' overrides');
+        document.getElementById('bpPreview').textContent = buildMarkdown();
+      }
+
+      function renderAll() {
+        renderCatPills();
+        renderKPIs();
+        renderTable();
+        renderDrilldown();
+        renderBlueprint();
+      }
+
+      // Bind Model / Stack segmented buttons
+      document.getElementById('modelFilter').addEventListener('click', function (e) {
+        var btn = e.target.closest('[data-model]');
+        if (!btn) return;
+        state.model = btn.getAttribute('data-model');
+        document.querySelectorAll('#modelFilter [data-model]').forEach(function (b) {
+          var on = b === btn;
+          b.classList.toggle('is-active', on);
+          b.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+        renderAll();
+      });
+
+      document.getElementById('stackFilter').addEventListener('click', function (e) {
+        var btn = e.target.closest('[data-stack]');
+        if (!btn) return;
+        state.stack = btn.getAttribute('data-stack');
+        document.querySelectorAll('#stackFilter [data-stack]').forEach(function (b) {
+          var on = b === btn;
+          b.classList.toggle('is-active', on);
+          b.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+        renderAll();
+      });
+
+      // Jump from surprise cards
+      document.querySelectorAll('.surprise-card').forEach(function (card) {
+        card.addEventListener('click', function () {
+          var c = card.getAttribute('data-jump-cat');
+          state.focusedCat = c;
+          renderTable();
+          renderDrilldown();
+          document.getElementById('drillPanel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        });
+      });
+
+      // Blueprint presets & copy
+      document.getElementById('btnPresetAi').addEventListener('click', function () {
+        CAT_ORDER.forEach(function (c) { state.bpChoices[c] = 'ai'; });
+        renderBlueprint();
+      });
+      document.getElementById('btnPresetProd').addEventListener('click', function () {
+        ['auth', 'database', 'deployment', 'email', 'storage', 'jobs', 'caching'].forEach(function (c) {
+          state.bpChoices[c] = 'prod';
+        });
+        ['payments', 'orm', 'observability'].forEach(function (c) {
+          state.bpChoices[c] = 'ai';
+        });
+        renderBlueprint();
+      });
+
+      document.getElementById('btnCopyMd').addEventListener('click', function () {
+        var status = document.getElementById('copyStatus');
+        window.KitWorksTools.copyText(buildMarkdown()).then(function () {
+          status.textContent = '✓ ' + DICT[state.lang].copied;
+          setTimeout(function () { status.textContent = ''; }, 2400);
+        });
+      });
+
+      window.addEventListener('kitworks:langchange', function (e) {
+        state.lang = e.detail.lang;
+        renderAll();
+      });
+
+      var i18n = window.KitWorksTools.initI18n(DICT);
+      state.lang = i18n.getLang();
+      renderAll();
+    })();
+  </script>
+</body>
+</html>

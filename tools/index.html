@@ -210,6 +210,69 @@
       margin-top: 22px;
     }
 
+    .hub-grid-ai {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 22px;
+      margin-top: 22px;
+    }
+
+    .mini-stack {
+      display: grid;
+      gap: 7px;
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+    }
+    .mini-stack-row {
+      display: grid;
+      grid-template-columns: 74px 1fr 56px;
+      gap: 6px;
+      align-items: center;
+      color: var(--ink-soft);
+    }
+    .mini-stack-track {
+      height: 8px;
+      border-radius: 2px;
+      background: var(--paper-card);
+      border: 1px solid var(--rule-strong);
+      overflow: hidden;
+    }
+    .mini-stack-track i {
+      display: block;
+      height: 100%;
+      background: var(--sage);
+    }
+    .mini-stack-track.is-diy i {
+      background: var(--accent);
+    }
+    .mini-mcp-box {
+      background: var(--paper-card);
+      border: 1.5px solid var(--ink);
+      border-radius: 5px;
+      padding: 8px 10px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      line-height: 1.45;
+      display: grid;
+      gap: 5px;
+    }
+    .mini-mcp-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+    .mini-mcp-badge {
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-weight: 800;
+      font-size: 9.5px;
+      color: #fff;
+      background: var(--sage);
+    }
+    .mini-mcp-badge.is-warn {
+      background: var(--accent);
+    }
+
     .mini-matcap {
       display: grid;
       gap: 10px;
@@ -387,7 +450,8 @@
     }
 
     @media (max-width: 980px) {
-      .hub-grid-vrc {
+      .hub-grid-vrc,
+      .hub-grid-ai {
         grid-template-columns: 1fr;
       }
     }
@@ -409,12 +473,10 @@
       <div class="header-right">
         <nav class="site-nav" aria-label="Primary">
           <a href="./" class="is-current" data-i18n="navTools">無料ツール一覧</a>
-          <a href="./yt-thumb-preview/" data-i18n="navYt">サムネ確認</a>
-          <a href="./obs-chat-css/" data-i18n="navChat">OBSチャットCSS</a>
-          <a href="./image-batch-resize/" data-i18n="navResize">画像リサイズ</a>
-          <a href="./matcap-preview/" data-i18n="navMatcap">MatCapプレビュー</a>
           <a href="./llm-cost-calc/" data-i18n="navLlm">LLMコスト試算</a>
-          <a href="../vpm/" data-i18n="navVpm">VPMリポジトリ</a>
+          <a href="./agent-stack-picks/" data-i18n="navStack">AI選定スタック</a>
+          <a href="./free-mcp-explorer/" data-i18n="navMcp">無料MCP探索</a>
+          <a href="../guides/" data-i18n="navGuides">SaaSコスト試算</a>
           <a href="../" data-i18n="navObs">OBS製品デモ</a>
         </nav>
         <div class="lang-toggle" role="group" aria-label="Language">
@@ -430,6 +492,8 @@
       <a href="./image-batch-resize/" data-i18n="navResize">画像リサイズ</a>
       <a href="./matcap-preview/" data-i18n="navMatcap">MatCapプレビュー</a>
       <a href="./llm-cost-calc/" data-i18n="navLlm">LLMコスト試算</a>
+      <a href="./agent-stack-picks/" data-i18n="navStack">AI選定スタック</a>
+      <a href="./free-mcp-explorer/" data-i18n="navMcp">無料MCP探索</a>
       <a href="../vpm/" data-i18n="navVpm">VPMリポジトリ</a>
     </nav>
   </header>
@@ -636,6 +700,62 @@
             </div>
           </article>
         </div>
+
+        <div class="hub-grid-ai">
+          <!-- Tool 7: AI Coding Agent Default Stack Explorer -->
+          <article class="hub-card">
+            <div class="hub-card-visual" aria-hidden="true">
+              <div class="mini-stack">
+                <div class="mini-stack-row"><span>Stripe</span><div class="mini-stack-track"><i style="width:100%"></i></div><span>35/35</span></div>
+                <div class="mini-stack-row"><span>DIY Auth</span><div class="mini-stack-track is-diy"><i style="width:91%"></i></div><span>32/35</span></div>
+                <div class="mini-stack-row"><span>Drizzle TS</span><div class="mini-stack-track"><i style="width:67%"></i></div><span>12 vs 0</span></div>
+                <div class="mini-presets-row" style="margin-top:2px;">
+                  <span>Supabase 0/36</span>
+                  <span>Vercel 0/36</span>
+                  <span>Prisma 0/36</span>
+                  <span>CC BY 4.0</span>
+                </div>
+              </div>
+            </div>
+            <div class="hub-card-body">
+              <span class="hub-card-tag">07 / AI AGENT · 360 RUNS</span>
+              <h2 class="hub-card-title" data-i18n="t7Title">AIコーディングエージェント選定スタック実測ビューア</h2>
+              <p class="hub-card-desc" data-i18n="t7Desc">Claude Code 5.5（Opus / Sonnet / Haiku）360回の実測データから、AIが指示なしで選ぶ決済・認証・DB・ORM・ホスティングを分析。人気SaaSとのズレを比較し、CLAUDE.md用の指定Markdownを出力できます。</p>
+              <p class="hub-card-specs" data-i18n="t7Specs">360実測ラン同梱・モデル帯/スタック別フィルタ・CLAUDE.md 1クリックコピー</p>
+            </div>
+            <div class="hub-card-foot">
+              <a class="btn btn-primary btn-sm" href="./agent-stack-picks/" data-i18n="openTool">ツールを開く →</a>
+            </div>
+          </article>
+
+          <!-- Tool 8: Free Remote MCP Explorer & mcp.json Generator -->
+          <article class="hub-card">
+            <div class="hub-card-visual" aria-hidden="true">
+              <div class="mini-mcp-box">
+                <div class="mini-mcp-badges">
+                  <span class="mini-mcp-badge">READ-ONLY SAFE 156</span>
+                  <span class="mini-mcp-badge is-warn">14,268 destructiveHint</span>
+                </div>
+                <div style="color:var(--ink-soft);">31,845 scanned → 18,439 open (58%)</div>
+                <div class="mini-presets-row">
+                  <span>Claude Code</span>
+                  <span>Claude Desktop</span>
+                  <span>Cursor</span>
+                  <span>Antigravity</span>
+                </div>
+              </div>
+            </div>
+            <div class="hub-card-body">
+              <span class="hub-card-tag">08 / MCP · 31,845 SCAN</span>
+              <h2 class="hub-card-title" data-i18n="t8Title">無料リモートMCPサーバー探索＆安全な mcp.json 生成</h2>
+              <p class="hub-card-desc" data-i18n="t8Desc">公式MCPレジストリ31,845件調査から厳選230件を高速ローカル検索。Read-only安全フィルタとリスクメーターで破壊ツール警告を確認しながら、主要AIクライアント向け設定を1クリック生成します。</p>
+              <p class="hub-card-specs" data-i18n="t8Specs">117KBオフラインJSON・12カテゴリ検索・ライブ安全リスク判定・mcp.json生成</p>
+            </div>
+            <div class="hub-card-foot">
+              <a class="btn btn-primary btn-sm" href="./free-mcp-explorer/" data-i18n="openTool">ツールを開く →</a>
+            </div>
+          </article>
+        </div>
       </div>
     </section>
 
@@ -733,6 +853,9 @@
           navResize: '画像リサイズ',
           navMatcap: 'MatCapプレビュー',
           navLlm: 'LLMコスト試算',
+          navStack: 'AI選定スタック',
+          navMcp: '無料MCP探索',
+          navGuides: 'SaaSコスト試算',
           navVpm: 'VPMリポジトリ',
           navObs: 'OBS製品デモ',
           title: '配信者・個人制作者のための無料Webツール集',
@@ -756,6 +879,12 @@
           t6Title: 'LLM API コスト・日本語トークン＆推論トラップ試算',
           t6Desc: '日本語・英語・コードのプロンプトを貼るだけでトークン膨張率（汎用BPE vs 国産JP最適化）と月額費用を比較。思考トークンによるHTTP 200空レスポンス罠と冗長表現の節約額も即チェックできます。',
           t6Specs: 'Claude / OpenAI / Gemini / DeepSeek / さくら(無料3,000req枠) · 編集可カスタム単価',
+          t7Title: 'AIコーディングエージェント選定スタック実測ビューア',
+          t7Desc: 'Claude Code 5.5（Opus / Sonnet / Haiku）360回の実測データから、AIが指示なしで選ぶ決済・認証・DB・ORM・ホスティングを分析。人気SaaSとのズレを比較し、CLAUDE.md用の指定Markdownを出力できます。',
+          t7Specs: '360実測ラン同梱・モデル帯/スタック別フィルタ・CLAUDE.md 1クリックコピー',
+          t8Title: '無料リモートMCPサーバー探索＆安全な mcp.json 生成',
+          t8Desc: '公式MCPレジストリ31,845件調査から厳選230件を高速ローカル検索。Read-only安全フィルタとリスクメーターで破壊ツール警告を確認しながら、主要AIクライアント向け設定を1クリック生成します。',
+          t8Specs: '117KBオフラインJSON・12カテゴリ検索・ライブ安全リスク判定・mcp.json生成',
           openTool: 'ツールを開く →',
           openVpm: 'VPMページを開く →',
           obsHeading: 'OBSで使える配信オーバーレイも作っています',
@@ -789,6 +918,9 @@
           navResize: 'Image Resizer',
           navMatcap: 'MatCap Preview',
           navLlm: 'LLM Cost Calc',
+          navStack: 'Agent Stack Picks',
+          navMcp: 'Free MCP Explorer',
+          navGuides: 'SaaS Cost Guides',
           navVpm: 'VPM Repo',
           navObs: 'OBS Overlays',
           title: 'Free Browser-Local Web Tools for Creators & Streamers',
@@ -812,6 +944,12 @@
           t6Title: 'LLM API Cost, Token & Reasoning-Trap Simulator',
           t6Desc: 'Analyze Japanese/English/code prompt token inflation (Global BPE vs JP-optimized), simulate monthly API costs with prompt caching, catch the HTTP 200 finish_reason: "length" trap, and inspect prompt bloat savings.',
           t6Specs: 'Claude / OpenAI / Gemini / DeepSeek / Sakura JP (3,000 free req/mo) · Custom rate row',
+          t7Title: 'AI Coding Agent Default Stack Explorer (360 Runs)',
+          t7Desc: 'Explore 360 unprompted Claude Code 5.5 (Opus / Sonnet / Haiku) runs to see why agents pick Stripe 100%, DIY auth 91%, and Supabase/Vercel/Prisma 0/36 — then copy CLAUDE.md stack rules.',
+          t7Specs: '360 measured runs bundled · Model & starter filters · 1-click Markdown blueprint',
+          t8Title: 'Free Remote MCP Explorer & Safe mcp.json Generator',
+          t8Desc: 'Filter 230 curated keyless endpoints from the 31,845-server registry scan by readOnlyHint vs destructiveHint risk, and generate ready-to-paste configs for Claude, Cursor, and Antigravity.',
+          t8Specs: '117KB offline JSON · 12 topics · Live security risk meter · 4 client formats',
           openTool: 'Open Tool →',
           openVpm: 'Open VPM Repo →',
           obsHeading: 'Local HTML Overlays for OBS Studio',
